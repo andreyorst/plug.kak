@@ -13,13 +13,27 @@ git clone https://github.com/andreyorst/plug.kak.git ~/.config/kak/plugins/plug.
 
 And source `plug.kak` from your `kakrc`, or any of your configuration file.
 
+If you cloned repo to your plugin installation dir, which defaults to `~/.config/kak/plugins/`
+**plug.kak** will be able to manage itself along with another plugins.
+
 ## Usage
 
 You can specify what plugins to install and load by using `plug` command:
 
-``` kak
+```sh
+plug andreyorst/plug.kak # only if plug.kak repo exists at plugin installation path. 
+...
 plug github_username/repo_name
 ```
+
+To specify where to install plugins, in case you don't like default `~/.config/kak/plugins/` path, you can
+use option `plug_install_dir`:
+
+```kak
+set-option global plug_install_dir '$HOME/.cache/kakoune_plugins'
+```
+
+Or any other path.
 
 ## Commands
 
