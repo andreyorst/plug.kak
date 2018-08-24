@@ -7,7 +7,8 @@ against Kakoune v2018.04.13.
 ## Installation
 
 ``` sh
-git clone https://github.com/andreyorst/plug.kak.git ~/.config/kak/plugins/
+mkdir -p ~/.config/kak/plugins/
+git clone https://github.com/andreyorst/plug.kak.git ~/.config/kak/plugins/plug.kak
 ```
 
 And source `plug.kak` from your `kakrc`, or any of your configuration file.
