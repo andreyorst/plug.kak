@@ -8,7 +8,7 @@ define-command -hidden plug -params 1..2 %{
 		if [ -d $(eval echo $kak_opt_plug_install_dir) ]; then
 			if [ -d $(eval echo $kak_opt_plug_install_dir/"${1##*/}") ]; then
 				for file in $(find -L $(eval echo $kak_opt_plug_install_dir/"${1##*/}") -type f -name '*.kak'); do
-					[ $file != "plug.kak" ] && echo source "$file"
+					[ "${file##*/}" != "plug.kak" ] && echo source "$file"
 				done
 			fi
 		fi
