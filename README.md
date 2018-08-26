@@ -2,7 +2,8 @@
 
 **plug.kak** is a plugin manager for Kakoune editor, that aims to work somewhat
 similar to [vim-plug](https://github.com/junegunn/vim-plug). It is being tested
-against Kakoune v2018.04.13.
+against Kakoune v2018.04.13. If you're using Kakoune builds from git master, switch to
+kak-git branch.
 
 ## Installation
 
