@@ -4,7 +4,7 @@ declare-option -hidden -docstring "Array of plugins" \
 	str plug_plugins ''
 
 define-command -hidden plug -params 1..2 %{
-	%sh{
+	evaluate-commands %sh{
 		if [ -d $(eval echo $kak_opt_plug_install_dir) ]; then
 			if [ -d $(eval echo $kak_opt_plug_install_dir/"${1##*/}") ]; then
 				for file in $(find -L $(eval echo $kak_opt_plug_install_dir/"${1##*/}") -type f -name '*.kak'); do
