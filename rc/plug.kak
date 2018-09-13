@@ -57,14 +57,14 @@ define-command plug-clean -docstring 'Delete all plugins that not present in con
 		while ! mkdir .plug.kaklock 2>/dev/null; do sleep 1; done
 			trap 'rmdir .plug.kaklock' EXIT
 
-		for instlled_plugin in $(echo $(eval echo $kak_opt_plug_install_dir)/*); do
+		for installed_plugin in $(echo $(eval echo $kak_opt_plug_install_dir)/*); do
 			skip=
 			for enabled_plugin in $kak_opt_plug_plugins; do
-				[ "${instlled_plugin##*/}" = "${enabled_plugin##*/}" ] && { skip=1; break; }
+				[ "${installed_plugin##*/}" = "${enabled_plugin##*/}" ] && { skip=1; break; }
 			done
-			[ "$skip" = "1" ] || plugins_to_remove+=("$instlled_plugin")
+			[ "$skip" = "1" ] || plugins_to_remove=$plugins_to_remove" $installed_plugin"
 		done
-		for plugin in ${plugins_to_remove[*]}; do
+		for plugin in $plugins_to_remove; do
 			rm -rf $plugin
 		done
 	) > /dev/null 2>&1 < /dev/null & }
