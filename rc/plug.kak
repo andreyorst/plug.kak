@@ -4,7 +4,7 @@ declare-option -hidden -docstring "Array of plugins. Should not be modified by u
 	str plug_plugins ''
 
 # since Kakoune escapes shell symbols in options
-# eval is usedin many places of this script
+# eval is used in many places of this script
 # to get actual value of Kakoune options
 define-command -hidden plug -params 1..2 %{
 	evaluate-commands %sh{
@@ -24,7 +24,7 @@ define-command -hidden plug -params 1..2 %{
 }
 
 # TODO:
-# Find a way to measure amount of simultaniously running Git processes
+# Find a way to measure amount of simultaneously running Git processes
 # to run not more than 5 at once, and let user configure this amount
 define-command plug-install -docstring 'Install all uninstalled plugins' %{
 	echo -markup "{Information}Installing plugins in the background"
@@ -38,7 +38,7 @@ define-command plug-install -docstring 'Install all uninstalled plugins' %{
 
 		for plugin in $kak_opt_plug_plugins; do
 			if [ ! -d $(eval echo $kak_opt_plug_install_dir/"${plugin##*/}") ]; then
-			# TODO: Support different git systems like gitlub, bitbucket
+			# TODO: Support different git systems like gitlab, bitbucket
 				(cd $(eval echo $kak_opt_plug_install_dir); git clone https://github.com/$plugin >/dev/null 2>&1) &
 			fi
 		done
