@@ -1,12 +1,32 @@
+# ╭─────────────╥────────────────────╮
+# │ Author:     ║ File:              │
+# │ Andrey Orst ║ plug.kak           │
+# ╞═════════════╩════════════════════╡
+# │ plug.kak is a plugin manager for │
+# │ Kakoune. It can install plugins  │
+# │ keep them updated and uninstall  │
+# ╞══════════════════════════════════╡
+# │ GitHub repo:                     │
+# │ GitHub.com/andreyorst/plug.kak   │
+# ╰──────────────────────────────────╯
+
 declare-option -docstring "path where plugins should be installed.\nDefault value: '$HOME/.config/kak/plugins'" \
 	str plug_install_dir '$HOME/.config/kak/plugins'
 declare-option -hidden -docstring "Array of plugins. Should not be modified by user" \
 	str plug_plugins ''
 
+hook global WinSetOption filetype=kak %{
+    add-highlighter window/plug regex ^(\h+)?\bplug\b 0:keyword
+    add-highlighter window/plug_repo regex (?<=plug)\h+[^\n]*/.*?$ 0:attribute
+}
+
 # since Kakoune escapes shell symbols in options
 # eval is used in many places of this script
 # to get actual value of Kakoune options
-define-command -hidden plug -params 1..2 %{
+define-command -override -hidden -docstring "
+plug <username/reponame>
+" \
+plug -params 1..2 %{
 	evaluate-commands %sh{
 		if [ -d $(eval echo $kak_opt_plug_install_dir) ]; then
 			if [ -d $(eval echo $kak_opt_plug_install_dir/"${1##*/}") ]; then
@@ -26,7 +46,8 @@ define-command -hidden plug -params 1..2 %{
 # TODO:
 # Find a way to measure amount of simultaneously running Git processes
 # to run not more than 5 at once, and let user configure this amount
-define-command plug-install -docstring 'Install all uninstalled plugins' %{
+define-command -override -docstring 'Install all uninstalled plugins' \
+plug-install %{
 	echo -markup "{Information}Installing plugins in the background"
 	nop %sh{ (
 		while ! mkdir .plug.kaklock 2>/dev/null; do sleep 1; done
@@ -49,7 +70,8 @@ define-command plug-install -docstring 'Install all uninstalled plugins' %{
 }
 
 # TODO: same as for plug-install
-define-command plug-update -docstring 'Update all installed plugins' %{
+define-command -override -docstring 'Update all installed plugins' \
+plug-update %{
 	echo -markup "{Information}Updating plugins in the background"
 	nop %sh{ (
 		while ! mkdir .plug.kaklock 2>/dev/null; do sleep 1; done
@@ -63,7 +85,8 @@ define-command plug-update -docstring 'Update all installed plugins' %{
 	) > /dev/null 2>&1 < /dev/null & }
 }
 
-define-command plug-clean -docstring 'Delete all plugins that not present in config files' %{
+define-command -override -docstring 'Delete all plugins that not present in config files' \
+plug-clean %{
 	nop %sh{ (
 		while ! mkdir .plug.kaklock 2>/dev/null; do sleep 1; done
 			trap 'rmdir .plug.kaklock' EXIT
