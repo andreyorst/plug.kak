@@ -31,6 +31,7 @@ plug -params 1.. %{
             eval echo "echo -markup '{Information}$1 already loaded. Skipping'"
             exit
         fi
+
         if [ -d $(eval echo $kak_opt_plug_install_dir) ]; then
             if [ -d $(eval echo $kak_opt_plug_install_dir/"${1##*/}") ]; then
                 eval echo 'set-option -add global plug_loaded_plugins \"$1 \"'
@@ -41,11 +42,9 @@ plug -params 1.. %{
                         break
                     fi
                 done
+                [ "$1" = "andreyorst/plug.kak" ] && exit
                 for file in $(find -L $(eval echo $kak_opt_plug_install_dir/"${1##*/}") -type f -name '*.kak'); do
-                    # rough way to not load plug when plug command is used with plug.kak as a parameter
-                    if [ "${file##*/}" != "plug.kak" ]; then
-                        echo source "$file"
-                    fi
+                    echo source "$file"
                 done
             fi
         fi
