@@ -10,8 +10,12 @@
 # │ GitHub.com/andreyorst/plug.kak   │
 # ╰──────────────────────────────────╯
 
-declare-option -docstring "path where plugins should be installed.\nDefault value: '$HOME/.config/kak/plugins'" \
-    str plug_install_dir '$HOME/.config/kak/plugins'
+declare-option -docstring \
+"path where plugins should be installed.
+        Default value: '$HOME/.config/kak/plugins'
+" \
+str plug_install_dir '$HOME/.config/kak/plugins'
+
 declare-option -hidden str plug_plugins ''
 declare-option -hidden str plug_loaded_plugins
 
@@ -19,10 +23,7 @@ hook global WinSetOption filetype=kak %{
     add-highlighter window/plug regex ^(\h+)?\bplug\b 0:keyword
 }
 
-define-command -override -hidden -docstring "
-plug <username/reponame>
-" \
-plug -params 1.. %{
+define-command -override -hidden plug -params 1.. %{
     set-option -add global plug_plugins "%arg{1} "
     evaluate-commands %sh{
         loaded="_ "$(eval echo $kak_opt_plug_loaded_plugins)
