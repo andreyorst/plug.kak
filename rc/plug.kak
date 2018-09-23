@@ -23,7 +23,8 @@ hook global WinSetOption filetype=kak %{
 define-command -override -hidden -docstring "
 plug <username/reponame>
 " \
-plug -params 1..2 %{
+plug -params 1.. %{
+    set-option -add global plug_plugins "%arg{1} "
     evaluate-commands %sh{
         loaded="_ "$(eval echo $kak_opt_plug_loaded_plugins)
         if [ -z "${loaded##*$1*}" ]; then
@@ -33,6 +34,13 @@ plug -params 1..2 %{
         if [ -d $(eval echo $kak_opt_plug_install_dir) ]; then
             if [ -d $(eval echo $kak_opt_plug_install_dir/"${1##*/}") ]; then
                 eval echo 'set-option -add global plug_loaded_plugins \"$1 \"'
+                for arg in "$@"; do
+                    if [ -z "${arg##*branch*}" ]; then
+                        branch=$(echo $arg | awk '{print $2}')
+                        (cd $(eval echo $kak_opt_plug_install_dir/"${1##*/}"); git checkout $branch)
+                        break
+                    fi
+                done
                 for file in $(find -L $(eval echo $kak_opt_plug_install_dir/"${1##*/}") -type f -name '*.kak'); do
                     # rough way to not load plug when plug command is used with plug.kak as a parameter
                     if [ "${file##*/}" != "plug.kak" ]; then
@@ -42,8 +50,6 @@ plug -params 1..2 %{
             fi
         fi
     }
-    # rough way to keep installed plugins
-    set-option -add global plug_plugins "%arg{1} "
 }
 
 # TODO:
@@ -99,7 +105,6 @@ plug-clean %{
             for enabled_plugin in $kak_opt_plug_plugins; do
                 [ "${installed_plugin##*/}" = "${enabled_plugin##*/}" ] && { skip=1; break; }
             done
-            # hacky way to concatenate strings to iterate over them later
             [ "$skip" = "1" ] || plugins_to_remove=$plugins_to_remove" $installed_plugin"
         done
         for plugin in $plugins_to_remove; do
