@@ -38,7 +38,7 @@ plug -params 1.. %{
                 for arg in "$@"; do
                     if [ -z "${arg##*branch*}" ]; then
                         branch=$(echo $arg | awk '{print $2}')
-                        (cd $(eval echo $kak_opt_plug_install_dir/"${1##*/}"); git checkout $branch)
+                        (cd $(eval echo $kak_opt_plug_install_dir/"${1##*/}"); git checkout $branch >/dev/null 2>&1)
                         break
                     fi
                 done
