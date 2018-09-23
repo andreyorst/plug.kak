@@ -36,7 +36,7 @@ define-command -override -hidden plug -params 1.. %{
             if [ -d $(eval echo $kak_opt_plug_install_dir/"${1##*/}") ]; then
                 eval echo 'set-option -add global plug_loaded_plugins \"$1 \"'
                 for arg in "$@"; do
-                    if [ -z "${arg##*branch*}" ]; then
+                    if [ -z "${arg##*branch*}" ]  || [ -z "${arg##*tag*}" ]; then
                         branch=$(echo $arg | awk '{print $2}')
                         (cd $(eval echo $kak_opt_plug_install_dir/"${1##*/}"); git checkout $branch >/dev/null 2>&1)
                         break
