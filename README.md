@@ -14,6 +14,10 @@ git clone https://github.com/andreyorst/plug.kak.git ~/.config/kak/plugins/plug.
 
 And source `plug.kak` from your `kakrc`, or any of your configuration file.
 
+```kak
+source /path/to/your/kakoune_config/plugins/plug.kak/rc/plug.kak
+```
+
 If you cloned repo to your plugin installation dir, which defaults to `~/.config/kak/plugins/`
 **plug.kak** will be able to manage itself along with another plugins.
 
@@ -22,9 +26,11 @@ If you cloned repo to your plugin installation dir, which defaults to `~/.config
 You can specify what plugins to install and load by using `plug` command:
 
 ```sh
-plug andreyorst/plug.kak # only if plug.kak repo exists at plugin installation path. 
+plug "andreyorst/plug.kak" # only if plug.kak exists at plugin installation path. 
 ...
-plug github_username/repo_name
+# You also can specify branch or tag for particular plugin
+plug "github_username/repo_name" "branch: master"
+plug "github_username/repo_name" "tag: v0.1.8"
 ```
 
 To specify where to install plugins, in case you don't like default `~/.config/kak/plugins/` path, you can
@@ -44,8 +50,4 @@ Or any other path.
 - `plug-update` - Update installed plugins
 - `plug-clean` - Remove plugins, that are installed, but disabled in
   configuration files.
-
-[Kakoune]: http://kakoune.org
-[IRC]: https://webchat.freenode.net?channels=kakoune
-[IRC Badge]: https://img.shields.io/badge/IRC-%23kakoune-blue.svg
 
