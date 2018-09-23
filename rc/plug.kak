@@ -12,12 +12,11 @@
 
 declare-option -docstring "path where plugins should be installed.\nDefault value: '$HOME/.config/kak/plugins'" \
     str plug_install_dir '$HOME/.config/kak/plugins'
-declare-option -hidden str plug_plugins
+declare-option -hidden str plug_plugins ''
 declare-option -hidden str plug_loaded_plugins
 
 hook global WinSetOption filetype=kak %{
     add-highlighter window/plug regex ^(\h+)?\bplug\b 0:keyword
-    add-highlighter window/plug_repo regex (?<=plug)\h+[^\n]*/.*?$ 0:attribute
 }
 
 define-command -override -hidden -docstring "
