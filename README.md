@@ -25,12 +25,25 @@ If you cloned repo to your plugin installation dir, which defaults to `~/.config
 
 You can specify what plugins to install and load by using `plug` command:
 
-```sh
-plug "andreyorst/plug.kak" # only if plug.kak exists at plugin installation path. 
-...
-# You also can specify branch or tag for particular plugin
-plug "github_username/repo_name" "branch: master"
-plug "github_username/repo_name" "tag: v0.1.8"
+```bash
+# make sure that plug.kak is installed at plug_install_dir path
+plug "andreyorst/plug.kak"
+
+# branch or tag can be specified with second parameter:
+plug "andreyorst/fzf.kak" "branch: master"
+# you can add configurations to the plugin and enable them only if pluin was loaded:
+evaluate-commands %sh{
+    [ -z "${kak_opt_plug_loaded_plugins##*fzf.kak*}" ] || exit
+    echo "map -docstring 'fzf mode' global normal '<c-p>' ': fzf-mode<ret>'"
+    echo "set-option global fzf_file_command \"find . \( -path '*/.svn*' -o -path '*/.git*' \) -prune -o -type f -print\""
+}
+
+plug "alexherbo2/auto-pairs.kak"
+evaluate-commands %sh{
+    [ -z "${kak_opt_plug_loaded_plugins##*auto-pairs.kak*}" ] || exit
+    echo "hook global WinCreate .* %{ auto-pairs-enable }"
+    echo "map global normal <a-s> : auto-pairs-surround<ret>"
+}
 ```
 
 To specify where to install plugins, in case you don't like default `~/.config/kak/plugins/` path, you can
@@ -51,3 +64,23 @@ Or any other path.
 - `plug-clean` - Remove plugins, that are installed, but disabled in
   configuration files.
 
+Here are some examples:
+
+### Installing new plugin
+
+1. Add `plug github_username/reponame` to your `kakrc`;
+2. Source your `kakrc` with `source` command, or restart Kakoune to tell plug.kak that configuration is changed;
+3. Execute `plug-install` command;
+4. Source your `kakrc` with `source` command, or restart Kakoune to load plugins.
+
+### Updating installed plugins
+
+1. Execute `plug-update` command;
+2. Restart Kakoune to load updated plugins.
+
+### Removing unneded plugins
+
+1. Delete desired `plug` entry from your `kakrc` or comment it;
+2. Source your `kakrc` with `source` command, or restart Kakoune to tell plug.kak that configuration is changed;
+3. Execute `plug-clean` command;
+4. (Optional) If you didn't restarted Kakoune at 2. restart it to unload uninstalled plugins.
