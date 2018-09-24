@@ -42,7 +42,7 @@ plug "alexherbo2/auto-pairs.kak"
 evaluate-commands %sh{
     [ -z "${kak_opt_plug_loaded_plugins##*auto-pairs.kak*}" ] || exit
     echo "hook global WinCreate .* %{ auto-pairs-enable }"
-    echo "map global normal <a-s> : auto-pairs-surround<ret>"
+    echo "map global normal <a-s> ': auto-pairs-surround<ret>'"
 }
 ```
 
