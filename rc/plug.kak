@@ -16,6 +16,13 @@ declare-option -docstring \
 " \
 str plug_install_dir '$HOME/.config/kak/plugins'
 
+declare-option -docstring \
+"default domain to access git repositories. Can be changed to any preferred domain, like gitlab, bitbucket, gitea, etc.
+
+    Default value: 'https://github.com'
+" \
+str plug_git_domain 'https://github.com'
+
 declare-option -hidden str plug_plugins ''
 declare-option -hidden str plug_loaded_plugins
 
@@ -66,18 +73,23 @@ plug-install %{
         fi
 
         for plugin in $kak_opt_plug_plugins; do
+            case $plufin in
+                http*|git*)
+                    git="git clone $plugin" ;;
+                *)
+                    git="git clone $kak_opt_plug_git_domain/$plugin" ;;
+            esac
             if [ ! -d $(eval echo $kak_opt_plug_install_dir/"${plugin##*/}") ]; then
-            # TODO: Support different git systems like gitlab, bitbucket
-                (cd $(eval echo $kak_opt_plug_install_dir); git clone https://github.com/$plugin >/dev/null 2>&1) &
+                (cd $(eval echo $kak_opt_plug_install_dir); $git ) &
             fi
         done
         wait
 
-        printf %s\\n "evaluate-commands -client $kak_client echo -markup '{Information}Done installing plugins'" | kak -p ${kak_session}
+        echo "echo -markup '{Information}Done installing plugins'"
     ) >/dev/null 2>&1 < /dev/null & }
 }
 
-# TODO: same as for plug-install
+# >/dev/null 2>&1# TODO: same as for plug-install
 define-command -override -docstring 'Update all installed plugins' \
 plug-update %{
     echo -markup "{Information}Updating plugins in the background"
