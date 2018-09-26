@@ -28,7 +28,7 @@ declare-option -docstring \
 "Maximum amount of simultanious downloads when installing or updating plugins
     Default value: 5
 " \
-int plug_max_simultanious_downloads 6
+int plug_max_simultanious_downloads 5
 
 declare-option -hidden -docstring \
 "Array of all plugins, mentioned in any configuration file.
@@ -45,7 +45,7 @@ hook global WinSetOption filetype=kak %{
 	add-highlighter window/plug regex ^(\h+)?\bplug\b\h 0:keyword
 }
 
-define-command -override -hidden plug -params 1.. -shell-candidates %{echo "$(eval echo $kak_opt_plug_install_dir)/*" | tr ' ' '\n'} %{
+define-command -override -hidden plug -params 1.. -shell-candidates %{ ls -1 $(eval echo $kak_opt_plug_install_dir) } %{
 	set-option -add global plug_plugins "%arg{1} "
 	evaluate-commands %sh{
 		loaded=$(eval echo $kak_opt_plug_loaded_plugins)
@@ -148,23 +148,34 @@ plug-update -params ..1 -shell-candidates %{ echo $kak_opt_plug_plugins | tr ' '
 }
 
 define-command -override -docstring 'Delete all plugins that not present in config files' \
-plug-clean %{
+plug-clean -params ..1 -shell-candidates %{ ls -1 $(eval echo $kak_opt_plug_install_dir) } %{
 	evaluate-commands %sh{ (
+		plugin=$1
 		if [ -d .plug.kaklock ]; then
 			echo "echo -markup '{Information}.plug.kaklock is present. Waiting...'"
 		fi
 		while ! mkdir .plug.kaklock 2>/dev/null; do sleep 1; done
 			trap 'rmdir .plug.kaklock' EXIT
 
-		for installed_plugin in $(echo $(eval echo $kak_opt_plug_install_dir)/*); do
-			skip=
-			for enabled_plugin in $kak_opt_plug_plugins; do
-				[ "${installed_plugin##*/}" = "${enabled_plugin##*/}" ] && { skip=1; break; }
+		if [ ! -z $plugin ]; then
+			if [ -d $(eval echo $kak_opt_plug_install_dir/"${plugin##*/}") ]; then
+				(cd $(eval echo $kak_opt_plug_install_dir) && rm -rf "${plugin##*/}")
+				eval echo "echo -markup '{Information}Removed $plugin'"
+			else
+				eval echo "echo -markup '{Error}No such plugin $plugin'"
+				exit
+			fi
+		else
+			for installed_plugin in $(echo $(eval echo $kak_opt_plug_install_dir)/*); do
+				skip=
+				for enabled_plugin in $kak_opt_plug_plugins; do
+					[ "${installed_plugin##*/}" = "${enabled_plugin##*/}" ] && { skip=1; break; }
+				done
+				[ "$skip" = "1" ] || plugins_to_remove=$plugins_to_remove" $installed_plugin"
 			done
-			[ "$skip" = "1" ] || plugins_to_remove=$plugins_to_remove" $installed_plugin"
-		done
-		for plugin in $plugins_to_remove; do
-			rm -rf $plugin
-		done
+			for plugin in $plugins_to_remove; do
+				rm -rf $plugin
+			done
+		fi
 	) > /dev/null 2>&1 < /dev/null & }
 }
