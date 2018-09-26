@@ -24,7 +24,16 @@ declare-option -docstring \
 " \
 str plug_git_domain 'https://github.com'
 
+declare-option -docstring \
+"Maximum amount of simultanious downloads when installing or updating plugins
+    Default value: 6
+" \
+int plug_max_simultanious_downloads 6
+
+# Since plug.kak can and should be reloaded with main Kakoune configuration,
+# we need to clear known plugins in order track if some plugins were disabled
 declare-option -hidden str plug_plugins ''
+# List of loaded plugins should not pe cleared during update of configuration files.
 declare-option -hidden str plug_loaded_plugins
 
 hook global WinSetOption filetype=kak %{
@@ -59,9 +68,6 @@ define-command -override -hidden plug -params 1.. %{
 	}
 }
 
-# TODO:
-# Find a way to measure amount of simultaneously running Git processes
-# to run not more than 5 at once, and let user configure this amount
 define-command -override -docstring 'Install all uninstalled plugins' \
 plug-install %{
 	echo -markup "{Information}Installing plugins in the background"
@@ -81,8 +87,11 @@ plug-install %{
 					git="git clone $kak_opt_plug_git_domain/$plugin" ;;
 			esac
 			if [ ! -d $(eval echo $kak_opt_plug_install_dir/"${plugin##*/}") ]; then
-				(cd $(eval echo $kak_opt_plug_install_dir); $git ) &
+				(cd $(eval echo $kak_opt_plug_install_dir); $git >/dev/null 2>&1) &
 			fi
+			while [ "$(jobs | wc -l)" = "$kak_opt_plug_max_simultanious_downloads" ]; do
+				sleep 1
+			done
 		done
 		wait
 
@@ -90,7 +99,7 @@ plug-install %{
 	) >/dev/null 2>&1 < /dev/null & }
 }
 
-# >/dev/null 2>&1# TODO: same as for plug-install
+# TODO: same as for plug-install
 define-command -override -docstring 'Update all installed plugins' \
 plug-update %{
 	echo -markup "{Information}Updating plugins in the background"
@@ -100,6 +109,9 @@ plug-update %{
 
 		for plugin in $kak_opt_plug_plugins; do
 			(cd $(eval echo $kak_opt_plug_install_dir/"${plugin##*/}") && git pull >/dev/null 2>&1) &
+			while [ "$(jobs | wc -l)" = "$kak_opt_plug_max_simultanious_downloads" ]; do
+				sleep 1
+			done
 		done
 		wait
 		printf %s\\n "evaluate-commands -client $kak_client echo -markup '{Information}Done updating plugins'" | kak -p ${kak_session}
