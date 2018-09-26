@@ -26,15 +26,20 @@ str plug_git_domain 'https://github.com'
 
 declare-option -docstring \
 "Maximum amount of simultanious downloads when installing or updating plugins
-    Default value: 6
+    Default value: 5
 " \
 int plug_max_simultanious_downloads 6
 
-# Since plug.kak can and should be reloaded with main Kakoune configuration,
-# we need to clear known plugins in order track if some plugins were disabled
-declare-option -hidden str plug_plugins ''
-# List of loaded plugins should not pe cleared during update of configuration files.
-declare-option -hidden str plug_loaded_plugins
+declare-option -hidden -docstring \
+"Array of all plugins, mentioned in any configuration file.
+Empty by default, and erased on reload of main Kakoune configuration, to track if some plugins were disabled
+Shlould not be modified by user." \
+str plug_plugins ''
+
+declare-option -hidden -docstring \
+"List of loaded plugins. Has no default value.
+Should not be cleared during update of configuration files. Shluld not be modified by user." \
+str plug_loaded_plugins
 
 hook global WinSetOption filetype=kak %{
 	add-highlighter window/plug regex ^(\h+)?\bplug\b 0:keyword
@@ -73,12 +78,13 @@ plug-install %{
 	echo -markup "{Information}Installing plugins in the background"
 	nop %sh{ (
 		while ! mkdir .plug.kaklock 2>/dev/null; do sleep 1; done
-			trap 'rmdir .plug.kaklock' EXIT
+		trap 'rmdir .plug.kaklock' EXIT
 
 		if [ ! -d $(eval echo $kak_opt_plug_install_dir) ]; then
 			mkdir -p $(eval echo $kak_opt_plug_install_dir)
 		fi
 
+		jobs=$(mktemp /tmp/jobs.XXXXXX)
 		for plugin in $kak_opt_plug_plugins; do
 			case $plugin in
 				http*|git*)
@@ -89,32 +95,38 @@ plug-install %{
 			if [ ! -d $(eval echo $kak_opt_plug_install_dir/"${plugin##*/}") ]; then
 				(cd $(eval echo $kak_opt_plug_install_dir); $git >/dev/null 2>&1) &
 			fi
-			printf %s\\n "evaluate-commands -client $kak_client echo -markup '{Information}$(jobs | wc -l) active downloads'" | kak -p ${kak_session}
-			while [ `jobs | wc -l` -ge $kak_opt_plug_max_simultanious_downloads ]; do
+			jobs > $jobs; active=$(wc -l < $jobs)
+			while [ $active -ge 2 ]; do
 				sleep 1
+				jobs > $jobs; active=$(wc -l < $jobs)
 			done
+			printf %s\\n "evaluate-commands -client $kak_client echo -markup '{Information}$active active downloads'" | kak -p ${kak_session}
 		done
 		wait
-
+		rm -rf $jobs
 		printf %s\\n "evaluate-commands -client $kak_client echo -markup '{Information}Done installing plugins'" | kak -p ${kak_session}
 	) >/dev/null 2>&1 < /dev/null & }
 }
 
-# TODO: same as for plug-install
 define-command -override -docstring 'Update all installed plugins' \
 plug-update %{
 	echo -markup "{Information}Updating plugins in the background"
 	nop %sh{ (
 		while ! mkdir .plug.kaklock 2>/dev/null; do sleep 1; done
-			trap 'rmdir .plug.kaklock' EXIT
+		trap 'rmdir .plug.kaklock' EXIT
 
+		jobs=$(mktemp /tmp/jobs.XXXXXX)
+		trap "rmdir $jobs" EXIT
 		for plugin in $kak_opt_plug_plugins; do
 			(cd $(eval echo $kak_opt_plug_install_dir/"${plugin##*/}") && git pull >/dev/null 2>&1) &
-			while [ "$(jobs | wc -l)" = "$kak_opt_plug_max_simultanious_downloads" ]; do
+			jobs > $jobs; active=$(wc -l < $jobs)
+			while [ $active -ge 2 ]; do
 				sleep 1
+				jobs > $jobs; active=$(wc -l < $jobs)
 			done
 		done
 		wait
+		rm -rf $jobs
 		printf %s\\n "evaluate-commands -client $kak_client echo -markup '{Information}Done updating plugins'" | kak -p ${kak_session}
 	) > /dev/null 2>&1 < /dev/null & }
 }
@@ -133,8 +145,6 @@ plug-clean %{
 			[ "$skip" = "1" ] || plugins_to_remove=$plugins_to_remove" $installed_plugin"
 		done
 		for plugin in $plugins_to_remove; do
-			# dangerous way to do this, but I don't know a better way to check
-			# if processed folder is really a plugin
 			rm -rf $plugin
 		done
 	) > /dev/null 2>&1 < /dev/null & }
