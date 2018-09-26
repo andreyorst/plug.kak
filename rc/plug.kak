@@ -26,9 +26,9 @@ str plug_git_domain 'https://github.com'
 
 declare-option -docstring \
 "Maximum amount of simultanious downloads when installing or updating plugins
-    Default value: 5
+    Default value: 10
 " \
-int plug_max_simultanious_downloads 5
+int plug_max_simultanious_downloads 10
 
 declare-option -hidden -docstring \
 "Array of all plugins, mentioned in any configuration file.
