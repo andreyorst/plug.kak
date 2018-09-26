@@ -42,7 +42,7 @@ Should not be cleared during update of configuration files. Shluld not be modifi
 str plug_loaded_plugins
 
 hook global WinSetOption filetype=kak %{
-	add-highlighter window/plug regex ^(\h+)?\bplug\b 0:keyword
+	add-highlighter window/plug regex ^(\h+)?\bplug\b\h 0:keyword
 }
 
 define-command -override -hidden plug -params 1.. %{
@@ -112,8 +112,7 @@ plug-install %{
 }
 
 define-command -override -docstring 'Update all installed plugins' \
-plug-update -params ..1 %{
-	echo -markup "{Information}Updating plugins in the background"
+plug-update -params ..1 -shell-candidates %{ echo $kak_opt_plug_plugins | tr ' ' '\n' } %{
 	nop %sh{ (
 		plugin=$1
 		if [ -d .plug.kaklock ]; then
@@ -122,13 +121,15 @@ plug-update -params ..1 %{
 		while ! mkdir .plug.kaklock 2>/dev/null; do sleep 1; done
 		trap 'rmdir .plug.kaklock' EXIT
 		if [ ! -z $plugin ]; then
-			if [ -d $(eval echo $kak_opt_plug_install_dir/"${1##*/}") ]; then
-				(cd $(eval echo $kak_opt_plug_install_dir/"${1##*/}") && git pull >/dev/null 2>&1) &
+			if [ -d $(eval echo $kak_opt_plug_install_dir/"${plugin##*/}") ]; then
+				printf %s\\n "evaluate-commands -client $kak_client echo -markup '{Information}Updating $plugin'" | kak -p ${kak_session}
+				(cd $(eval echo $kak_opt_plug_install_dir/"${plugin##*/}") && git pull >/dev/null 2>&1) &
 			else
-				eval echo "fail 'can''t update $1. Plugin is not installed'"
+				printf %s\\n "evaluate-commands -client $kak_client echo -markup '{Error}can''t update $plugin. Plugin is not installed'" | kak -p ${kak_session}
 				exit
 			fi
 		else
+			printf %s\\n "evaluate-commands -client $kak_client echo -markup '{Information}Updating plugins in the background'" | kak -p ${kak_session}
 			jobs=$(mktemp /tmp/jobs.XXXXXX)
 			for plugin in $kak_opt_plug_plugins; do
 				(cd $(eval echo $kak_opt_plug_install_dir/"${plugin##*/}") && git pull >/dev/null 2>&1) &
@@ -148,6 +149,9 @@ plug-update -params ..1 %{
 define-command -override -docstring 'Delete all plugins that not present in config files' \
 plug-clean %{
 	nop %sh{ (
+		if [ -d .plug.kaklock ]; then
+			printf %s\\n "evaluate-commands -client $kak_client echo -markup '{Information}.plug.kaklock is present. Waiting...'" | kak -p ${kak_session}
+		fi
 		while ! mkdir .plug.kaklock 2>/dev/null; do sleep 1; done
 			trap 'rmdir .plug.kaklock' EXIT
 
