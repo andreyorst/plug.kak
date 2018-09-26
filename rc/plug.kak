@@ -77,6 +77,9 @@ define-command -override -docstring 'Install all uninstalled plugins' \
 plug-install %{
 	echo -markup "{Information}Installing plugins in the background"
 	nop %sh{ (
+		if [ -d .plug.kaklock ]; then
+			printf %s\\n "evaluate-commands -client $kak_client echo -markup '{Information}.plug.kaklock is present. Waiting...'" | kak -p ${kak_session}
+		fi
 		while ! mkdir .plug.kaklock 2>/dev/null; do sleep 1; done
 		trap 'rmdir .plug.kaklock' EXIT
 
@@ -109,24 +112,35 @@ plug-install %{
 }
 
 define-command -override -docstring 'Update all installed plugins' \
-plug-update %{
+plug-update -params ..1 %{
 	echo -markup "{Information}Updating plugins in the background"
 	nop %sh{ (
+		plugin=$1
+		if [ -d .plug.kaklock ]; then
+			printf %s\\n "evaluate-commands -client $kak_client echo -markup '{Information}.plug.kaklock is present. Waiting...'" | kak -p ${kak_session}
+		fi
 		while ! mkdir .plug.kaklock 2>/dev/null; do sleep 1; done
 		trap 'rmdir .plug.kaklock' EXIT
-
-		jobs=$(mktemp /tmp/jobs.XXXXXX)
-		trap "rmdir $jobs" EXIT
-		for plugin in $kak_opt_plug_plugins; do
-			(cd $(eval echo $kak_opt_plug_install_dir/"${plugin##*/}") && git pull >/dev/null 2>&1) &
-			jobs > $jobs; active=$(wc -l < $jobs)
-			while [ $active -ge 2 ]; do
-				sleep 1
+		if [ ! -z $plugin ]; then
+			if [ -d $(eval echo $kak_opt_plug_install_dir/"${1##*/}") ]; then
+				(cd $(eval echo $kak_opt_plug_install_dir/"${1##*/}") && git pull >/dev/null 2>&1) &
+			else
+				eval echo "fail 'can''t update $1. Plugin is not installed'"
+				exit
+			fi
+		else
+			jobs=$(mktemp /tmp/jobs.XXXXXX)
+			for plugin in $kak_opt_plug_plugins; do
+				(cd $(eval echo $kak_opt_plug_install_dir/"${plugin##*/}") && git pull >/dev/null 2>&1) &
 				jobs > $jobs; active=$(wc -l < $jobs)
+				while [ $active -ge 2 ]; do
+					sleep 1
+					jobs > $jobs; active=$(wc -l < $jobs)
+				done
 			done
-		done
+			rm -rf $jobs
+		fi
 		wait
-		rm -rf $jobs
 		printf %s\\n "evaluate-commands -client $kak_client echo -markup '{Information}Done updating plugins'" | kak -p ${kak_session}
 	) > /dev/null 2>&1 < /dev/null & }
 }
