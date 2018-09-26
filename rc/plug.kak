@@ -65,7 +65,6 @@ define-command -override -hidden plug -params 1.. -shell-candidates %{ ls -1 $(e
 					fi
 				done
 				[ "$1" = "andreyorst/plug.kak" ] && exit
-				eval echo "echo -markup '{Information}Loading ${1##*/}...'"
 				for file in $(find -L $(eval echo $kak_opt_plug_install_dir/"${1##*/}") -type f -name '*.kak'); do
 					echo source "$file"
 				done
@@ -78,11 +77,11 @@ define-command -override -docstring 'Install all uninstalled plugins' \
 plug-install %{
 	echo -markup "{Information}Installing plugins in the background"
 	evaluate-commands %sh{ (
-		if [ -d .plug.kaklock ]; then
+		if [ -d $(eval echo "$kak_opt_plug_install_dir/.plug.kaklock") ]; then
 			echo "echo -markup '{Information}.plug.kaklock is present. Waiting...'"
 		fi
-		while ! mkdir .plug.kaklock 2>/dev/null; do sleep 1; done
-		trap 'rmdir .plug.kaklock' EXIT
+		while ! mkdir $(eval echo "$kak_opt_plug_install_dir/.plug.kaklock") 2>/dev/null; do sleep 1; done
+		trap 'rmdir $(eval echo "$kak_opt_plug_install_dir/.plug.kaklock")' EXIT
 
 		if [ ! -d $(eval echo $kak_opt_plug_install_dir) ]; then
 			mkdir -p $(eval echo $kak_opt_plug_install_dir)
@@ -104,7 +103,6 @@ plug-install %{
 				sleep 1
 				jobs > $jobs; active=$(wc -l < $jobs)
 			done
-			eval echo "echo -markup '{Information}$active active downloads'"
 		done
 		wait
 		rm -rf $jobs
@@ -116,17 +114,17 @@ define-command -override -docstring 'Update all installed plugins' \
 plug-update -params ..1 -shell-candidates %{ echo $kak_opt_plug_plugins | tr ' ' '\n' } %{
 	evaluate-commands %sh{ (
 		plugin=$1
-		if [ -d .plug.kaklock ]; then
+		if [ -d $(eval echo "$kak_opt_plug_install_dir/.plug.kaklock") ]; then
 			echo "echo -markup '{Information}.plug.kaklock is present. Waiting...'"
 		fi
-		while ! mkdir .plug.kaklock 2>/dev/null; do sleep 1; done
-		trap 'rmdir .plug.kaklock' EXIT
+		while ! mkdir $(eval echo "$kak_opt_plug_install_dir/.plug.kaklock") 2>/dev/null; do sleep 1; done
+		trap 'rmdir $(eval echo "$kak_opt_plug_install_dir/.plug.kaklock")' EXIT
 		if [ ! -z $plugin ]; then
 			if [ -d $(eval echo $kak_opt_plug_install_dir/"${plugin##*/}") ]; then
 				eval echo "echo -markup '{Information}Updating $plugin'"
 				(cd $(eval echo $kak_opt_plug_install_dir/"${plugin##*/}") && git pull >/dev/null 2>&1) &
 			else
-				eval echo "echo -markup '{Error}can''t update $plugin. Plugin is not installed'"
+				echo "echo -markup '{Error}can''t update $plugin. Plugin is not installed'"
 				exit
 			fi
 		else
@@ -151,18 +149,18 @@ define-command -override -docstring 'Delete all plugins that not present in conf
 plug-clean -params ..1 -shell-candidates %{ ls -1 $(eval echo $kak_opt_plug_install_dir) } %{
 	evaluate-commands %sh{ (
 		plugin=$1
-		if [ -d .plug.kaklock ]; then
+		if [ -d $(eval echo "$kak_opt_plug_install_dir/.plug.kaklock") ]; then
 			echo "echo -markup '{Information}.plug.kaklock is present. Waiting...'"
 		fi
-		while ! mkdir .plug.kaklock 2>/dev/null; do sleep 1; done
-			trap 'rmdir .plug.kaklock' EXIT
+		while ! mkdir $(eval echo "$kak_opt_plug_install_dir/.plug.kaklock") 2>/dev/null; do sleep 1; done
+		trap 'rmdir $(eval echo "$kak_opt_plug_install_dir/.plug.kaklock")' EXIT
 
 		if [ ! -z $plugin ]; then
 			if [ -d $(eval echo $kak_opt_plug_install_dir/"${plugin##*/}") ]; then
 				(cd $(eval echo $kak_opt_plug_install_dir) && rm -rf "${plugin##*/}")
 				eval echo "echo -markup '{Information}Removed $plugin'"
 			else
-				eval echo "echo -markup '{Error}No such plugin $plugin'"
+				echo "echo -markup '{Error}No such plugin $plugin'"
 				exit
 			fi
 		else
