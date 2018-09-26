@@ -89,13 +89,14 @@ plug-install %{
 			if [ ! -d $(eval echo $kak_opt_plug_install_dir/"${plugin##*/}") ]; then
 				(cd $(eval echo $kak_opt_plug_install_dir); $git >/dev/null 2>&1) &
 			fi
-			while [ "$(jobs | wc -l)" = "$kak_opt_plug_max_simultanious_downloads" ]; do
+			printf %s\\n "evaluate-commands -client $kak_client echo -markup '{Information}$(jobs | wc -l) active downloads'" | kak -p ${kak_session}
+			while [ `jobs | wc -l` -ge $kak_opt_plug_max_simultanious_downloads ]; do
 				sleep 1
 			done
 		done
 		wait
 
-		echo "echo -markup '{Information}Done installing plugins'"
+		printf %s\\n "evaluate-commands -client $kak_client echo -markup '{Information}Done installing plugins'" | kak -p ${kak_session}
 	) >/dev/null 2>&1 < /dev/null & }
 }
 
