@@ -7,8 +7,7 @@
 
 **plug.kak** is a plugin manager for Kakoune editor, that aims to work somewhat
 similar to [vim-plug](https://github.com/junegunn/vim-plug). It is being tested
-against Kakoune 2018.09.04. If you're using Kakoune builds from git master, switch to
-kak-git branch.
+against Kakoune 2018.09.04.
 
 ## Installation
 
@@ -66,7 +65,7 @@ Or any other path.
 
 ### Maximum downloads
 
-To specify maximum amount of simultanious downloads set `plug_max_simultanious_downloads`. Default value is `10`.
+To specify maximum amount of simultaneous downloads set `plug_max_simultanious_downloads`. Default value is `10`.
 
 ### Default git domain
 
