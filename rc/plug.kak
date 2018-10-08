@@ -48,7 +48,7 @@ hook global WinSetOption filetype=kak %{
 define-command -override -docstring \
 "plug <plugin> [<branch>]: load <plugin> from ""%opt{plug_install_dir}""
 " \
-plug -params 1.. -shell-candidates %{ ls -1 $(eval echo $kak_opt_plug_install_dir) } %{
+plug -params 1.. -shell-script-candidates %{ ls -1 $(eval echo $kak_opt_plug_install_dir) } %{
 	set-option -add global plug_plugins "%arg{1} "
 	evaluate-commands %sh{
 		loaded=$(eval echo $kak_opt_plug_loaded_plugins)
@@ -116,7 +116,7 @@ plug-install %{
 define-command -override -docstring \
 "plug-update [<plugin>]: Update plugin.
 If <plugin> ommited all installed plugins are updated" \
-plug-update -params ..1 -shell-candidates %{ echo $kak_opt_plug_plugins | tr ' ' '\n' } %{
+plug-update -params ..1 -shell-script-candidates %{ echo $kak_opt_plug_plugins | tr ' ' '\n' } %{
 	nop %sh{ (
 		plugin=$1
 		if [ -d $(eval echo "$kak_opt_plug_install_dir/.plug.kaklock") ]; then
@@ -152,7 +152,7 @@ plug-update -params ..1 -shell-candidates %{ echo $kak_opt_plug_plugins | tr ' '
 
 define-command -override -docstring "plug-delete [<plugin>]: delete <plugin>.
 If <plugin> ommited deletes all plugins that are not presented in configuration files" \
-plug-clean -params ..1 -shell-candidates %{ ls -1 $(eval echo $kak_opt_plug_install_dir) } %{
+plug-clean -params ..1 -shell-script-candidates %{ ls -1 $(eval echo $kak_opt_plug_install_dir) } %{
 	nop %sh{ (
 		plugin=$1
 		if [ -d $(eval echo "$kak_opt_plug_install_dir/.plug.kaklock") ]; then
