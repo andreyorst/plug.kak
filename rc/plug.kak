@@ -51,6 +51,7 @@ define-command -override -docstring \
 plug -params 1.. -shell-script-candidates %{ ls -1 $(eval echo $kak_opt_plug_install_dir) } %{
 	set-option -add global plug_plugins "%arg{1} "
 	evaluate-commands %sh{
+		start=$(expr $(date +%s%N) / 10000000)
 		loaded=$(eval echo $kak_opt_plug_loaded_plugins)
 		if [ ! -z "$loaded" ] && [ -z "${loaded##*$1*}" ]; then
 			printf %s\\n "evaluate-commands -client $kak_client echo -markup '{Information}${1##*/} already loaded'" | kak -p ${kak_session}
@@ -73,6 +74,10 @@ plug -params 1.. -shell-script-candidates %{ ls -1 $(eval echo $kak_opt_plug_ins
 				done
 			fi
 		fi
+		end=$(expr $(date +%s%N) / 10000000)
+		elapsed_time=$(expr $end - $start)
+		load_time=$(echo "in $(expr $end - $start)" | sed -e "s:\(.*\)\(..$\):\1.\2:;s:in \.:in 0.:;s:in\. \(.\):in 0.0\1:;s:in ::")
+		echo "echo -debug %{Loaded ${1##*/} in $load_time seconds}"
 	}
 }
 
@@ -127,7 +132,7 @@ plug-update -params ..1 -shell-script-candidates %{ echo $kak_opt_plug_plugins |
 		if [ ! -z $plugin ]; then
 			if [ -d $(eval echo $kak_opt_plug_install_dir/"${plugin##*/}") ]; then
 				printf %s\\n "evaluate-commands -client $kak_client echo -markup '{Information}Updating $plugin'" | kak -p ${kak_session}
-				(cd $(eval echo $kak_opt_plug_install_dir/"${plugin##*/}") && git pull >/dev/null 2>&1) &
+				(cd $(eval echo $kak_opt_plug_install_dir/"${plugin##*/}") && git fetch >/dev/null 2>&1) &
 			else
 				printf %s\\n "evaluate-commands -client $kak_client echo -markup '{Error}can''t update $plugin. Plugin is not installed'" | kak -p ${kak_session}
 				exit
@@ -136,7 +141,7 @@ plug-update -params ..1 -shell-script-candidates %{ echo $kak_opt_plug_plugins |
 			printf %s\\n "evaluate-commands -client $kak_client echo -markup '{Information}Updating plugins in the background'" | kak -p ${kak_session}
 			jobs=$(mktemp /tmp/jobs.XXXXXX)
 			for plugin in $kak_opt_plug_plugins; do
-				(cd $(eval echo $kak_opt_plug_install_dir/"${plugin##*/}") && git pull >/dev/null 2>&1) &
+				(cd $(eval echo $kak_opt_plug_install_dir/"${plugin##*/}") && git fetch >/dev/null 2>&1) &
 				jobs > $jobs; active=$(wc -l < $jobs)
 				while [ $active -ge 2 ]; do
 					sleep 1
