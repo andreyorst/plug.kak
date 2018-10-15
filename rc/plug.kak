@@ -99,15 +99,15 @@ plug-install %{
 		for plugin in $kak_opt_plug_plugins; do
 			case $plugin in
 				http*|git*)
-					git="git clone $plugin" ;;
+					git="git clone $plugin --depth 1" ;;
 				*)
-					git="git clone $kak_opt_plug_git_domain/$plugin" ;;
+					git="git clone $kak_opt_plug_git_domain/$plugin --depth 1" ;;
 			esac
 			if [ ! -d $(eval echo $kak_opt_plug_install_dir/"${plugin##*/}") ]; then
 				(cd $(eval echo $kak_opt_plug_install_dir); $git >/dev/null 2>&1) &
 			fi
 			jobs > $jobs; active=$(wc -l < $jobs)
-			while [ $active -ge 2 ]; do
+			while [ $active -ge $kak_opt_plug_max_simultaneous_downloads ]; do
 				sleep 1
 				jobs > $jobs; active=$(wc -l < $jobs)
 			done
@@ -132,7 +132,7 @@ plug-update -params ..1 -shell-script-candidates %{ echo $kak_opt_plug_plugins |
 		if [ ! -z $plugin ]; then
 			if [ -d $(eval echo $kak_opt_plug_install_dir/"${plugin##*/}") ]; then
 				printf %s\\n "evaluate-commands -client $kak_client echo -markup '{Information}Updating $plugin'" | kak -p ${kak_session}
-				(cd $(eval echo $kak_opt_plug_install_dir/"${plugin##*/}") && git fetch >/dev/null 2>&1) &
+				(cd $(eval echo $kak_opt_plug_install_dir/"${plugin##*/}") && git pull >/dev/null 2>&1) &
 			else
 				printf %s\\n "evaluate-commands -client $kak_client echo -markup '{Error}can''t update $plugin. Plugin is not installed'" | kak -p ${kak_session}
 				exit
