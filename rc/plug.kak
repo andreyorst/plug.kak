@@ -42,7 +42,7 @@ Should not be cleared during update of configuration files. Shluld not be modifi
 str plug_loaded_plugins
 
 hook global WinSetOption filetype=kak %{
-	add-highlighter window/plug regex ^(\h+)?\bplug\b\h 0:keyword
+	add-highlighter window/plug regex \bplug\b\h 0:keyword
 }
 
 define-command -override -docstring \
