@@ -35,21 +35,22 @@ plug "andreyorst/plug.kak"
 
 # branch or tag can be specified with second parameter:
 plug "andreyorst/fzf.kak" "branch: master" %{
-# you can add configurations to the plugin and enable them only if pluin was loaded:
-	map -docstring 'fzf mode' global normal '<c-p>' ': fzf-mode<ret>'
-	set-option global fzf_preview_width '65%'
-	evaluate-commands %sh{
-		if [ ! -z "$(command -v fd)" ]; then
-			echo "set-option global fzf_file_command 'fd . --no-ignore --type f --follow --hidden --exclude .git --exclude .svn'"
-		else
-			echo "set-option global fzf_file_command \"find . \( -path '*/.svn*' -o -path '*/.git*' \) -prune -o -type f -follow -print\""
-		fi
-		if [ ! -z "$(command -v bat)" ]; then
-			echo "set-option global fzf_highlighter 'bat'"
-		elif [ ! -z "$(command -v highlight)" ]; then
-			echo "set-option global fzf_highlighter 'highlight'"
-		fi
-	}
+    # you can add configurations to the plugin and enable them only if pluin was loaded:
+    map -docstring 'fzf mode' global normal '<c-p>' ': fzf-mode<ret>'
+    set-option global fzf_preview_width '65%'
+    evaluate-commands %sh{
+        if [ ! -z "$(command -v fd)" ]; then
+            echo "set-option global fzf_file_command 'fd . --no-ignore --type f --follow --hidden --exclude .git --exclude .svn'"
+        else
+            echo "set-option global fzf_file_command \"find . \( -path '*/.svn*' -o -path '*/.git*' \) -prune -o -type f -follow -print\""
+        fi
+        if [ ! -z "$(command -v bat)" ]; then
+            echo "set-option global fzf_highlighter 'bat'"
+        elif [ ! -z "$(command -v highlight)" ]; then
+            echo "set-option global fzf_highlighter 'highlight'"
+        fi
+    }
+
 }
 
 plug "https://github.com/alexherbo2/auto-pairs.kak" %{
