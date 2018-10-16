@@ -13,20 +13,20 @@
 declare-option -docstring \
 "path where plugins should be installed.
 
-    Default value: '$HOME/.config/kak/plugins'
+	Default value: '$HOME/.config/kak/plugins'
 " \
 str plug_install_dir '$HOME/.config/kak/plugins'
 
 declare-option -docstring \
 "default domain to access git repositories. Can be changed to any preferred domain, like gitlab, bitbucket, gitea, etc.
 
-    Default value: 'https://github.com'
+	Default value: 'https://github.com'
 " \
 str plug_git_domain 'https://github.com'
 
 declare-option -docstring \
 "Maximum amount of simultaneous downloads when installing or updating plugins
-    Default value: 10
+	Default value: 10
 " \
 int plug_max_simultaneous_downloads 10
 
@@ -51,33 +51,42 @@ define-command -override -docstring \
 plug -params 1.. -shell-script-candidates %{ ls -1 $(eval echo $kak_opt_plug_install_dir) } %{
 	set-option -add global plug_plugins "%arg{1} "
 	evaluate-commands %sh{
+		plugin=$1; shift
 		start=$(expr $(date +%s%N) / 10000000)
 		loaded=$(eval echo $kak_opt_plug_loaded_plugins)
-		if [ ! -z "$loaded" ] && [ -z "${loaded##*$1*}" ]; then
-			printf %s\\n "evaluate-commands -client $kak_client echo -markup '{Information}${1##*/} already loaded'" | kak -p ${kak_session}
+		if [ ! -z "$loaded" ] && [ -z "${loaded##*$plugin*}" ]; then
+			printf %s\\n "evaluate-commands -client $kak_client echo -markup '{Information}${plugin##*/} already loaded'" | kak -p ${kak_session}
 			exit
 		fi
 
 		if [ -d $(eval echo $kak_opt_plug_install_dir) ]; then
-			if [ -d $(eval echo $kak_opt_plug_install_dir/"${1##*/}") ]; then
-				eval echo 'set-option -add global plug_loaded_plugins \"$1 \"'
+			if [ -d $(eval echo $kak_opt_plug_install_dir/"${plugin##*/}") ]; then
 				for arg in "$@"; do
-					if [ -z "${arg##*branch*}" ]  || [ -z "${arg##*tag*}" ]; then
-						branch=$(echo $arg | awk '{print $2}')
-						(cd $(eval echo $kak_opt_plug_install_dir/"${1##*/}"); git checkout $branch >/dev/null 2>&1)
+					if [ -z "${arg##*branch:*}" ]  || [ -z "${arg##*tag:*}" ] || [ -z "${arg##*commit:*}" ]; then
+						branch=$(echo $arg | awk '{print $2}'); shift
+						(cd $(eval echo $kak_opt_plug_install_dir/"${plugin##*/}"); git checkout $branch >/dev/null 2>&1)
 						break
 					fi
 				done
-				[ "$1" = "andreyorst/plug.kak" ] && exit
-				for file in $(find -L $(eval echo $kak_opt_plug_install_dir/"${1##*/}") -type f -name '*.kak'); do
+				[ "$plugin" = "andreyorst/plug.kak" ] && exit
+				for file in $(find -L $(eval echo $kak_opt_plug_install_dir/"${plugin##*/}") -type f -name '*.kak'); do
 					echo source "$file"
 				done
+				if [ $# -gt 0 ]; then
+					IFS='
+'
+					for command in $@; do
+						echo "$command"
+					done
+				fi
+				eval echo 'set-option -add global plug_loaded_plugins \"$plugin \"'
 			fi
 		fi
+
 		end=$(expr $(date +%s%N) / 10000000)
 		elapsed_time=$(expr $end - $start)
 		load_time=$(echo "in $(expr $end - $start)" | sed -e "s:\(.*\)\(..$\):\1.\2:;s:in \.:in 0.:;s:in\. \(.\):in 0.0\1:;s:in ::")
-		echo "echo -debug %{Loaded ${1##*/} in $load_time seconds}"
+		echo "echo -debug %{Loaded ${plugin##*/} in $load_time seconds}"
 	}
 }
 
