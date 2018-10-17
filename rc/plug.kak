@@ -150,7 +150,7 @@ plug-update -params ..1 -shell-script-candidates %{ echo $kak_opt_plug_plugins |
 			printf %s\\n "evaluate-commands -client $kak_client echo -markup '{Information}Updating plugins in the background'" | kak -p ${kak_session}
 			jobs=$(mktemp /tmp/jobs.XXXXXX)
 			for plugin in $kak_opt_plug_plugins; do
-				(cd $(eval echo $kak_opt_plug_install_dir/"${plugin##*/}") && git fetch >/dev/null 2>&1) &
+				(cd $(eval echo $kak_opt_plug_install_dir/"${plugin##*/}") && git pull >/dev/null 2>&1) &
 				jobs > $jobs; active=$(wc -l < $jobs)
 				while [ $active -ge 2 ]; do
 					sleep 1
