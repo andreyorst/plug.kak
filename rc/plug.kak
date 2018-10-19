@@ -83,7 +83,7 @@ plug -params 1.. -shell-script-candidates %{ ls -1 $(eval echo $kak_opt_plug_ins
 				fi
 				if [ $# -gt 0 ]; then
 					if [ ! -z $noload ]; then
-						state=" (configuration) "
+						state=" (configuration)"
 						noload=
 					fi
 					IFS='
