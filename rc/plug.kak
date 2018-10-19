@@ -53,6 +53,8 @@ plug -params 1.. -shell-script-candidates %{ ls -1 $(eval echo $kak_opt_plug_ins
 	evaluate-commands %sh{
 		plugin=$1; shift
 		start=$(expr $(date +%s%N) / 10000000)
+		noload=
+		state=
 		loaded=$(eval echo $kak_opt_plug_loaded_plugins)
 		if [ ! -z "$loaded" ] && [ -z "${loaded##*$plugin*}" ]; then
 			printf %s\\n "evaluate-commands -client $kak_client echo -markup '{Information}${plugin##*/} already loaded'" | kak -p ${kak_session}
@@ -62,17 +64,28 @@ plug -params 1.. -shell-script-candidates %{ ls -1 $(eval echo $kak_opt_plug_ins
 		if [ -d $(eval echo $kak_opt_plug_install_dir) ]; then
 			if [ -d $(eval echo $kak_opt_plug_install_dir/"${plugin##*/}") ]; then
 				for arg in "$@"; do
-					if [ -z "${arg##*branch:*}" ]  || [ -z "${arg##*tag:*}" ] || [ -z "${arg##*commit:*}" ]; then
-						branch=$(echo $arg | awk '{print $2}'); shift
-						(cd $(eval echo $kak_opt_plug_install_dir/"${plugin##*/}"); git checkout $branch >/dev/null 2>&1)
-						break
-					fi
+					case $arg in
+						*branch:*|*tag:*|*commit:*)
+							branch=$(echo $arg | awk '{print $2}'); shift ;;
+						noload)
+							noload=1; shift ;;
+						*)
+							;;
+					esac
 				done
-				[ "$plugin" = "andreyorst/plug.kak" ] && exit
-				for file in $(find -L $(eval echo $kak_opt_plug_install_dir/"${plugin##*/}") -type f -name '*.kak'); do
-					echo source "$file"
-				done
+				if [ ! -z $branch ]; then
+					(cd $(eval echo $kak_opt_plug_install_dir/"${plugin##*/}"); git checkout $branch >/dev/null 2>&1)
+				fi
+				if [ -z $noload ]; then
+					for file in $(find -L $(eval echo $kak_opt_plug_install_dir/"${plugin##*/}") -type f -name '*.kak'); do
+						echo source "$file"
+					done
+				fi
 				if [ $# -gt 0 ]; then
+					if [ ! -z $noload ]; then
+						state=" (configuration) "
+						noload=
+					fi
 					IFS='
 '
 					for command in $@; do
@@ -80,13 +93,17 @@ plug -params 1.. -shell-script-candidates %{ ls -1 $(eval echo $kak_opt_plug_ins
 					done
 				fi
 				eval echo 'set-option -add global plug_loaded_plugins \"$plugin \"'
+			else
+				exit
 			fi
 		fi
+		if [ -z $noload ]; then
+			end=$(expr $(date +%s%N) / 10000000)
+			elapsed_time=$(expr $end - $start)
+			load_time=$(echo "in $(expr $end - $start)" | sed -e "s:\(.*\)\(..$\):\1.\2:;s:in \.:in 0.:;s:in\. \(.\):in 0.0\1:;s:in ::")
+			echo "echo -debug %{Loaded ${plugin##*/}$state in $load_time seconds}"
+		fi
 
-		end=$(expr $(date +%s%N) / 10000000)
-		elapsed_time=$(expr $end - $start)
-		load_time=$(echo "in $(expr $end - $start)" | sed -e "s:\(.*\)\(..$\):\1.\2:;s:in \.:in 0.:;s:in\. \(.\):in 0.0\1:;s:in ::")
-		echo "echo -debug %{Loaded ${plugin##*/} in $load_time seconds}"
 	}
 }
 
