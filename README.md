@@ -27,11 +27,16 @@ If you cloned repo to your plugin installation dir, which defaults to `~/.config
 
 ## Usage
 
+`plug` command supports these options:
+- git checkout before load: `"branch: branch_name"`, `tag: tag_name`, `commit: commit_hash`.
+- `"noload"` - skip loading of installed plugin, but load it's configurations. Useful with kak-lsp, and plug.kak itself
+- `%{configurations}` - last parameter is always configurations of the plugin. Configurations are applied only if plugin is installed.
+
 You can specify what plugins to install and load by using `plug` command:
 
-```sh
+```kak
 # make sure that plug.kak is installed at plug_install_dir path
-plug "andreyorst/plug.kak"
+plug "andreyorst/plug.kak" "noload"
 
 # branch or tag can be specified with second parameter:
 plug "andreyorst/fzf.kak" "branch: master" %{
@@ -40,9 +45,9 @@ plug "andreyorst/fzf.kak" "branch: master" %{
     set-option global fzf_preview_width '65%'
     evaluate-commands %sh{
         if [ ! -z "$(command -v fd)" ]; then
-            echo "set-option global fzf_file_command 'fd . --no-ignore --type f --follow --hidden --exclude .git --exclude .svn'"
+            echo "set-option global fzf_file_command 'fd . --no-ignore --type f --follow --hidden'"
         else
-            echo "set-option global fzf_file_command \"find . \( -path '*/.svn*' -o -path '*/.git*' \) -prune -o -type f -follow -print\""
+            echo "set-option global fzf_file_command find"
         fi
         if [ ! -z "$(command -v bat)" ]; then
             echo "set-option global fzf_highlighter 'bat'"
@@ -50,12 +55,20 @@ plug "andreyorst/fzf.kak" "branch: master" %{
             echo "set-option global fzf_highlighter 'highlight'"
         fi
     }
-
 }
 
 plug "https://github.com/alexherbo2/auto-pairs.kak" %{
     hook global WinCreate .* %{ auto-pairs-enable }
     map global normal <a-s> ': auto-pairs-surround<ret>'
+}
+
+# example of kak-lsp configuration with plug.kak
+plug "ul/kak-lsp" "noload" %{
+    hook global WinSetOption filetype=(c|cpp|rust) %{
+        evaluate-commands %sh{ kak-lsp --kakoune -s $kak_session }
+        lsp-auto-hover-enable
+        set-option global lsp_hover_anchor true
+    }
 }
 ```
 
