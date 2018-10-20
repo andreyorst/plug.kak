@@ -35,7 +35,7 @@ plug "andreyorst/plug.kak"
 
 # branch or tag can be specified with second parameter:
 plug "andreyorst/fzf.kak" "branch: master" %{
-    # you can add configurations to the plugin and enable them only if pluin was loaded:
+    # you can add configurations to the plugin and enable them only if plugin was loaded:
     map -docstring 'fzf mode' global normal '<c-p>' ': fzf-mode<ret>'
     set-option global fzf_preview_width '65%'
     evaluate-commands %sh{

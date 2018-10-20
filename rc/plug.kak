@@ -33,12 +33,12 @@ int plug_max_simultaneous_downloads 10
 declare-option -hidden -docstring \
 "Array of all plugins, mentioned in any configuration file.
 Empty by default, and erased on reload of main Kakoune configuration, to track if some plugins were disabled
-Shlould not be modified by user." \
+Should not be modified by user." \
 str plug_plugins ''
 
 declare-option -hidden -docstring \
 "List of loaded plugins. Has no default value.
-Should not be cleared during update of configuration files. Shluld not be modified by user." \
+Should not be cleared during update of configuration files. Should not be modified by user." \
 str plug_loaded_plugins
 
 hook global WinSetOption filetype=kak %{
@@ -181,7 +181,8 @@ plug-update -params ..1 -shell-candidates %{ echo $kak_opt_plug_plugins | tr ' '
 	) > /dev/null 2>&1 < /dev/null & }
 }
 
-define-command -override -docstring "plug-delete [<plugin>]: delete <plugin>.
+define-command -override -docstring \
+"plug-clean [<plugin>]: delete <plugin>.
 If <plugin> ommited deletes all plugins that are not presented in configuration files" \
 plug-clean -params ..1 -shell-candidates %{ ls -1 $(eval echo $kak_opt_plug_install_dir) } %{
 	nop %sh{ (
