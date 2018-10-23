@@ -108,7 +108,7 @@ plug -params 1.. -shell-script-candidates %{ ls -1 $(eval echo $kak_opt_plug_ins
                     IFS='
 '
                     for command in $@; do
-                        echo "$command"
+                        echo $command
                     done
                 fi
                 eval echo 'set-option -add global plug_loaded_plugins \"$plugin \"'
