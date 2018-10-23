@@ -7,7 +7,7 @@
 
 **plug.kak** is a plugin manager for Kakoune editor, that aims to work somewhat
 similar to [vim-plug](https://github.com/junegunn/vim-plug). It is being tested
-against Kakoune git master branch. If you're using stable release, switch to [master](https://github.com/andreyorst/plug.kak/tree/master) branch.
+against Kakoune 2018.09.04. If you're using development release, switch to [Kakoune_dev](https://github.com/andreyorst/plug.kak/tree/Kakoune_dev) branch.
 
 ## Installation
 
@@ -34,13 +34,13 @@ If you cloned repo to your plugin installation dir, which defaults to `~/.config
 
 You can specify what plugins to install and load by using `plug` command:
 
-```kak
+```sh
 # make sure that plug.kak is installed at plug_install_dir path
 plug "andreyorst/plug.kak" "noload"
 
 # branch or tag can be specified with second parameter:
 plug "andreyorst/fzf.kak" "branch: master" %{
-    # you can add configurations to the plugin and enable them only if pluin was loaded:
+    # you can add configurations to the plugin and enable them only if plugin was loaded:
     map -docstring 'fzf mode' global normal '<c-p>' ': fzf-mode<ret>'
     set-option global fzf_preview_width '65%'
     evaluate-commands %sh{
@@ -63,7 +63,7 @@ plug "https://github.com/alexherbo2/auto-pairs.kak" %{
 }
 
 # example of kak-lsp configuration with plug.kak
-plug "ul/kak-lsp" "noload" %{
+plug "ul/kak-lsp" "noload" do ${cargo build --release} %{
     hook global WinSetOption filetype=(c|cpp|rust) %{
         evaluate-commands %sh{ kak-lsp --kakoune -s $kak_session }
         lsp-auto-hover-enable

@@ -1,6 +1,6 @@
 # ╭─────────────╥──────────╥─────────────╮
 # │ Author:     ║ File:    ║ Branch:     │
-# │ Andrey Orst ║ plug.kak ║ Kakoune_dev │
+# │ Andrey Orst ║ plug.kak ║ Master      │
 # ╞═════════════╩══════════╩═════════════╡
 # │ plug.kak is a plugin manager for     │
 # │ Kakoune. It can install plugins      │
@@ -20,25 +20,25 @@ str plug_install_dir "%val{config}/plugins"
 declare-option -docstring \
 "default domain to access git repositories. Can be changed to any preferred domain, like gitlab, bitbucket, gitea, etc.
 
-    Default value: 'https://github.com'
+	Default value: 'https://github.com'
 " \
 str plug_git_domain 'https://github.com'
 
 declare-option -docstring \
 "Maximum amount of simultaneous downloads when installing or updating plugins
-    Default value: 10
+	Default value: 10
 " \
 int plug_max_simultaneous_downloads 10
 
 declare-option -hidden -docstring \
 "Array of all plugins, mentioned in any configuration file.
 Empty by default, and erased on reload of main Kakoune configuration, to track if some plugins were disabled
-Shlould not be modified by user." \
+Should not be modified by user." \
 str plug_plugins ''
 
 declare-option -hidden -docstring \
 "List of loaded plugins. Has no default value.
-Should not be cleared during update of configuration files. Shluld not be modified by user." \
+Should not be cleared during update of configuration files. Should not be modified by user." \
 str plug_loaded_plugins
 
 declare-option -hidden -docstring \
