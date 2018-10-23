@@ -259,9 +259,18 @@ plug-eval-hooks -params 1 %{
         for command in $kak_opt_plug_post_hooks; do
             if [ ${command%%:*} = $plugin ]; then
                 temp=$(mktemp ${TMPDIR:-/tmp}/$plugin.XXXXXX)
-                printf %s\\n "evaluate-commands -client $kak_client echo -markup %{{Information}running post-update hooks for ${1##*/} in background}" | kak -p ${kak_session}
                 printf %s\\n "evaluate-commands -client $kak_client echo -debug %{running post-update hooks for ${1##*/}}" | kak -p ${kak_session}
-                printf %s\\n "evaluate-commands -client $kak_client nop %sh{(${command##*:}; wait; if [ ! $? ]; then printf %s\\\\n \"echo -debug %{finished post-update hooks for ${1##*/}}\" | kak -p ${kak_session}; rm -rf $temp; else printf %s\\\\n \"echo -debug %{errors occured while processing post-update hooks for ${1##*/}. Log at: $temp}\" | kak -p ${kak_session}; fi) >$temp 2>&1 < /dev/null &}" | kak -p ${kak_session}
+                IFS='
+'
+                for cmd in "${command##*:}"; do
+                    eval $cmd
+                    [ $? -eq 1 ] && break;
+                done
+                if [ $? -eq 0 ]; then
+                    printf %s\\n "evaluate-commands -client $kak_client echo -debug %{finished post-update hooks for ${1##*/}}" | kak -p ${kak_session}
+                else
+                    printf %s\\n "evaluate-commands -client $kak_client echo -debug %{Error occured while evaluation of post-update hooks for ${1##*/}}" | kak -p ${kak_session}
+                fi
             fi
         done
         printf %s\\n "evaluate-commands -client $kak_client change-directory $pwd" | kak -p ${kak_session}
