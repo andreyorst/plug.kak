@@ -306,6 +306,10 @@ plug-elapsed -params 3 %{
             start=$1; shift;
             end=$1; shift;
             message=$1;
+            if [ $start -gt $end ]; then
+                echo "echo -debug %{Error: 'start: $start' time is bigger than 'end: $end' time}"
+                exit
+            fi
             load_time=$(echo "in $(expr $end - $start)" | sed -e "s:\(.*\)\(..$\):\1.\2:;s:in \.:in 0.:;s:in\. \(.\):in 0.0\1:;s:in ::")
             echo "echo -debug %{$message $load_time seconds}"
         fi
