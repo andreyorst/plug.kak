@@ -76,22 +76,22 @@ plug -params 1.. -shell-script-candidates %{ ls -1 $(eval echo $kak_opt_plug_ins
         fi
 
         if [ -d $(eval echo $kak_opt_plug_install_dir) ]; then
+            for arg in "$@"; do
+                case $arg in
+                    "*branch:*"|"*tag:*"|"*commit:*")
+                        branch=$(echo $arg | awk '{print $2}'); shift ;;
+                    "noload")
+                        noload=1; shift ;;
+                    "do")
+                        shift;
+                        plug_opt=$(echo "${plugin##*/}" | sed 's:[^a-zA-Z0-9_]:_:g;')
+                        echo "set-option -add global plug_post_hooks %{$plug_opt:$1|}"
+                        shift ;;
+                    *)
+                        ;;
+                esac
+            done
             if [ -d $(eval echo $kak_opt_plug_install_dir/"${plugin##*/}") ]; then
-                for arg in "$@"; do
-                    case $arg in
-                        "*branch:*"|"*tag:*"|"*commit:*")
-                            branch=$(echo $arg | awk '{print $2}'); shift ;;
-                        "noload")
-                            noload=1; shift ;;
-                        "do")
-                            shift;
-                            plug_opt=$(echo "${plugin##*/}" | sed 's:[^a-zA-Z0-9_]:_:g;')
-                            echo "set-option -add global plug_post_hooks %{$plug_opt:$1|}"
-                            shift ;;
-                        *)
-                            ;;
-                    esac
-                done
                 if [ ! -z $branch ]; then
                     (cd $(eval echo $kak_opt_plug_install_dir/"${plugin##*/}"); git checkout $branch >/dev/null 2>&1)
                 fi
