@@ -280,8 +280,8 @@ plug-eval-hooks -params 1 %{
 define-command -override -hidden \
 -docstring "plug-elapsed <start> <end> <msg> prints elapsed time" \
 plug-elapsed -params 3 %{
-    nop %sh{
-        if [ $kak_opt_plug_profiler = "true" ]; then
+    evaluate-commands %sh{
+        if [ "$kak_opt_plug_profiler" = "true" ]; then
             start=$1; shift;
             end=$1; shift;
             message=$1;
