@@ -45,19 +45,19 @@ declare-option -hidden -docstring \
 "List of post update/install hooks to be executed" \
 str plug_post_hooks ''
 
-hook global WinSetOption filetype=kak %{
-    try %{
-        add-highlighter window/plug regex \bplug\b\h 0:keyword
-        add-highlighter window/plug_do regex \bdo\b\h 0:keyword
-    }
-}
+declare-option -docstring \
+"enable or disable messages about per plugin load time to profile configuration" \
+bool plug_profiler true
 
-hook  global WinSetOption filetype=(?!kak).* %{
-    try %{
-        remove-highlighter window/plug
-        remove-highlighter window/plug_do
-    }
-}
+hook global WinSetOption filetype=kak %{ try %{
+    add-highlighter window/plug regex \bplug\b\h 0:keyword
+    add-highlighter window/plug_do regex \bdo\b\h 0:keyword
+}}
+
+hook  global WinSetOption filetype=(?!kak).* %{ try %{
+    remove-highlighter window/plug
+    remove-highlighter window/plug_do
+}}
 
 define-command -override -docstring \
 "plug <plugin> [<branch>] [<noload>] [<configurations>]: load <plugin> from ""%opt{plug_install_dir}""
@@ -65,13 +65,13 @@ define-command -override -docstring \
 plug -params 1.. -shell-script-candidates %{ ls -1 $(eval echo $kak_opt_plug_install_dir) } %{
     set-option -add global plug_plugins "%arg{1} "
     evaluate-commands %sh{
-        plugin=$1; shift
         start=$(expr $(date +%s%N) / 10000000)
+        plugin=$1; shift
         noload=
         state=
         loaded=$(eval echo $kak_opt_plug_loaded_plugins)
         if [ ! -z "$loaded" ] && [ -z "${loaded##*$plugin*}" ]; then
-            printf %s\\n "evaluate-commands -client $kak_client echo -markup '{Information}${plugin##*/} already loaded'" | kak -p ${kak_session}
+            echo "echo -markup %{{Information}${plugin##*/} already loaded}"
             exit
         fi
 
@@ -90,6 +90,7 @@ plug -params 1.. -shell-script-candidates %{ ls -1 $(eval echo $kak_opt_plug_ins
                     ;;
             esac
         done
+
         if [ -d $(eval echo $kak_opt_plug_install_dir) ]; then
             if [ -d $(eval echo $kak_opt_plug_install_dir/"${plugin##*/}") ]; then
                 if [ ! -z $branch ]; then
@@ -116,13 +117,12 @@ plug -params 1.. -shell-script-candidates %{ ls -1 $(eval echo $kak_opt_plug_ins
                 exit
             fi
         fi
+
         if [ -z $noload ]; then
             end=$(expr $(date +%s%N) / 10000000)
-            elapsed_time=$(expr $end - $start)
-            load_time=$(echo "in $(expr $end - $start)" | sed -e "s:\(.*\)\(..$\):\1.\2:;s:in \.:in 0.:;s:in\. \(.\):in 0.0\1:;s:in ::")
-            echo "echo -debug %{Loaded ${plugin##*/}$state in $load_time seconds}"
+            message="loaded ${plugin##*/}$state in"
+            echo "plug-elapsed '$start' '$end' '$message'"
         fi
-
     }
 }
 
@@ -277,3 +277,16 @@ plug-eval-hooks -params 1 %{
     ) > /dev/null 2>&1 < /dev/null & }
 }
 
+define-command -override -hidden \
+-docstring "plug-elapsed <start> <end> <msg> prints elapsed time" \
+plug-elapsed -params 3 %{
+    evaluate-commands %sh{
+        if [ "$kak_opt_plug_profiler" = "true" ]; then
+            start=$1; shift;
+            end=$1; shift;
+            message=$1;
+            load_time=$(echo "in $(expr $end - $start)" | sed -e "s:\(.*\)\(..$\):\1.\2:;s:in \.:in 0.:;s:in\. \(.\):in 0.0\1:;s:in ::")
+            echo "echo -debug %{$message $load_time seconds}"
+        fi
+    }
+}
