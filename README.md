@@ -29,7 +29,8 @@ If you cloned repo to your plugin installation dir, which defaults to `~/.config
 
 `plug` command supports these options:
 - git checkout before load: `"branch: branch_name"`, `tag: tag_name`, `commit: commit_hash`.
-- `"noload"` - skip loading of installed plugin, but load it's configurations. Useful with kak-lsp, and plug.kak itself
+- `noload` - skip loading of installed plugin, but load it's configurations. Useful with kak-lsp, and plug.kak itself
+- `do %{...}` - post-update hook, executes shell code only after updates of plugin. Useful for plugins that need building.
 - `%{configurations}` - last parameter is always configurations of the plugin. Configurations are applied only if plugin is installed.
 
 You can specify what plugins to install and load by using `plug` command:
@@ -63,7 +64,7 @@ plug "https://github.com/alexherbo2/auto-pairs.kak" %{
 }
 
 # example of kak-lsp configuration with plug.kak
-plug "ul/kak-lsp" "noload" do ${cargo build --release} %{
+plug "ul/kak-lsp" noload do %{cargo build --release} %{
     hook global WinSetOption filetype=(c|cpp|rust) %{
         evaluate-commands %sh{ kak-lsp --kakoune -s $kak_session }
         lsp-auto-hover-enable
