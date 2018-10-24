@@ -45,6 +45,10 @@ declare-option -hidden -docstring \
 "List of post update/install hooks to be executed" \
 str plug_post_hooks ''
 
+declare-option -hidden -docstring \
+"List of configurations for all mentioned plugins" \
+str plug_configurations ''
+
 declare-option -docstring \
 "enable or disable messages about per plugin load time to profile configuration" \
 bool plug_profiler true
@@ -92,6 +96,10 @@ plug -params 1.. -shell-script-candidates %{ ls -1 $(eval echo $kak_opt_plug_ins
                     ;;
             esac
         done
+        if [ $# -gt 0 ]; then
+            plug_conf=$(echo "${plugin##*/}" | sed 's:[^a-zA-Z0-9_]:_:g;')
+            echo "set-option -add global plug_configurations %{$plug_conf:$1|}"
+        fi
 
         if [ -d $(eval echo $kak_opt_plug_install_dir) ]; then
             if [ -d $(eval echo $kak_opt_plug_install_dir/"${plugin##*/}") ]; then
@@ -103,18 +111,14 @@ plug -params 1.. -shell-script-candidates %{ ls -1 $(eval echo $kak_opt_plug_ins
                         echo source "$file"
                     done
                 fi
-                if [ $# -gt 0 ]; then
+                if [ "${kak_opt_configurations##*$plugin*}" ]; then
                     if [ ! -z $noload ]; then
                         state=" (configuration)"
                         noload=
                     fi
-                    IFS='
-'
-                    for command in $@; do
-                        echo $command
-                    done
+                    echo "plug-configure $plugin"
                 fi
-                eval echo 'set-option -add global plug_loaded_plugins \"$plugin \"'
+                echo "set-option -add global plug_loaded_plugins %{$plugin }"
             else
                 exit
             fi
@@ -155,7 +159,9 @@ plug-install -params ..1 %{
                 printf %s\\n "evaluate-commands -client $kak_client echo -markup '{Information}Installing $plugin'" | kak -p ${kak_session}
                 (
                     cd $(eval echo $kak_opt_plug_install_dir) && $git >/dev/null 2>&1
-                    printf %s\\n "evaluate-commands -client $kak_client echo -markup '{Information}Done'" | kak -p ${kak_session}
+                    printf %s\\n "evaluate-commands -client $kak_client echo -debug 'installed ${plugin##*/}'" | kak -p ${kak_session}
+                    printf %s\\n "evaluate-commands -client $kak_client plug $plugin" | kak -p ${kak_session}
+                    printf %s\\n "evaluate-commands -client $kak_client plug-configure $plugin" | kak -p ${kak_session}
                     exit
                 ) &
             fi
@@ -172,7 +178,10 @@ plug-install -params ..1 %{
                 if [ ! -d $(eval echo $kak_opt_plug_install_dir/"${plugin##*/}") ]; then
                     (
                         cd $(eval echo $kak_opt_plug_install_dir) && $git >/dev/null 2>&1
+                        printf %s\\n "evaluate-commands -client $kak_client echo -debug 'installed ${plugin##*/}'" | kak -p ${kak_session}
                         printf %s\\n "evaluate-commands -client $kak_client plug-eval-hooks $plugin" | kak -p ${kak_session}
+                        printf %s\\n "evaluate-commands -client $kak_client plug $plugin" | kak -p ${kak_session}
+                        printf %s\\n "evaluate-commands -client $kak_client plug-configure $plugin" | kak -p ${kak_session}
                     ) &
                 fi
                 jobs > $jobs; active=$(wc -l < $jobs)
@@ -270,6 +279,22 @@ plug-clean -params ..1 -shell-script-candidates %{ ls -1 $(eval echo $kak_opt_pl
         fi
     ) > /dev/null 2>&1 < /dev/null & }
 }
+
+define-command -override -hidden \
+-docstring "plug-configure: wrapper for configuring plugin" \
+plug-configure -params 1 %{ evaluate-commands %sh{
+    plugin=$(echo "${1##*/}" | sed 's:[^a-zA-Z0-9_]:_:g;')
+    IFS='|'
+    for command in $kak_opt_plug_configurations; do
+        if [ ${command%%:*} = $plugin ]; then
+            IFS='
+'
+            for command in "${command#*:}"; do
+                echo $command
+            done
+        fi
+    done
+}}
 
 define-command -override -hidden \
 -docstring "plug-eval-hooks: wrapper for post update/install hooks" \
