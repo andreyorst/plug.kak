@@ -29,14 +29,15 @@ If you cloned repo to your plugin installation dir, which defaults to `~/.config
 
 `plug` command supports these options:
 - git checkout before load: `"branch: branch_name"`, `tag: tag_name`, `commit: commit_hash`.
-- `"noload"` - skip loading of installed plugin, but load it's configurations. Useful with kak-lsp, and plug.kak itself
+- `"noload"` - skip loading of installed plugin, but load it's configurations. Useful with kak-lsp, and plug.kak itself.
+- `do %{...}` - a post-install/update shell hook.
 - `%{configurations}` - last parameter is always configurations of the plugin. Configurations are applied only if plugin is installed.
 
 You can specify what plugins to install and load by using `plug` command:
 
 ```kak
 # make sure that plug.kak is installed at plug_install_dir path
-plug "andreyorst/plug.kak" "noload"
+plug "andreyorst/plug.kak" noload
 
 # branch or tag can be specified with second parameter:
 plug "andreyorst/fzf.kak" "branch: master" %{
@@ -63,7 +64,8 @@ plug "https://github.com/alexherbo2/auto-pairs.kak" %{
 }
 
 # example of kak-lsp configuration with plug.kak
-plug "ul/kak-lsp" "noload" %{
+# 'do %{cargo build --release}' will be executed after every successful update
+plug "ul/kak-lsp" noload do %{cargo build --release} %{
     hook global WinSetOption filetype=(c|cpp|rust) %{
         evaluate-commands %sh{ kak-lsp --kakoune -s $kak_session }
         lsp-auto-hover-enable
@@ -99,7 +101,7 @@ Default value is `https://github.com`
 
 ## Commands
 
-**plug.kak** adds three commands:
+**plug.kak** adds four commands:
 
 - `plug-install` - Install all plugins specified in any configuration file;
 - `plug-update` - Update installed plugins;
@@ -113,8 +115,7 @@ Here are some examples:
 
 1. Add `plug "github_username/reponame"` to your `kakrc`;
 2. Source your `kakrc` with `source` command, or restart Kakoune to tell **plug.kak** that configuration is changed;
-3. Execute `plug-install` command;
-4. Source your `kakrc` with `source` command, or restart Kakoune to load plugins.
+3. Execute `plug-install` command, it will install plugins and update configuration of Kakoune accordingly;
 
 ### Updating installed plugins
 
