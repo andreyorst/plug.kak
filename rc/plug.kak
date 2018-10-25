@@ -215,6 +215,7 @@ plug-update -params ..1 -shell-script-candidates %{ echo $kak_opt_plug_plugins |
                     if [ $rev != $(git rev-parse HEAD) ]; then
                         printf %s\\n "evaluate-commands -client $kak_client plug-eval-hooks $plugin" | kak -p ${kak_session}
                     fi
+                    printf %s\\n "evaluate-commands -client $kak_client echo -debug 'updated ${plugin##*/}'" | kak -p ${kak_session}
                 ) &
             else
                 printf %s\\n "evaluate-commands -client $kak_client echo -markup '{Error}can''t update $plugin. Plugin is not installed'" | kak -p ${kak_session}
@@ -229,6 +230,7 @@ plug-update -params ..1 -shell-script-candidates %{ echo $kak_opt_plug_plugins |
                     if [ $rev != $(git rev-parse HEAD) ]; then
                         printf %s\\n "evaluate-commands -client $kak_client plug-eval-hooks $plugin" | kak -p ${kak_session}
                     fi
+                    printf %s\\n "evaluate-commands -client $kak_client echo -debug 'updated ${plugin##*/}'" | kak -p ${kak_session}
                 ) &
                 jobs > $jobs; active=$(wc -l < $jobs)
                 while [ $active -ge $kak_opt_plug_max_simultaneous_downloads ]; do
@@ -258,7 +260,7 @@ plug-clean -params ..1 -shell-script-candidates %{ ls -1 $(eval echo $kak_opt_pl
         if [ ! -z $plugin ]; then
             if [ -d $(eval echo $kak_opt_plug_install_dir/"${plugin##*/}") ]; then
                 (cd $(eval echo $kak_opt_plug_install_dir) && rm -rf "${plugin##*/}")
-                printf %s\\n "evaluate-commands -client $kak_client echo -markup '{Information}Removed $plugin'" | kak -p ${kak_session}
+                printf %s\\n "evaluate-commands -client $kak_client echo -debug 'removed ${plugin##*/}'" | kak -p ${kak_session}
             else
                 printf %s\\n "evaluate-commands -client $kak_client echo -markup '{Error}No such plugin $plugin'" | kak -p ${kak_session}
                 exit
@@ -273,6 +275,7 @@ plug-clean -params ..1 -shell-script-candidates %{ ls -1 $(eval echo $kak_opt_pl
             done
             for plugin in $plugins_to_remove; do
                 rm -rf $plugin
+                printf %s\\n "evaluate-commands -client $kak_client echo -debug 'removed ${plugin##*/}'" | kak -p ${kak_session}
             done
         fi
     ) > /dev/null 2>&1 < /dev/null & }
