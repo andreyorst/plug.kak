@@ -52,7 +52,7 @@ bool plug_profiler true
 hook global WinSetOption filetype=kak %{ try %{
     add-highlighter window/plug        regex \bplug\b\h+((?=")|(?=')|(?=%)|(?=\w)) 0:keyword
     add-highlighter window/plug_do     regex \bdo\b\h+((?=")|(?=')|(?=%)|(?=\w)) 0:keyword
-    add-highlighter window/plug_noload regex \bnoload\b\h+((?=")|(?=')|(?=%)|(?=\w)) 0:attribute
+    add-highlighter window/plug_noload regex \bnoload\b 0:attribute
 }}
 
 hook  global WinSetOption filetype=(?!kak).* %{ try %{
