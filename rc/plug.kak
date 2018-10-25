@@ -287,7 +287,7 @@ plug-configure -params 1 %{ evaluate-commands %sh{
     plugin=$(echo "${1##*/}" | sed 's:[^a-zA-Z0-9_]:_:g;')
     IFS='┆'
     for configuration in $kak_opt_plug_configurations; do
-        if [ ${configuration%%:*} = $plugin ]; then
+        if [ "${configuration%%:*}" = "$plugin" ]; then
             IFS='
 '
             for cmd in "${configuration#*:}"; do
@@ -305,7 +305,7 @@ plug-eval-hooks -params 1 %{
         plugin=$(echo "${1##*/}" | sed 's:[^a-zA-Z0-9_]:_:g;')
         IFS='┆'
         for hook in $kak_opt_plug_post_hooks; do
-            if [ ${hook%%:*} = $plugin ]; then
+            if [ "${hook%%:*}" = "$plugin" ]; then
                 temp=$(mktemp ${TMPDIR:-/tmp}/$plugin.XXXXXX)
                 printf %s\\n "evaluate-commands -client $kak_client echo -debug %{running post-update hooks for ${1##*/}}" | kak -p ${kak_session}
                 cd $(eval echo "$kak_opt_plug_install_dir/${1##*/}")
