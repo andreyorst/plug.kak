@@ -161,7 +161,6 @@ plug-install -params ..1 %{
                     cd $(eval echo $kak_opt_plug_install_dir) && $git >/dev/null 2>&1
                     printf %s\\n "evaluate-commands -client $kak_client echo -debug 'installed ${plugin##*/}'" | kak -p ${kak_session}
                     printf %s\\n "evaluate-commands -client $kak_client plug $plugin" | kak -p ${kak_session}
-                    printf %s\\n "evaluate-commands -client $kak_client plug-configure $plugin" | kak -p ${kak_session}
                     exit
                 ) &
             fi
@@ -181,7 +180,6 @@ plug-install -params ..1 %{
                         printf %s\\n "evaluate-commands -client $kak_client echo -debug 'installed ${plugin##*/}'" | kak -p ${kak_session}
                         printf %s\\n "evaluate-commands -client $kak_client plug-eval-hooks $plugin" | kak -p ${kak_session}
                         printf %s\\n "evaluate-commands -client $kak_client plug $plugin" | kak -p ${kak_session}
-                        printf %s\\n "evaluate-commands -client $kak_client plug-configure $plugin" | kak -p ${kak_session}
                     ) &
                 fi
                 jobs > $jobs; active=$(wc -l < $jobs)
