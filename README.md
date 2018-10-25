@@ -100,7 +100,7 @@ Default value is `https://github.com`
 
 ## Commands
 
-**plug.kak** adds three commands:
+**plug.kak** adds four commands:
 
 - `plug-install` - Install all plugins specified in any configuration file;
 - `plug-update` - Update installed plugins;
@@ -114,8 +114,7 @@ Here are some examples:
 
 1. Add `plug "github_username/reponame"` to your `kakrc`;
 2. Source your `kakrc` with `source` command, or restart Kakoune to tell **plug.kak** that configuration is changed;
-3. Execute `plug-install` command;
-4. Source your `kakrc` with `source` command, or restart Kakoune to load plugins.
+3. Execute `plug-install` command. Plugins will be loaded and configured accordingly to your kakrc;
 
 ### Updating installed plugins
 
