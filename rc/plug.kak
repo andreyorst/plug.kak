@@ -66,7 +66,7 @@ hook  global WinSetOption filetype=(?!kak).* %{ try %{
 }}
 
 define-command -override -docstring \
-"plug <plugin> [<branch>] [<noload>] [<configurations>]: load <plugin> from ""%opt{plug_install_dir}""
+"plug <plugin> [<branch>|<tag>|<commit>] [<noload>] [<configurations>]: load <plugin> from ""%opt{plug_install_dir}""
 " \
 plug -params 1.. -shell-script-candidates %{ ls -1 $(eval echo $kak_opt_plug_install_dir) } %{
     set-option -add global plug_plugins "%arg{1} "
