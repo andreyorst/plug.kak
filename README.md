@@ -7,7 +7,7 @@
 
 **plug.kak** is a plugin manager for Kakoune editor, that aims to work somewhat
 similar to [vim-plug](https://github.com/junegunn/vim-plug). It is being tested
-against Kakoune git master branch. If you're using stable release, switch to [master](https://github.com/andreyorst/plug.kak/tree/master) branch.
+against Kakoune 2018.09.04. If you're using development release, switch to [Kakoune_dev](https://github.com/andreyorst/plug.kak/tree/Kakoune_dev) branch.
 
 ## Installation
 
@@ -29,19 +29,19 @@ If you cloned repo to your plugin installation dir, which defaults to `~/.config
 
 `plug` command supports these options:
 - git checkout before load: `"branch: branch_name"`, `tag: tag_name`, `commit: commit_hash`.
-- `"noload"` - skip loading of installed plugin, but load it's configurations. Useful with kak-lsp, and plug.kak itself.
-- `do %{...}` - a post-install/update shell hook.
+- `noload` - skip loading of installed plugin, but load it's configurations. Useful with kak-lsp, and plug.kak itself
+- `do %{...}` - post-update hook, executes shell code only after updates of plugin. Useful for plugins that need building.
 - `%{configurations}` - last parameter is always configurations of the plugin. Configurations are applied only if plugin is installed.
 
 You can specify what plugins to install and load by using `plug` command:
 
-```kak
+```sh
 # make sure that plug.kak is installed at plug_install_dir path
 plug "andreyorst/plug.kak" noload
 
 # branch or tag can be specified with second parameter:
 plug "andreyorst/fzf.kak" "branch: master" %{
-    # you can add configurations to the plugin and enable them only if pluin was loaded:
+    # you can add configurations to the plugin and enable them only if plugin was loaded:
     map -docstring 'fzf mode' global normal '<c-p>' ': fzf-mode<ret>'
     set-option global fzf_preview_width '65%'
     evaluate-commands %sh{
@@ -115,7 +115,7 @@ Here are some examples:
 
 1. Add `plug "github_username/reponame"` to your `kakrc`;
 2. Source your `kakrc` with `source` command, or restart Kakoune to tell **plug.kak** that configuration is changed;
-3. Execute `plug-install` command, it will install plugins and update configuration of Kakoune accordingly;
+3. Execute `plug-install` command. Plugins will be loaded and configured accordingly to your kakrc;
 
 ### Updating installed plugins
 
