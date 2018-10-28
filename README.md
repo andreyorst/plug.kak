@@ -37,7 +37,7 @@ You can specify what plugins to install and load by using `plug` command:
 
 ```sh
 # make sure that plug.kak is installed at plug_install_dir path
-plug "andreyorst/plug.kak" "noload"
+plug "andreyorst/plug.kak" noload
 
 # branch or tag can be specified with second parameter:
 plug "andreyorst/fzf.kak" "branch: master" %{
@@ -64,6 +64,7 @@ plug "https://github.com/alexherbo2/auto-pairs.kak" %{
 }
 
 # example of kak-lsp configuration with plug.kak
+# 'do %{cargo build --release}' will be executed after every successful update
 plug "ul/kak-lsp" noload do %{cargo build --release} %{
     hook global WinSetOption filetype=(c|cpp|rust) %{
         evaluate-commands %sh{ kak-lsp --kakoune -s $kak_session }
