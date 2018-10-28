@@ -10,6 +10,12 @@
 # │ GitHub.com/andreyorst/plug.kak       │
 # ╰──────────────────────────────────────╯
 
+evaluate-commands %sh{
+    if [ "$kak_version" != "v2018.10.27" ]; then
+        echo "echo -debug %{plug.kak: Warning Your Kakoune version doesn't match curren plug.kak version. please check if there is another release branch at https://github.com/andreyorst/plug.kak}"
+    fi
+}
+
 declare-option -docstring \
 "path where plugins should be installed.
 
