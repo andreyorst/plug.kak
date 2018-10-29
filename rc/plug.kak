@@ -10,6 +10,16 @@
 # │ GitHub.com/andreyorst/plug.kak       │
 # ╰──────────────────────────────────────╯
 
+evaluate-commands %sh{
+    if [ "$kak_version" != "$(git rev-parse --abbrev-ref HEAD)" ] && [ "$kak_opt_plug_dismiss_warnings" != "true" ]; then
+        if [ "$kak_version" = "unknown" ]; then
+            echo "echo -debug %{plug.kak: Can't determinate Kakoune version - '$kak_version'. plug.kak branch name should match Kakoune version}"
+        else
+            echo "echo -debug %{plug.kak: Warning: your Kakoune version '$kak_version' doesn't match current plug.kak version '$(git rev-parse --abbrev-ref HEAD)'. Please check if there is another named branch at https://github.com/andreyorst/plug.kak}"
+        fi
+    fi
+}
+
 declare-option -docstring \
 "path where plugins should be installed.
 
