@@ -239,8 +239,8 @@ plug-update -params ..1 -shell-candidates %{ echo $kak_opt_plug_plugins | tr ' '
                     cd $(eval echo $kak_opt_plug_install_dir/"${plugin##*/}") && rev=$(git rev-parse HEAD) && git pull -q
                     if [ $rev != $(git rev-parse HEAD) ]; then
                         printf %s\\n "evaluate-commands -client $kak_client plug-eval-hooks $plugin" | kak -p ${kak_session}
+                        printf %s\\n "evaluate-commands -client $kak_client echo -debug 'updated ${plugin##*/}'" | kak -p ${kak_session}
                     fi
-                    printf %s\\n "evaluate-commands -client $kak_client echo -debug 'updated ${plugin##*/}'" | kak -p ${kak_session}
                 ) &
                 jobs > $jobs; active=$(wc -l < $jobs)
                 while [ $active -ge $kak_opt_plug_max_simultaneous_downloads ]; do
