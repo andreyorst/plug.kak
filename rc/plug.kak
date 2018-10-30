@@ -76,6 +76,7 @@ plug -params 1.. -shell-script-candidates %{ ls -1 $(eval echo $kak_opt_plug_ins
         start=$(expr $(date +%s%N) / 10000000)
         plugin=$1; shift
         noload=
+        ensure=
         state=
         loaded=$(eval echo $kak_opt_plug_loaded_plugins)
         if [ ! -z "$loaded" ] && [ -z "${loaded##*$plugin*}" ]; then
@@ -96,7 +97,7 @@ plug -params 1.. -shell-script-candidates %{ ls -1 $(eval echo $kak_opt_plug_ins
                     shift ;;
                 "ensure")
                     shift;
-                    install=1 ;;
+                    ensure=1 ;;
                 *)
                     ;;
             esac
@@ -125,8 +126,8 @@ plug -params 1.. -shell-script-candidates %{ ls -1 $(eval echo $kak_opt_plug_ins
                 fi
                 echo "set-option -add global plug_loaded_plugins %{$plugin }"
             else
-                if [ ! -z $install ]; then
-                    echo "plug-install '$plugin'"
+                if [ ! -z $ensure ]; then
+                    echo "evaluate-commands -client ${kak_client:-client0} plug-install $plugin" | kak -p ${kak_session}
                 else
                     exit
                 fi
