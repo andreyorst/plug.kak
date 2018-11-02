@@ -126,7 +126,7 @@ plug -params 1.. -shell-script-candidates %{ ls -1 $(eval echo $kak_opt_plug_ins
                 fi
                 echo "set-option -add global plug_loaded_plugins %{$plugin }"
             else
-                if [ ! -z $ensure ]; then
+                if [ ! -z $ensure ] || [ "$kak_opt_plug_always_ensure" = "true" ]; then
                     echo "evaluate-commands -client ${kak_client:-client0} plug-install $plugin" | kak -p ${kak_session}
                 else
                     exit
