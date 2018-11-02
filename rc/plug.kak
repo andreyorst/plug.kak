@@ -53,16 +53,18 @@ declare-option -docstring \
 "enable or disable messages about per plugin load time to profile configuration" \
 bool plug_profiler true
 
+declare-option -docstring \
+"always ensure sthat all plugins are installed" \
+bool plug_always_ensure false
+
 hook global WinSetOption filetype=kak %{ try %{
-    add-highlighter window/plug        regex \bplug\b\h+((?=")|(?=')|(?=%)|(?=\w)) 0:keyword
-    add-highlighter window/plug_do     regex \bdo\b\h+((?=")|(?=')|(?=%)|(?=\w)) 0:keyword
-    add-highlighter window/plug_noload regex \bnoload\b 0:attribute
+    add-highlighter window/plug_keywords   regex \b(plug|do)\b\h+((?=")|(?=')|(?=%)|(?=\w)) 0:keyword
+    add-highlighter window/plug_attributes regex \b(noload|ensure)\b 0:attribute
 }}
 
 hook  global WinSetOption filetype=(?!kak).* %{ try %{
-    remove-highlighter window/plug
-    remove-highlighter window/plug_do
-    remove-highlighter window/plug_noload
+    remove-highlighter window/plug_keywords
+    remove-highlighter window/plug_attributes
 }}
 
 define-command -override -docstring \
@@ -74,6 +76,7 @@ plug -params 1.. -shell-script-candidates %{ ls -1 $(eval echo $kak_opt_plug_ins
         start=$(expr $(date +%s%N) / 10000000)
         plugin=$1; shift
         noload=
+        ensure=
         state=
         loaded=$(eval echo $kak_opt_plug_loaded_plugins)
         if [ ! -z "$loaded" ] && [ -z "${loaded##*$plugin*}" ]; then
@@ -92,6 +95,9 @@ plug -params 1.. -shell-script-candidates %{ ls -1 $(eval echo $kak_opt_plug_ins
                     plug_opt=$(echo "${plugin##*/}" | sed 's:[^a-zA-Z0-9_]:_:g;')
                     echo "set-option -add global plug_post_hooks %{$plug_opt:$1┆}"
                     shift ;;
+                "ensure")
+                    shift;
+                    ensure=1 ;;
                 *)
                     ;;
             esac
@@ -120,7 +126,11 @@ plug -params 1.. -shell-script-candidates %{ ls -1 $(eval echo $kak_opt_plug_ins
                 fi
                 echo "set-option -add global plug_loaded_plugins %{$plugin }"
             else
-                exit
+                if [ ! -z $ensure ] || [ "$kak_opt_plug_always_ensure" = "true" ]; then
+                    echo "evaluate-commands -client ${kak_client:-client0} plug-install $plugin" | kak -p ${kak_session}
+                else
+                    exit
+                fi
             fi
         fi
 
