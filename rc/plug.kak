@@ -113,7 +113,7 @@ plug -params 1.. -shell-script-candidates %{ ls -1 $(eval echo $kak_opt_plug_ins
                     (cd $(eval echo $kak_opt_plug_install_dir/"${plugin##*/}"); git checkout $branch >/dev/null 2>&1)
                 fi
                 if [ -z "$noload" ]; then
-                    for file in $(find -L $(eval echo $kak_opt_plug_install_dir/"${plugin##*/}") -type f -name '*.kak' | awk -F/ '{print NF-1, $F}' | sort -n | cut -d' ' -f2); do
+                    for file in $(find -L $(eval echo $kak_opt_plug_install_dir/"${plugin##*/}") -type f -name '*.kak' | awk -F/ '{print NF-1, $0}' | sort -n | cut -d' ' -f2); do
                         echo source "$file"
                         wait
                     done
