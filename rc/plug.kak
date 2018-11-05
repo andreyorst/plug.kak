@@ -112,8 +112,8 @@ plug -params 1.. -shell-script-candidates %{ ls -1 $(eval echo $kak_opt_plug_ins
                 if [ -n "$branch" ]; then
                     (cd $(eval echo $kak_opt_plug_install_dir/"${plugin##*/}"); git checkout $branch >/dev/null 2>&1)
                 fi
-                if [ -z $noload ]; then
-                    for file in $(find -L $(eval echo $kak_opt_plug_install_dir/"${plugin##*/}") -type f -name '*.kak'); do
+                if [ -z "$noload" ]; then
+                    for file in $(find -L $(eval echo $kak_opt_plug_install_dir/"${plugin##*/}") -type f -name '*.kak' | awk -F/ '{print NF-1, $F}' | sort -n | cut -d' ' -f2); do
                         echo source "$file"
                         wait
                     done
@@ -135,7 +135,7 @@ plug -params 1.. -shell-script-candidates %{ ls -1 $(eval echo $kak_opt_plug_ins
             fi
         fi
 
-        if [ -z $noload ]; then
+        if [ -z "$noload" ]; then
             end=$(expr $(date +%s%N) / 10000000)
             message="loaded ${plugin##*/}$state in"
             echo "plug-elapsed '$start' '$end' '$message'"
@@ -202,7 +202,6 @@ plug-install -params ..1 %{
             wait
             rm -rf $jobs
         fi
-        printf %s\\n "evaluate-commands -client $kak_client echo -markup '{Information}Done installing plugins'" | kak -p ${kak_session}
     ) >/dev/null 2>&1 < /dev/null & }
 }
 
@@ -220,7 +219,6 @@ plug-update -params ..1 -shell-script-candidates %{ echo $kak_opt_plug_plugins |
         trap 'rmdir $(eval echo "$kak_opt_plug_install_dir/.plug.kaklock")' EXIT
         if [ -n "$plugini" ]; then
             if [ -d $(eval echo $kak_opt_plug_install_dir/"${plugin##*/}") ]; then
-                printf %s\\n "evaluate-commands -client $kak_client echo -markup '{Information}Updating $plugin'" | kak -p ${kak_session}
                 (
                     cd $(eval echo $kak_opt_plug_install_dir/"${plugin##*/}") && rev=$(git rev-parse HEAD) && git pull -q
                     if [ $rev != $(git rev-parse HEAD) ]; then
@@ -330,7 +328,7 @@ plug-eval-hooks -params 1 %{
                         break
                     fi
                 done
-                if [ -z $error ]; then
+                if [ -z "$error" ]; then
                     printf %s\\n "evaluate-commands -client $kak_client echo -debug %{finished post-update hooks for ${1##*/}}" | kak -p ${kak_session}
                 else
                     printf %s\\n "evaluate-commands -client $kak_client echo -debug %{error occured while evaluation of post-update hooks for ${1##*/}:}" | kak -p ${kak_session}
