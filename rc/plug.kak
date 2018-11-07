@@ -86,18 +86,20 @@ plug -params 1.. -shell-candidates %{ ls -1 $(eval echo $kak_opt_plug_install_di
 
         for arg in "$@"; do
             case $arg in
-                "*branch:*"|"*tag:*"|"*commit:*")
-                    branch=$(echo $arg | awk '{print $2}'); shift ;;
-                "noload")
-                    noload=1; shift ;;
-                "do")
+                *branch:*|*tag:*|*commit:*)
+                    branch=$(echo $arg | awk '{print $2}')
+                    shift ;;
+                noload)
+                    noload=1
+                    shift ;;
+                do)
                     shift;
                     plug_opt=$(echo "${plugin##*/}" | sed 's:[^a-zA-Z0-9_]:_:g;')
                     echo "set-option -add global plug_post_hooks %{$plug_opt:$1┆}"
                     shift ;;
-                "ensure")
-                    shift;
-                    ensure=1 ;;
+                ensure)
+                    ensure=1
+                    shift ;;
                 *)
                     ;;
             esac
@@ -115,7 +117,6 @@ plug -params 1.. -shell-candidates %{ ls -1 $(eval echo $kak_opt_plug_install_di
                 if [ -z "$noload" ]; then
                     for file in $(find -L $(eval echo $kak_opt_plug_install_dir/"${plugin##*/}") -type f -name '*.kak' | awk -F/ '{print NF-1, $0}' | sort -n | cut -d' ' -f2); do
                         echo source "$file"
-                        wait
                     done
                 fi
                 if [ -z "${kak_opt_configurations##*$plug_conf*}" ]; then
