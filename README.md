@@ -1,9 +1,5 @@
 # plug.kak
-
-[![GitHub release](https://img.shields.io/github/release/andreyorst/plug.kak.svg)](https://github.com/andreyorst/plug.kak/releases)
-[![GitHub Release Date](https://img.shields.io/github/release-date/andreyorst/plug.kak.svg)](https://github.com/andreyorst/plug.kak/releases)
-![Github commits (since latest release)](https://img.shields.io/github/commits-since/andreyorst/plug.kak/latest.svg)
-![license](https://img.shields.io/github/license/andreyorst/plug.kak.svg)
+[![GitHub issues](https://img.shields.io/github/issues/andreyorst/plug.kak.svg)](https://github.com/andreyorst/plug.kak/issues) ![license](https://img.shields.io/github/license/andreyorst/plug.kak.svg)
 
 **plug.kak** is a plugin manager for Kakoune editor, that aims to work somewhat
 similar to [vim-plug](https://github.com/junegunn/vim-plug). This plugin currently supports
