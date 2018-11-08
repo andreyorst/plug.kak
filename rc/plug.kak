@@ -218,8 +218,7 @@ plug-install -params ..1 %{
                         cd $(eval echo $kak_opt_plug_install_dir) && $git >/dev/null 2>&1
                         printf %s\\n "evaluate-commands -client $kak_client echo -debug 'installed ${plugin##*/}'" | kak -p ${kak_session}
                         printf %s\\n "evaluate-commands -client $kak_client plug-eval-hooks $plugin" | kak -p ${kak_session}
-                        printf %s\\n "evaluate-commands -client $kak_client plug $plugin noload" | kak -p ${kak_session}
-                        printf %s\\n "evaluate-commands -client $kak_client plug-load $plugin" | kak -p ${kak_session}
+                        printf %s\\n "evaluate-commands -client $kak_client plug $plugin" | kak -p ${kak_session}
                     ) &
                 fi
                 jobs > $jobs; active=$(wc -l < $jobs)
@@ -328,7 +327,7 @@ plug-configure -params 1 %{ evaluate-commands %sh{
         if [ "${configuration%%:*}" = "$plugin" ]; then
             IFS='
 '
-            for cmd in "${configuration#*:}"; do
+            for cmd in ${configuration#*:}; do
                 echo "$cmd"
             done
             break
@@ -345,9 +344,9 @@ plug-load -params 1 %{ evaluate-commands %sh{
         if [ "${load_subset%%:*}" = "$plugin" ]; then
             IFS='
 '
-            for file in "${load_subset#*:}"; do
-                file="${file#"${file%%[![:space:]]*}"}" # remove leading spaces
-                file="${file%"${file##*[![:space:]]}"}" # remove trailing spaces
+            for file in ${load_subset#*:}; do
+                file="${file#"${file%%[![:space:]]*}"}"
+                file="${file%"${file##*[![:space:]]}"}"
                 for script in $(find -L $(eval echo $kak_opt_plug_install_dir/"${1##*/}") -type f -name "$file" | awk -F/ '{print NF-1, $0}' | sort -n | cut -d' ' -f2); do
                     echo source "$script"
                 done
@@ -370,7 +369,7 @@ plug-eval-hooks -params 1 %{
                 cd $(eval echo "$kak_opt_plug_install_dir/${1##*/}")
                 IFS='
 '
-                for cmd in "${hook#*:}"; do
+                for cmd in ${hook#*:}; do
                     eval "$cmd" >$temp 2>&1
                     if [ $? -eq 1 ]; then
                         error=1
