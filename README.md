@@ -8,31 +8,54 @@ All features that are being development here will be eventually backported to **
 
 ## Installation
 
+You need to create a `plugins` directory at your Kakoune configuration path. You can check correct location by evaluating this command in Kakoune: `echo %val{config}`. 
+
 ```sh
 mkdir -p ~/.config/kak/plugins/
+```
+
+In my case it is `$HOME/.config/kak`. After directory was created, you need to clone this repo there with this command:
+
+```sh
 git clone https://github.com/andreyorst/plug.kak.git ~/.config/kak/plugins/plug.kak
 ```
 
 And source `plug.kak` from your `kakrc`, or any of your configuration file.
 
 ```kak
-source /path/to/your/kakoune_config/plugins/plug.kak/rc/plug.kak
+source "%val{config}/plugins/plug.kak/rc/plug.kak"
 ```
 
-If you cloned repo to your plugin installation dir, which defaults to `~/.config/kak/plugins/`
-**plug.kak** will be able to manage itself along with another plugins.
+**plug.kak** can work from any directory, but if you installed it to your plugin installation dir, which defaults to `%val{config}/plugins/`
+**plug.kak** will be able to update itself along with another plugins.
 
 ## Usage
+You can specify what plugins to install and load by using `plug` command. This command accepts one or more arguments, which are keywords and attributes, that change how **plug.kak** behaves. For most plugins it is usually enough to provide single argument, which is plugin's author name, and plugin name separated with slash. **plug.kak** will look for this plugin on GitHub, and download it for you.
+If you want to install plugin from place other than GitHub, like GitLab or Gitea, `plug` accepts url as first parameter.
+So in most cases it is enough to add this into your `kakrc` to use a plugin:
 
-`plug` command supports these options:
-- git checkout before load: `"branch: branch_name"`, `tag: tag_name`, `commit: commit_hash`.
-- `noload` - skip loading of installed plugin, but load it's configurations. Useful with kak-lsp, and plug.kak itself
+```kak
+plug "delapouite/kakoune-text-objects"
+```
+
+After that you'll need to re-source your `kakrc` or restart Kakoune to let **plug.kak** know that configuration was updated, and use a `plug-install` command to install new plugins. More iniformation about commands available in [Commands]() section.
+
+### Keywords and attributes
+As was already mentioned `plug` command accepts optional attributes, that change how **plug.kak** works, or add additional steps for `plug` to perform for you.
+
+#### Branch, Tag or Commit
+`plug` can checkout a plugin to desired branch, commit or tag before load. To do so, add this after plugin name: `"branch: branch_name"`, `tag: tag_name` or `commit: commit_hash`. Nothe that this must be a single parameter, and the syntax is very restrictive - you need to specify a keyword separated with a `: ` (colon space) from it's argument. Other keywords are not that restrictive.
+#### Loading subset of files from plugin repository
+If you want to load only part of a plugin (assuming that plugin allows this) you can use `load` keyword followed by filenames. If `load` isn't specified `plug` uses it's default value, which is `*.kak`, and by specifying a value, you just override default one. Here's an example:
+```kak
+```
+
+#### Skipping loading of a plugin
+Some plugins require to be loaded by calling an external tool. In such case use `noload` attribute to skip loading of installed plugin. Useful with plug.kak itself, because it is already loaded by userconfiguration.
 - `do %{...}` - post-update hook, executes shell code only after updates of plugin. Useful for plugins that need building.
 - `%{configurations}` - last parameter is always configurations of the plugin. Configurations are applied only if plugin is installed.
 
-You can specify what plugins to install and load by using `plug` command:
-
-```sh
+```kak
 # make sure that plug.kak is installed at plug_install_dir path
 plug "andreyorst/plug.kak" noload
 
@@ -55,6 +78,7 @@ plug "andreyorst/fzf.kak" "branch: master" %{
     }
 }
 
+# using url to download a plugin
 plug "https://github.com/alexherbo2/auto-pairs.kak" %{
     hook global WinCreate .* %{ auto-pairs-enable }
     map global normal <a-s> ': auto-pairs-surround<ret>'
