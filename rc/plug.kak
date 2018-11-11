@@ -344,6 +344,7 @@ plug-load -params 1 %{ evaluate-commands %sh{
         if [ "${load_subset%%:*}" = "$plugin" ]; then
             IFS='
 '
+            set -f # set noglob
             for file in ${load_subset#*:}; do
                 file="${file#"${file%%[![:space:]]*}"}"
                 file="${file%"${file##*[![:space:]]}"}"
