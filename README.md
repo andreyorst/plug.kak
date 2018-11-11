@@ -43,7 +43,7 @@ provide single argument, which is plugin's author name, and plugin name
 separated with slash. **plug.kak** will look for this plugin on GitHub, and
 download it for you.
 If you want to install plugin from place other than GitHub, like GitLab or
-Gitea, `plug` accepts url as first parameter.
+Gitea, `plug` accepts URL as first parameter.
 So in most cases it is enough to add this into your `kakrc` to use a plugin:
 
 ```kak
@@ -52,7 +52,7 @@ plug "delapouite/kakoune-text-objects"
 
 After that you'll need to re-source your `kakrc` or restart Kakoune to let
 **plug.kak** know that configuration was updated, and use a `plug-install`
-command to install new plugins. More iniformation about commands available
+command to install new plugins. More information about commands available
 in [Commands](#Commands) section.
 
 ### Keywords and attributes
@@ -68,7 +68,7 @@ These are keywords to use:
 #### Branch, Tag or Commit
 `plug` can checkout a plugin to desired branch, commit or tag before load. To do
 so, add this after plugin name: `"branch: branch_name"`, `tag: tag_name` or
-`commit: commit_hash`. Nothe that this must be a single parameter, and the
+`commit: commit_hash`. Note that this must be a single parameter, and the
 syntax is very restrictive - you need to specify a keyword separated with a `: `
 (colon space) from it's argument. Other keywords are not that restrictive.
 
@@ -88,7 +88,7 @@ plug "lenormf/kakoune-extra" load %{
 #### Skipping loading of a plugin
 Some plugins require to be loaded by calling an external tool. In such case use
 `noload` attribute to skip loading of installed plugin. Useful with plug.kak
-itself, because it is already loaded by userconfiguration.
+itself, because it is already loaded by user configuration.
 
 ```kak
 plug "andreyorst/plug.kak" noload
@@ -137,13 +137,13 @@ Or any other path.
 ### Maximum downloads
 
 To specify maximum amount of simultaneous downloads set
-`plug_max_simultanious_downloads`. Default value is `10`.
+`plug_max_simultaneous_downloads`. Default value is `10`.
 
 ### Default git domain
 
 Although you can use URLs inside `plugin` field, if you're using plugins from,
 say, Gitlab only, you can drop URLs, and set default git domain to
-`https://gitlab.com`. Or to bitbucket, and any other git domain, as long as it
+`https://gitlab.com`. Or to Bitbucket, and any other git domain, as long as it
 similar to github's in term of URL structure.
 
 Default value is `https://github.com`
@@ -173,7 +173,7 @@ Here are some examples:
 1. Execute `plug-update` command;
 2. Restart Kakoune to load updated plugins.
 
-### Removing unneded plugins
+### Removing unneeded plugins
 
 1. Delete desired `plug` entry from your `kakrc` or comment it;
 2. Source your `kakrc` with `source` command, or restart Kakoune to tell
