@@ -49,6 +49,10 @@ declare-option -hidden -docstring \
 "List of configurations for all mentioned plugins" \
 str plug_configurations ''
 
+declare-option -hidden -docstring \
+"List of filest to load for all mentioned plugins" \
+str plug_load_files ''
+
 declare-option -docstring \
 "enable or disable messages about per plugin load time to profile configuration" \
 bool plug_profiler true
@@ -58,7 +62,7 @@ declare-option -docstring \
 bool plug_always_ensure false
 
 hook global WinSetOption filetype=kak %{ try %{
-    add-highlighter window/plug_keywords   regex \b(plug|do)\b\h+((?=")|(?=')|(?=%)|(?=\w)) 0:keyword
+    add-highlighter window/plug_keywords   regex \b(plug|do|config|load)\b\h+((?=")|(?=')|(?=%)|(?=\w)) 0:keyword
     add-highlighter window/plug_attributes regex \b(noload|ensure)\b 0:attribute
 }}
 
@@ -68,7 +72,7 @@ hook  global WinSetOption filetype=(?!kak).* %{ try %{
 }}
 
 define-command -override -docstring \
-"plug <plugin> [<branch>|<tag>|<commit>] [<noload>] [<configurations>]: load <plugin> from ""%opt{plug_install_dir}""
+"plug <plugin> [<branch>|<tag>|<commit>] [<noload>|<load> <subset>] [[<config>] <configurations>]: load <plugin> from ""%opt{plug_install_dir}""
 " \
 plug -params 1.. -shell-script-candidates %{ ls -1 $(eval echo $kak_opt_plug_install_dir) } %{
     set-option -add global plug_plugins "%arg{1} "
@@ -76,6 +80,7 @@ plug -params 1.. -shell-script-candidates %{ ls -1 $(eval echo $kak_opt_plug_ins
         start=$(expr $(date +%s%N) / 10000000)
         plugin=$1; shift
         noload=
+        load=
         ensure=
         state=
         loaded=$(eval echo $kak_opt_plug_loaded_plugins)
@@ -84,13 +89,19 @@ plug -params 1.. -shell-script-candidates %{ ls -1 $(eval echo $kak_opt_plug_ins
             exit
         fi
 
-        for arg in "$@"; do
+        for arg in $@; do
             case $arg in
                 *branch:*|*tag:*|*commit:*)
                     branch=$(echo $arg | awk '{print $2}')
                     shift ;;
                 noload)
                     noload=1
+                    shift ;;
+                load)
+                    shift;
+                    plug_load=$(echo "${plugin##*/}" | sed 's:[^a-zA-Z0-9_]:_:g;')
+                    echo "set-option -add global plug_load_files %{$plug_load:$1┆}"
+                    load=1
                     shift ;;
                 do)
                     shift;
@@ -100,10 +111,26 @@ plug -params 1.. -shell-script-candidates %{ ls -1 $(eval echo $kak_opt_plug_ins
                 ensure)
                     ensure=1
                     shift ;;
+                config)
+                    shift
+                    plug_conf=$(echo "${plugin##*/}" | sed 's:[^a-zA-Z0-9_]:_:g;')
+                    echo "set-option -add global plug_configurations %{$plug_conf:$1┆}"
+                    shift ;;
                 *)
                     ;;
             esac
         done
+
+        if [ -n "$noload" ] && [ -n "$load" ]; then
+            echo "echo -debug %{plug.kak: warning, using both 'load' and 'noload' for ${plugin##*/} plugin}"
+            echo "echo -debug %{          'load' has higer priority so 'noload' will be ignored.}"
+            noload=
+        fi
+
+        if [ -z "$load" ]; then
+            plug_load=$(echo "${plugin##*/}" | sed 's:[^a-zA-Z0-9_]:_:g;')
+            echo "set-option -add global plug_load_files %{$plug_load:*.kak┆}"
+        fi
 
         if [ $# -gt 0 ]; then
             plug_conf=$(echo "${plugin##*/}" | sed 's:[^a-zA-Z0-9_]:_:g;')
@@ -116,10 +143,9 @@ plug -params 1.. -shell-script-candidates %{ ls -1 $(eval echo $kak_opt_plug_ins
                     (cd $(eval echo $kak_opt_plug_install_dir/"${plugin##*/}"); git checkout $branch >/dev/null 2>&1)
                 fi
                 if [ -z "$noload" ]; then
-                    for file in $(find -L $(eval echo $kak_opt_plug_install_dir/"${plugin##*/}") -type f -name '*.kak' | awk -F/ '{print NF-1, $0}' | sort -n | cut -d' ' -f2); do
-                        echo source "$file"
-                    done
+                    echo "plug-load $plugin"
                 fi
+                plug_conf=$(echo "${plugin##*/}" | sed 's:[^a-zA-Z0-9_]:_:g;')
                 if [ -z "${kak_opt_configurations##*$plug_conf*}" ]; then
                     if [ -n "$noload" ]; then
                         state=" (configuration)"
@@ -301,8 +327,29 @@ plug-configure -params 1 %{ evaluate-commands %sh{
         if [ "${configuration%%:*}" = "$plugin" ]; then
             IFS='
 '
-            for cmd in "${configuration#*:}"; do
+            for cmd in ${configuration#*:}; do
                 echo "$cmd"
+            done
+            break
+        fi
+    done
+}}
+
+define-command -override -hidden \
+-docstring "plug-load: load selected subset of files from repository" \
+plug-load -params 1 %{ evaluate-commands %sh{
+    plugin=$(echo "${1##*/}" | sed 's:[^a-zA-Z0-9_]:_:g;')
+    IFS='┆'
+    for load_subset in $kak_opt_plug_load_files; do
+        if [ "${load_subset%%:*}" = "$plugin" ]; then
+            IFS='
+'
+            for file in ${load_subset#*:}; do
+                file="${file#"${file%%[![:space:]]*}"}"
+                file="${file%"${file##*[![:space:]]}"}"
+                for script in $(find -L $(eval echo $kak_opt_plug_install_dir/"${1##*/}") -type f -name "$file" | awk -F/ '{print NF-1, $0}' | sort -n | cut -d' ' -f2); do
+                    echo source "$script"
+                done
             done
             break
         fi
@@ -322,7 +369,7 @@ plug-eval-hooks -params 1 %{
                 cd $(eval echo "$kak_opt_plug_install_dir/${1##*/}")
                 IFS='
 '
-                for cmd in "${hook#*:}"; do
+                for cmd in ${hook#*:}; do
                     eval "$cmd" >$temp 2>&1
                     if [ $? -eq 1 ]; then
                         error=1
@@ -360,3 +407,4 @@ plug-elapsed -params 3 %{
         fi
     }
 }
+
