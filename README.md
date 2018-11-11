@@ -58,6 +58,12 @@ in [Commands](#Commands) section.
 ### Keywords and attributes
 As was already mentioned `plug` command accepts optional attributes, that change
 how **plug.kak** works, or add additional steps for `plug` to perform for you.
+These are keywords to use:
+- [branch, tag, commit](#Branch_Tag_or_Commit)
+- [load](#Loading_subset_of_files_from_plugin_repository)
+- [noload](#Skipping_loading_of_a_plugin)
+- [do](#Automatically_do_certain_tasks_on_install_or_update)
+- [config](#Handling_user_configurations)
 
 #### Branch, Tag or Commit
 `plug` can checkout a plugin to desired branch, commit or tag before load. To do
