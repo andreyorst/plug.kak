@@ -53,7 +53,7 @@ plug "delapouite/kakoune-text-objects"
 After that you'll need to re-source your `kakrc` or restart Kakoune to let
 **plug.kak** know that configuration was updated, and use a `plug-install`
 command to install new plugins. More iniformation about commands available
-in [Commands](Commands) section.
+in [Commands](#Commands) section.
 
 ### Keywords and attributes
 As was already mentioned `plug` command accepts optional attributes, that change
