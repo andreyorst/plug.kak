@@ -140,8 +140,7 @@ plug -params 1.. -shell-script-candidates %{ ls -1 $(eval echo $kak_opt_plug_ins
         if [ -d $(eval echo $kak_opt_plug_install_dir) ]; then
             if [ -d $(eval echo $kak_opt_plug_install_dir/"${plugin##*/}") ]; then
                 if [ -n "$branch" ]; then
-                # >/dev/null 2>&1
-                    (cd $(eval echo $kak_opt_plug_install_dir/"${plugin##*/}"); git checkout $branch )
+                    (cd $(eval echo $kak_opt_plug_install_dir/"${plugin##*/}"); git checkout $branch >/dev/null 2>&1)
                 fi
                 if [ -z "$noload" ]; then
                     echo "plug-load $plugin"
