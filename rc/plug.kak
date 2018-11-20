@@ -92,7 +92,7 @@ plug -params 1.. -shell-script-candidates %{ ls -1 $(eval echo $kak_opt_plug_ins
         for arg in $@; do
             case $arg in
                 *branch:*|*tag:*|*commit:*)
-                    branch=$(echo $arg | awk '{print $2}')
+                    branch=$(echo $1 | awk '{print $2}')
                     shift ;;
                 noload)
                     noload=1
@@ -140,7 +140,8 @@ plug -params 1.. -shell-script-candidates %{ ls -1 $(eval echo $kak_opt_plug_ins
         if [ -d $(eval echo $kak_opt_plug_install_dir) ]; then
             if [ -d $(eval echo $kak_opt_plug_install_dir/"${plugin##*/}") ]; then
                 if [ -n "$branch" ]; then
-                    (cd $(eval echo $kak_opt_plug_install_dir/"${plugin##*/}"); git checkout $branch >/dev/null 2>&1)
+                # >/dev/null 2>&1
+                    (cd $(eval echo $kak_opt_plug_install_dir/"${plugin##*/}"); git checkout $branch )
                 fi
                 if [ -z "$noload" ]; then
                     echo "plug-load $plugin"
