@@ -92,7 +92,7 @@ plug -params 1.. -shell-script-candidates %{ ls -1 $(eval echo $kak_opt_plug_ins
         for arg in $@; do
             case $arg in
                 *branch:*|*tag:*|*commit:*)
-                    branch=$(echo $arg | awk '{print $2}')
+                    branch=$(echo $1 | awk '{print $2}')
                     shift ;;
                 noload)
                     noload=1
