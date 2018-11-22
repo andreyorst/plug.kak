@@ -54,10 +54,6 @@ declare-option -hidden -docstring \
 str plug_load_files ''
 
 declare-option -docstring \
-"enable or disable messages about per plugin load time to profile configuration" \
-bool plug_profiler true
-
-declare-option -docstring \
 "always ensure sthat all plugins are installed" \
 bool plug_always_ensure false
 
@@ -77,7 +73,6 @@ define-command -override -docstring \
 plug -params 1.. -shell-script-candidates %{ ls -1 $(eval echo $kak_opt_plug_install_dir) } %{
     set-option -add global plug_plugins "%arg{1} "
     evaluate-commands %sh{
-        start=$(expr $(date +%s%N) / 10000000)
         plugin=$1; shift
         noload=
         load=
@@ -147,10 +142,6 @@ plug -params 1.. -shell-script-candidates %{ ls -1 $(eval echo $kak_opt_plug_ins
                 fi
                 plug_conf=$(echo "${plugin##*/}" | sed 's:[^a-zA-Z0-9_]:_:g;')
                 if [ -z "${kak_opt_configurations##*$plug_conf*}" ]; then
-                    if [ -n "$noload" ]; then
-                        state=" (configuration)"
-                        noload=
-                    fi
                     echo "plug-configure $plugin"
                 fi
                 echo "set-option -add global plug_loaded_plugins %{$plugin }"
@@ -161,12 +152,6 @@ plug -params 1.. -shell-script-candidates %{ ls -1 $(eval echo $kak_opt_plug_ins
                     exit
                 fi
             fi
-        fi
-
-        if [ -z "$noload" ]; then
-            end=$(expr $(date +%s%N) / 10000000)
-            message="loaded ${plugin##*/}$state in"
-            echo "plug-elapsed '$start' '$end' '$message'"
         fi
     }
 }
@@ -390,22 +375,3 @@ plug-eval-hooks -params 1 %{
         done
     ) > /dev/null 2>&1 < /dev/null & }
 }
-
-define-command -override -hidden \
--docstring "plug-elapsed <start> <end> <msg> prints elapsed time" \
-plug-elapsed -params 3 %{
-    evaluate-commands %sh{
-        if [ "$kak_opt_plug_profiler" = "true" ]; then
-            start=$1; shift;
-            end=$1; shift;
-            message=$1;
-            if [ $start -gt $end ]; then
-                echo "echo -debug %{Error: 'start: $start' time is bigger than 'end: $end' time}"
-                exit
-            fi
-            load_time=$(echo "in $(expr $end - $start)" | sed -e "s:\(.*\)\(..$\):\1.\2:;s:in \.:in 0.:;s:in\. \(.\):in 0.0\1:;s:in ::")
-            echo "echo -debug %{$message $load_time seconds}"
-        fi
-    }
-}
-
