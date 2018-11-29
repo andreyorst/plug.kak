@@ -357,17 +357,18 @@ plug-eval-hooks -params 1 %{
 '
                 for cmd in ${hook#*:}; do
                     eval "$cmd" >$temp 2>&1
-                    if [ $? -eq 1 ]; then
-                        error=1
+                    status=$?
+                    if [ ! $status -eq 0 ]; then
                         log=$(cat $temp)
                         break
                     fi
                 done
-                if [ -z "$error" ]; then
-                    printf %s\\n "evaluate-commands -client $kak_client echo -debug %{finished post-update hooks for ${1##*/}}" | kak -p ${kak_session}
+                if [ $status -eq 0 ]; then
+                    printf "%s\n" "evaluate-commands -client $kak_client echo -debug %{finished post-update hooks for ${1##*/}}" | kak -p ${kak_session}
                 else
-                    printf %s\\n "evaluate-commands -client $kak_client echo -debug %{error occured while evaluation of post-update hooks for ${1##*/}:}" | kak -p ${kak_session}
-                    printf %s\\n "evaluate-commands -client $kak_client echo -debug %{$log}" | kak -p ${kak_session}
+                    printf "%s\n" "evaluate-commands -client $kak_client echo -debug %{error occured while evaluation of post-update hooks for ${1##*/}:}" | kak -p ${kak_session}
+                    printf "%s\n" "evaluate-commands -client $kak_client echo -debug %{$log}" | kak -p ${kak_session}
+                    printf "%s\n" "evaluate-commands -client $kak_client echo -debug %{aborting hooks for ${1##*/} with code: $status}" | kak -p ${kak_session}
                 fi
                 rm -rf $temp
                 break
