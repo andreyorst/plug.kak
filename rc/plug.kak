@@ -43,15 +43,15 @@ str plug_loaded_plugins
 
 declare-option -hidden -docstring \
 "List of post update/install hooks to be executed" \
-str plug_post_hooks ''
+str-list plug_post_hooks ''
 
 declare-option -hidden -docstring \
 "List of configurations for all mentioned plugins" \
-str plug_configurations ''
+str-list plug_configurations ''
 
 declare-option -hidden -docstring \
 "List of filest to load for all mentioned plugins" \
-str plug_load_files ''
+str-list plug_load_files ''
 
 declare-option -docstring \
 "always ensure sthat all plugins are installed" \
@@ -74,6 +74,7 @@ plug -params 1.. -shell-script-candidates %{ ls -1 $(eval echo $kak_opt_plug_ins
     set-option -add global plug_plugins "%arg{1} "
     evaluate-commands %sh{
         plugin=$1; shift
+        plugin_name="${plugin##*/}"
         noload=
         load=
         ensure=
@@ -94,22 +95,19 @@ plug -params 1.. -shell-script-candidates %{ ls -1 $(eval echo $kak_opt_plug_ins
                     shift ;;
                 load)
                     shift;
-                    plug_load=$(echo "${plugin##*/}" | sed 's:[^a-zA-Z0-9_]:_:g;')
-                    echo "set-option -add global plug_load_files %{$plug_load:$1┆}"
+                    echo "set-option -add global plug_load_files %{$plugin_name:$1}"
                     load=1
                     shift ;;
                 do)
                     shift;
-                    plug_opt=$(echo "${plugin##*/}" | sed 's:[^a-zA-Z0-9_]:_:g;')
-                    echo "set-option -add global plug_post_hooks %{$plug_opt:$1┆}"
+                    echo "set-option -add global plug_post_hooks %{$plugin_name:$1}"
                     shift ;;
                 ensure)
                     ensure=1
                     shift ;;
                 config)
                     shift
-                    plug_conf=$(echo "${plugin##*/}" | sed 's:[^a-zA-Z0-9_]:_:g;')
-                    echo "set-option -add global plug_configurations %{$plug_conf:$1┆}"
+                    echo "set-option -add global plug_configurations %{$plugin_name:$1}"
                     shift ;;
                 *)
                     ;;
@@ -123,13 +121,11 @@ plug -params 1.. -shell-script-candidates %{ ls -1 $(eval echo $kak_opt_plug_ins
         fi
 
         if [ -z "$load" ]; then
-            plug_load=$(echo "${plugin##*/}" | sed 's:[^a-zA-Z0-9_]:_:g;')
-            echo "set-option -add global plug_load_files %{$plug_load:*.kak┆}"
+            echo "set-option -add global plug_load_files %{$plugin_name:*.kak}"
         fi
 
         if [ $# -gt 0 ]; then
-            plug_conf=$(echo "${plugin##*/}" | sed 's:[^a-zA-Z0-9_]:_:g;')
-            echo "set-option -add global plug_configurations %{$plug_conf:$1┆}"
+            echo "set-option -add global plug_configurations %{$plugin_name:$1}"
         fi
 
         if [ -d $(eval echo $kak_opt_plug_install_dir) ]; then
@@ -306,39 +302,41 @@ plug-clean -params ..1 -shell-script-candidates %{ ls -1 $(eval echo $kak_opt_pl
 define-command -override -hidden \
 -docstring "plug-configure: wrapper for configuring plugin" \
 plug-configure -params 1 %{ evaluate-commands %sh{
-    plugin=$(echo "${1##*/}" | sed 's:[^a-zA-Z0-9_]:_:g;')
-    IFS='┆'
-    for configuration in $kak_opt_plug_configurations; do
-        if [ "${configuration%%:*}" = "$plugin" ]; then
+        plugin="${1##*/}"
+        eval "set -- $kak_opt_plug_configurations"
+        while [ $# -gt 0 ]; do
+        if [ "${1%%:*}" = "$plugin" ]; then
             IFS='
 '
-            for cmd in ${configuration#*:}; do
+            for cmd in ${1#*:}; do
                 echo "$cmd"
             done
             break
         fi
+        shift
     done
 }}
 
 define-command -override -hidden \
 -docstring "plug-load: load selected subset of files from repository" \
 plug-load -params 1 %{ evaluate-commands %sh{
-    plugin=$(echo "${1##*/}" | sed 's:[^a-zA-Z0-9_]:_:g;')
-    IFS='┆'
-    for load_subset in $kak_opt_plug_load_files; do
-        if [ "${load_subset%%:*}" = "$plugin" ]; then
+        plugin="${1##*/}"
+        eval "set -- $kak_opt_plug_load_files"
+        while [ $# -gt 0 ]; do
+        if [ "${1%%:*}" = "$plugin" ]; then
             IFS='
 '
             set -f # set noglob
-            for file in ${load_subset#*:}; do
+            for file in ${1#*:}; do
                 file="${file#"${file%%[![:space:]]*}"}"
                 file="${file%"${file##*[![:space:]]}"}"
-                for script in $(find -L $(eval echo $kak_opt_plug_install_dir/"${1##*/}") -type f -name "$file" | awk -F/ '{print NF-1, $0}' | sort -n | cut -d' ' -f2); do
+                for script in $(find -L $(eval echo $kak_opt_plug_install_dir/$plugin) -type f -name "$file" | awk -F/ '{print NF-1, $0}' | sort -n | cut -d' ' -f2); do
                     echo source "$script"
                 done
             done
             break
         fi
+        shift
     done
 }}
 
@@ -346,16 +344,16 @@ define-command -override -hidden \
 -docstring "plug-eval-hooks: wrapper for post update/install hooks" \
 plug-eval-hooks -params 1 %{
     nop %sh{ (
-        plugin=$(echo "${1##*/}" | sed 's:[^a-zA-Z0-9_]:_:g;')
-        IFS='┆'
-        for hook in $kak_opt_plug_post_hooks; do
-            if [ "${hook%%:*}" = "$plugin" ]; then
+        plugin="${1##*/}"
+        eval "set -- $kak_opt_plug_post_hooks"
+        while [ $# -gt 0 ]; do
+            if [ "${1%%:*}" = "$plugin" ]; then
                 temp=$(mktemp ${TMPDIR:-/tmp}/$plugin.XXXXXX)
-                printf %s\\n "evaluate-commands -client $kak_client echo -debug %{running post-update hooks for ${1##*/}}" | kak -p ${kak_session}
-                cd $(eval echo "$kak_opt_plug_install_dir/${1##*/}")
+                printf "%s\n" "evaluate-commands -client $kak_client echo -debug %{running post-update hooks for $plugin}" | kak -p ${kak_session}
+                cd $(eval echo "$kak_opt_plug_install_dir/$plugin")
                 IFS='
 '
-                for cmd in ${hook#*:}; do
+                for cmd in ${1#*:}; do
                     eval "$cmd" >$temp 2>&1
                     if [ $? -eq 1 ]; then
                         error=1
@@ -364,14 +362,14 @@ plug-eval-hooks -params 1 %{
                     fi
                 done
                 if [ -z "$error" ]; then
-                    printf %s\\n "evaluate-commands -client $kak_client echo -debug %{finished post-update hooks for ${1##*/}}" | kak -p ${kak_session}
+                    printf "%s\n" "evaluate-commands -client $kak_client echo -debug %{finished post-update hooks for $plugin}" | kak -p ${kak_session}
                 else
-                    printf %s\\n "evaluate-commands -client $kak_client echo -debug %{error occured while evaluation of post-update hooks for ${1##*/}:}" | kak -p ${kak_session}
-                    printf %s\\n "evaluate-commands -client $kak_client echo -debug %{$log}" | kak -p ${kak_session}
+                    printf "%s\n%s\n" "evaluate-commands -client $kak_client echo -debug %{error occured while evaluation of post-update hooks for $plugin:}" "evaluate-commands -client $kak_client echo -debug %{$log}" | kak -p ${kak_session}
                 fi
                 rm -rf $temp
                 break
             fi
+            shift
         done
     ) > /dev/null 2>&1 < /dev/null & }
 }
