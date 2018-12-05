@@ -361,7 +361,7 @@ plug-eval-hooks -params 1 %{
                     fi
                 done
 
-                if [ ! $status -eq 0 ]; then
+                if [ $status -eq 0 ]; then
                     printf "%s\n" "evaluate-commands -client $kak_client echo -debug %{finished post-update hooks for $plugin}" | kak -p ${kak_session}
                 else
                     printf "%s\n%s\n%s\n" "evaluate-commands -client $kak_client echo -debug %{error occured while evaluation of post-update hooks for $plugin:}" \
