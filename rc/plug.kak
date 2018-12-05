@@ -348,16 +348,15 @@ plug-eval-hooks -params 1 %{
         eval "set -- $kak_opt_plug_post_hooks"
         while [ $# -gt 0 ]; do
             if [ "${1%%:*}" = "$plugin" ]; then
-                temp=$(mktemp ${TMPDIR:-/tmp}/$plugin.XXXXXX)
+                temp=$(mktemp ${TMPDIR:-/tmp}/$plugin-log.XXXXXX)
                 printf "%s\n" "evaluate-commands -client $kak_client echo -debug %{running post-update hooks for $plugin}" | kak -p ${kak_session}
                 cd $(eval echo "$kak_opt_plug_install_dir/$plugin")
-                IFS='
+                IFS=';
 '
                 for cmd in ${1#*:}; do
                     eval "$cmd" >$temp 2>&1
                     status=$?
                     if [ ! $status -eq 0 ]; then
-                        log=$(cat $temp)
                         break
                     fi
                 done
@@ -366,7 +365,7 @@ plug-eval-hooks -params 1 %{
                     printf "%s\n" "evaluate-commands -client $kak_client echo -debug %{finished post-update hooks for $plugin}" | kak -p ${kak_session}
                 else
                     printf "%s\n%s\n%s\n" "evaluate-commands -client $kak_client echo -debug %{error occured while evaluation of post-update hooks for $plugin:}" \
-                    "evaluate-commands -client $kak_client echo -debug %{$log}" \
+                    "evaluate-commands -client $kak_client echo -debug %{printf '%s\n' '$(cat $temp)'}" \
                     "evaluate-commands -client $kak_client echo -debug %{aborting hooks for $plugin with code: $status}" | kak -p ${kak_session}
                 fi
                 rm -rf $temp
