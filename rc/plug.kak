@@ -302,9 +302,9 @@ plug-clean -params ..1 -shell-script-candidates %{ ls -1 $(eval echo $kak_opt_pl
 define-command -override -hidden \
 -docstring "plug-configure: wrapper for configuring plugin" \
 plug-configure -params 1 %{ evaluate-commands %sh{
-        plugin="${1##*/}"
-        eval "set -- $kak_opt_plug_configurations"
-        while [ $# -gt 0 ]; do
+    plugin="${1##*/}"
+    eval "set -- $kak_opt_plug_configurations"
+    while [ $# -gt 0 ]; do
         if [ "${1%%:*}" = "$plugin" ]; then
             IFS='
 '
@@ -320,9 +320,9 @@ plug-configure -params 1 %{ evaluate-commands %sh{
 define-command -override -hidden \
 -docstring "plug-load: load selected subset of files from repository" \
 plug-load -params 1 %{ evaluate-commands %sh{
-        plugin="${1##*/}"
-        eval "set -- $kak_opt_plug_load_files"
-        while [ $# -gt 0 ]; do
+    plugin="${1##*/}"
+    eval "set -- $kak_opt_plug_load_files"
+    while [ $# -gt 0 ]; do
         if [ "${1%%:*}" = "$plugin" ]; then
             IFS='
 '
@@ -362,7 +362,7 @@ plug-eval-hooks -params 1 %{
                     fi
                 done
 
-                if [ -z "$error" ]; then
+                if [ ! $status -eq 0 ]; then
                     printf "%s\n" "evaluate-commands -client $kak_client echo -debug %{finished post-update hooks for $plugin}" | kak -p ${kak_session}
                 else
                     printf "%s\n%s\n%s\n" "evaluate-commands -client $kak_client echo -debug %{error occured while evaluation of post-update hooks for $plugin:}" \
