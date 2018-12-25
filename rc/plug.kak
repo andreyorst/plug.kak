@@ -171,9 +171,9 @@ plug-install -params ..1 %{
         if [ -n "$plugin" ]; then
             case $plugin in
                 http*|git*)
-                    git="git clone $plugin --depth 1" ;;
+                    git="git clone $plugin" ;;
                 *)
-                    git="git clone $kak_opt_plug_git_domain/$plugin --depth 1" ;;
+                    git="git clone $kak_opt_plug_git_domain/$plugin" ;;
             esac
             if [ ! -d $(eval echo $kak_opt_plug_install_dir/"${plugin##*/}") ]; then
                 printf "%s\n" "evaluate-commands -client $kak_client echo -markup '{Information}Installing $plugin'" | kak -p ${kak_session}
@@ -190,9 +190,9 @@ plug-install -params ..1 %{
             for plugin in $kak_opt_plug_plugins; do
                 case $plugin in
                     http*|git*)
-                        git="git clone $plugin --depth 1" ;;
+                        git="git clone $plugin" ;;
                     *)
-                        git="git clone $kak_opt_plug_git_domain/$plugin --depth 1" ;;
+                        git="git clone $kak_opt_plug_git_domain/$plugin" ;;
                 esac
                 if [ ! -d $(eval echo $kak_opt_plug_install_dir/"${plugin##*/}") ]; then
                     (
