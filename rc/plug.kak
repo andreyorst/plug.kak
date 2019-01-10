@@ -376,3 +376,17 @@ plug-eval-hooks -params 1 %{
     ) > /dev/null 2>&1 < /dev/null & }
 }
 
+define-command -override \
+-docstring "plug-list: list all installed plugins in *plug* buffer" \
+plug-list %{ evaluate-commands %sh{
+    output=$(mktemp -d "${TMPDIR:-/tmp}"/plug-kak.XXXXXXXX)/fifo
+    mkfifo ${output}
+    eval "set -- $kak_opt_plug_plugins"
+    ( while [ $# -gt 0 ]; do
+        printf "%s\n" "$1" >> ${output}
+        shift
+    done ) > /dev/null 2>&1 < /dev/null &
+    printf "%s\n" "evaluate-commands -try-client '$kak_opt_toolsclient' %{
+                   edit! -fifo ${output} -scroll *plug*
+                   hook -always -once buffer BufCloseFifo .* %{ nop %sh{ rm -r $(dirname ${output}) } } }"
+}}
