@@ -163,6 +163,9 @@ plug-install -params ..1 %{
     nop %sh{ (
         plugin=$1
         jobs=$(mktemp ${TMPDIR:-/tmp}/jobs.XXXXXX)
+        fifo=$(mktemp -d "${TMPDIR:-/tmp}"/plug-kak.XXXXXXXX)/fifo
+        mkfifo ${fifo}
+        printf "%s\n" "evaluate-commands -client $kak_client plug-list $fifo" | kak -p ${kak_session}
 
         if [ -d "$kak_opt_plug_install_dir/.plug.kaklock" ]; then
             printf "%s\n" "evaluate-commands -client $kak_client echo -markup '{Information}.plug.kaklock is present. Waiting...'" | kak -p ${kak_session}
@@ -193,7 +196,6 @@ plug-install -params ..1 %{
             if [ ! -d "$kak_opt_plug_install_dir/${plugin##*/}" ]; then
                 (
                     cd $kak_opt_plug_install_dir && $git >/dev/null 2>&1
-                    printf "%s\n" "evaluate-commands -client $kak_client echo -debug 'installed ${plugin##*/}'" | kak -p ${kak_session}
                     printf "%s\n" "evaluate-commands -client $kak_client plug-eval-hooks $plugin" | kak -p ${kak_session}
                     printf "%s\n" "evaluate-commands -client $kak_client plug $plugin" | kak -p ${kak_session}
                 ) &
@@ -216,6 +218,9 @@ plug-update -params ..1 -shell-script-candidates %{ echo $kak_opt_plug_plugins |
     evaluate-commands %sh{ (
         plugin=$1
         jobs=$(mktemp ${TMPDIR:-/tmp}/jobs.XXXXXX)
+        fifo=$(mktemp -d "${TMPDIR:-/tmp}"/plug-kak.XXXXXXXX)/fifo
+        mkfifo ${fifo}
+        printf "%s\n" "evaluate-commands -client $kak_client plug-list $fifo" | kak -p ${kak_session}
 
         if [ -d "$kak_opt_plug_install_dir/.plug.kaklock" ]; then
             printf "%s\n" "evaluate-commands -client $kak_client echo -markup '{Information}.plug.kaklock is present. Waiting...'" | kak -p ${kak_session}
@@ -226,17 +231,15 @@ plug-update -params ..1 -shell-script-candidates %{ echo $kak_opt_plug_plugins |
 
         if [ -n "$plugin" ]; then
             plugin_list=$plugin
-            printf "%s\n" "evaluate-commands -client $kak_client echo -markup '{Information}Updating $plugin'" | kak -p ${kak_session}
         else
             plugin_list=$kak_opt_plug_plugins
-            printf "%s\n" "evaluate-commands -client $kak_client echo -markup '{Information}Updating plugins in the background'" | kak -p ${kak_session}
         fi
         for plugin in $plugin_list; do
             (
                 cd "$kak_opt_plug_install_dir/${plugin##*/}" && rev=$(git rev-parse HEAD) && git pull -q
                 if [ $rev != $(git rev-parse HEAD) ]; then
-                    printf "%s\n" "evaluate-commands -client $kak_client plug-eval-hooks $plugin" | kak -p ${kak_session}
-                    printf "%s\n" "evaluate-commands -client $kak_client echo -debug 'updated ${plugin##*/}'" | kak -p ${kak_session}
+                    printf "%s\n" "evaluate-commands -client $kak_client plug-eval-hooks $plugin $fifo" | kak -p ${kak_session}
+                else
                 fi
             ) &
             jobs > $jobs; active=$(wc -l < $jobs)
@@ -247,7 +250,6 @@ plug-update -params ..1 -shell-script-candidates %{ echo $kak_opt_plug_plugins |
         done
         rm -rf $jobs
         wait
-        printf "%s\n" "evaluate-commands -client $kak_client echo -markup '{Information}Done updating plugins'" | kak -p ${kak_session}
     ) > /dev/null 2>&1 < /dev/null & }
 }
 
@@ -268,7 +270,6 @@ plug-clean -params ..1 -shell-script-candidates %{ ls -1 $kak_opt_plug_install_d
         if [ -n "$plugin" ]; then
             if [ -d "$kak_opt_plug_install_dir/${plugin##*/}" ]; then
                 (cd $kak_opt_plug_install_dir && rm -rf "${plugin##*/}")
-                printf "%s\n" "evaluate-commands -client $kak_client echo -debug 'removed ${plugin##*/}'" | kak -p ${kak_session}
             else
                 printf "%s\n" "evaluate-commands -client $kak_client echo -markup %{{Error}No such plugin '$plugin'}" | kak -p ${kak_session}
                 exit
@@ -283,7 +284,6 @@ plug-clean -params ..1 -shell-script-candidates %{ ls -1 $kak_opt_plug_install_d
             done
             for plugin in $plugins_to_remove; do
                 rm -rf $plugin
-                printf "%s\n" "evaluate-commands -client $kak_client echo -debug 'removed ${plugin##*/}'" | kak -p ${kak_session}
             done
         fi
     ) > /dev/null 2>&1 < /dev/null & }
@@ -332,15 +332,19 @@ plug-load -params 1 %{ evaluate-commands %sh{
 
 define-command -override -hidden \
 -docstring "plug-eval-hooks: wrapper for post update/install hooks" \
-plug-eval-hooks -params 1 %{
+plug-eval-hooks -params 1..2 %{
     nop %sh{ (
-        plugin="${1##*/}"
+        plugin=$1
+        if [ $# -eq 2 ]; then
+            fifo=$2
+            printf "%s\n" "evaluate-commands -client $kak_client plug-list $fifo" | kak -p ${kak_session}
+        fi
+        plugin_name="${plugin##*/}"
         eval "set -- $kak_opt_plug_post_hooks"
         while [ $# -gt 0 ]; do
-            if [ "${1%%:*}" = "$plugin" ]; then
-                temp=$(mktemp ${TMPDIR:-/tmp}/$plugin-log.XXXXXX)
-                printf "%s\n" "evaluate-commands -client $kak_client echo -debug %{running post-update hooks for $plugin}" | kak -p ${kak_session}
-                cd "$kak_opt_plug_install_dir/$plugin"
+            if [ "${1%%:*}" = "$plugin_name" ]; then
+                temp=$(mktemp ${TMPDIR:-/tmp}/$plugin_name-log.XXXXXX)
+                cd "$kak_opt_plug_install_dir/$plugin_name"
                 IFS=';
 '
                 for cmd in ${1#*:}; do
@@ -352,12 +356,11 @@ plug-eval-hooks -params 1 %{
                 done
 
                 if [ $status -eq 0 ]; then
-                    printf "%s\n" "evaluate-commands -client $kak_client echo -debug %{finished post-update hooks for $plugin}" | kak -p ${kak_session}
                     rm -rf $temp
                 else
-                    printf "%s\n%s\n%s\n" "evaluate-commands -client $kak_client echo -debug %{error occured while evaluation of post-update hooks for $plugin:}" \
+                    printf "%s\n%s\n%s\n" "evaluate-commands -client $kak_client echo -debug %{error occured while evaluation of post-update hooks for $plugin_name:}" \
                     "evaluate-commands -client $kak_client echo -debug %sh{cat $temp; rm -rf $temp}" \
-                    "evaluate-commands -client $kak_client echo -debug %{aborting hooks for $plugin with code: $status}" | kak -p ${kak_session}
+                    "evaluate-commands -client $kak_client echo -debug %{aborting hooks for $plugin_name with code: $status}" | kak -p ${kak_session}
                 fi
                 break
             fi
@@ -368,24 +371,28 @@ plug-eval-hooks -params 1 %{
 
 define-command -override \
 -docstring "plug-list: list all installed plugins in *plug* buffer" \
-plug-list %{ evaluate-commands -save-regs t %{
+plug-list -params ..1 %{ evaluate-commands -save-regs t %{
     set-register t %sh{
-        output=$(mktemp -d "${TMPDIR:-/tmp}"/plug-kak.XXXXXXXX)/fifo
-        mkfifo ${output}
-        printf "%s" "${output}"
+        if [ $# -gt 0 ]; then
+            fifo=$1
+        else
+            fifo=$(mktemp -d "${TMPDIR:-/tmp}"/plug-kak.XXXXXXXX)/fifo
+            mkfifo ${fifo}
+        fi
+        printf "%s" "${fifo}"
         (   eval "set -- $kak_opt_plug_plugins"
             while [ $# -gt 0 ]; do
                 if [ -d "$kak_opt_plug_install_dir/${1##*/}" ]; then
                     (
                         cd $kak_opt_plug_install_dir/${1##*/}
                         if git diff --quiet remotes/origin/HEAD; then
-                            printf "%s: %s\n" $1 "Up to date" >> ${output}
+                            printf "%s: %s\n" $1 "Up to date" >> ${fifo}
                         else
-                            printf "%s: %s\n" $1 "Update available" >> ${output}
+                            printf "%s: %s\n" $1 "Update available" >> ${fifo}
                         fi
                     )
                 else
-                    printf "%s: %s\n" $1 "Not installed" >> ${output}
+                    printf "%s: %s\n" $1 "Not installed" >> ${fifo}
                 fi
                 shift
             done
