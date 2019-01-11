@@ -378,14 +378,10 @@ plug-list %{ evaluate-commands -save-regs t %{
                 if [ -d "$kak_opt_plug_install_dir/${1##*/}" ]; then
                     (
                         cd $kak_opt_plug_install_dir/${1##*/}
-                        LOCAL=$(git rev-parse @{0})
-                        REMOTE=$(git rev-parse @{u})
-                        if [ $LOCAL = $REMOTE ]; then
+                        if git diff --quiet remotes/origin/HEAD; then
                             printf "%s: %s\n" $1 "Up to date" >> ${output}
-                        elif [ $LOCAL = $BASE ]; then
-                            printf "%s: %s\n" $1 "Update available" >> ${output}
                         else
-                            printf "%s: %s\n" $1 "Installed" >> ${output}
+                            printf "%s: %s\n" $1 "Update available" >> ${output}
                         fi
                     )
                 else
@@ -397,7 +393,7 @@ plug-list %{ evaluate-commands -save-regs t %{
     }
     try %{ delete-buffer *plug* }
     edit! -fifo %reg{t} *plug*
-    hook -always -once buffer BufCloseFifo .* %{ nop %sh{ rm -rf "${kak_reg_t##*/}" }}
+    hook -always -once buffer BufCloseFifo .* %{ nop %sh{ rm -rf "${kak_reg_t##*/}" } }
     map buffer normal "<ret>" ":<space>plug-fifo-operate<ret>"
     execute-keys -draft ged
 }}
