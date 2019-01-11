@@ -158,9 +158,12 @@ If <plugin> ommited installs all plugins mentioned in configuration files" \
 plug-install -params ..1 %{
     nop %sh{ (
         plugin=$1
+        jobs=$(mktemp ${TMPDIR:-/tmp}/jobs.XXXXXX)
+
         if [ -d $(eval echo "$kak_opt_plug_install_dir/.plug.kaklock") ]; then
             printf %s\\n "evaluate-commands -client $kak_client echo -markup '{Information}.plug.kaklock is present. Waiting...'" | kak -p ${kak_session}
         fi
+
         while ! mkdir $(eval echo "$kak_opt_plug_install_dir/.plug.kaklock") 2>/dev/null; do sleep 1; done
         trap 'rmdir $(eval echo "$kak_opt_plug_install_dir/.plug.kaklock")' EXIT
 
@@ -169,6 +172,14 @@ plug-install -params ..1 %{
         fi
 
         if [ -n "$plugin" ]; then
+            plugin_list=$plugin
+            printf "%s\n" "evaluate-commands -client $kak_client echo -markup '{Information}Installing $plugin'" | kak -p ${kak_session}
+        else
+            plugin_list=$kak_opt_plug_plugins
+            printf %s\\n "evaluate-commands -client $kak_client echo -markup '{Information}Installing plugins in background'" | kak -p ${kak_session}
+        fi
+
+        for plugin in $plugin_list; do
             case $plugin in
                 http*|git*)
                     git="git clone $plugin" ;;
@@ -176,41 +187,21 @@ plug-install -params ..1 %{
                     git="git clone $kak_opt_plug_git_domain/$plugin" ;;
             esac
             if [ ! -d $(eval echo $kak_opt_plug_install_dir/"${plugin##*/}") ]; then
-                printf %s\\n "evaluate-commands -client $kak_client echo -markup '{Information}Installing $plugin'" | kak -p ${kak_session}
                 (
                     cd $(eval echo $kak_opt_plug_install_dir) && $git >/dev/null 2>&1
                     printf %s\\n "evaluate-commands -client $kak_client echo -debug 'installed ${plugin##*/}'" | kak -p ${kak_session}
+                    printf %s\\n "evaluate-commands -client $kak_client plug-eval-hooks $plugin" | kak -p ${kak_session}
                     printf %s\\n "evaluate-commands -client $kak_client plug $plugin" | kak -p ${kak_session}
-                    exit
                 ) &
             fi
-        else
-            jobs=$(mktemp ${TMPDIR:-/tmp}/jobs.XXXXXX)
-            printf %s\\n "evaluate-commands -client $kak_client echo -markup '{Information}Installing plugins in background'" | kak -p ${kak_session}
-            for plugin in $kak_opt_plug_plugins; do
-                case $plugin in
-                    http*|git*)
-                        git="git clone $plugin" ;;
-                    *)
-                        git="git clone $kak_opt_plug_git_domain/$plugin" ;;
-                esac
-                if [ ! -d $(eval echo $kak_opt_plug_install_dir/"${plugin##*/}") ]; then
-                    (
-                        cd $(eval echo $kak_opt_plug_install_dir) && $git >/dev/null 2>&1
-                        printf %s\\n "evaluate-commands -client $kak_client echo -debug 'installed ${plugin##*/}'" | kak -p ${kak_session}
-                        printf %s\\n "evaluate-commands -client $kak_client plug-eval-hooks $plugin" | kak -p ${kak_session}
-                        printf %s\\n "evaluate-commands -client $kak_client plug $plugin" | kak -p ${kak_session}
-                    ) &
-                fi
+            jobs > $jobs; active=$(wc -l < $jobs)
+            while [ $active -ge $kak_opt_plug_max_simultaneous_downloads ]; do
+                sleep 1
                 jobs > $jobs; active=$(wc -l < $jobs)
-                while [ $active -ge $kak_opt_plug_max_simultaneous_downloads ]; do
-                    sleep 1
-                    jobs > $jobs; active=$(wc -l < $jobs)
-                done
             done
-            wait
-            rm -rf $jobs
-        fi
+        done
+        wait
+        rm -rf $jobs
     ) >/dev/null 2>&1 < /dev/null & }
 }
 
@@ -220,44 +211,37 @@ If <plugin> ommited all installed plugins are updated" \
 plug-update -params ..1 -shell-script-candidates %{ echo $kak_opt_plug_plugins | tr ' ' '\n' } %{
     evaluate-commands %sh{ (
         plugin=$1
+        jobs=$(mktemp ${TMPDIR:-/tmp}/jobs.XXXXXX)
+
         if [ -d $(eval echo "$kak_opt_plug_install_dir/.plug.kaklock") ]; then
             printf %s\\n "evaluate-commands -client $kak_client echo -markup '{Information}.plug.kaklock is present. Waiting...'" | kak -p ${kak_session}
         fi
 
         while ! mkdir $(eval echo "$kak_opt_plug_install_dir/.plug.kaklock") 2>/dev/null; do sleep 1; done
         trap 'rmdir $(eval echo "$kak_opt_plug_install_dir/.plug.kaklock")' EXIT
+
         if [ -n "$plugin" ]; then
-            if [ -d $(eval echo $kak_opt_plug_install_dir/"${plugin##*/}") ]; then
-                (
-                    cd $(eval echo $kak_opt_plug_install_dir/"${plugin##*/}") && rev=$(git rev-parse HEAD) && git pull -q
-                    if [ $rev != $(git rev-parse HEAD) ]; then
-                        printf %s\\n "evaluate-commands -client $kak_client plug-eval-hooks $plugin" | kak -p ${kak_session}
-                        printf %s\\n "evaluate-commands -client $kak_client echo -debug 'updated ${plugin##*/}'" | kak -p ${kak_session}
-                    fi
-                ) &
-            else
-                printf %s\\n "evaluate-commands -client $kak_client echo -markup '{Error}can''t update $plugin. Plugin is not installed'" | kak -p ${kak_session}
-                exit
-            fi
+            plugin_list=$plugin
+            printf "%s\n" "evaluate-commands -client $kak_client echo -markup '{Information}Updating $plugin'" | kak -p ${kak_session}
         else
-            printf %s\\n "evaluate-commands -client $kak_client echo -markup '{Information}Updating plugins in the background'" | kak -p ${kak_session}
-            jobs=$(mktemp ${TMPDIR:-/tmp}/jobs.XXXXXX)
-            for plugin in $kak_opt_plug_plugins; do
-                (
-                    cd $(eval echo $kak_opt_plug_install_dir/"${plugin##*/}") && rev=$(git rev-parse HEAD) && git pull -q
-                    if [ $rev != $(git rev-parse HEAD) ]; then
-                        printf %s\\n "evaluate-commands -client $kak_client plug-eval-hooks $plugin" | kak -p ${kak_session}
-                        printf %s\\n "evaluate-commands -client $kak_client echo -debug 'updated ${plugin##*/}'" | kak -p ${kak_session}
-                    fi
-                ) &
-                jobs > $jobs; active=$(wc -l < $jobs)
-                while [ $active -ge $kak_opt_plug_max_simultaneous_downloads ]; do
-                    sleep 1
-                    jobs > $jobs; active=$(wc -l < $jobs)
-                done
-            done
-            rm -rf $jobs
+            plugin_list=$kak_opt_plug_plugins
+            printf "%s\n" "evaluate-commands -client $kak_client echo -markup '{Information}Updating plugins in the background'" | kak -p ${kak_session}
         fi
+        for plugin in $plugin_list; do
+            (
+                cd $(eval echo $kak_opt_plug_install_dir/"${plugin##*/}") && rev=$(git rev-parse HEAD) && git pull -q
+                if [ $rev != $(git rev-parse HEAD) ]; then
+                    printf %s\\n "evaluate-commands -client $kak_client plug-eval-hooks $plugin" | kak -p ${kak_session}
+                    printf %s\\n "evaluate-commands -client $kak_client echo -debug 'updated ${plugin##*/}'" | kak -p ${kak_session}
+                fi
+            ) &
+            jobs > $jobs; active=$(wc -l < $jobs)
+            while [ $active -ge $kak_opt_plug_max_simultaneous_downloads ]; do
+                sleep 1
+                jobs > $jobs; active=$(wc -l < $jobs)
+            done
+        done
+        rm -rf $jobs
         wait
         printf %s\\n "evaluate-commands -client $kak_client echo -markup '{Information}Done updating plugins'" | kak -p ${kak_session}
     ) > /dev/null 2>&1 < /dev/null & }
@@ -269,9 +253,11 @@ If <plugin> ommited deletes all plugins that are not presented in configuration 
 plug-clean -params ..1 -shell-script-candidates %{ ls -1 $(eval echo $kak_opt_plug_install_dir) } %{
     nop %sh{ (
         plugin=$1
+
         if [ -d $(eval echo "$kak_opt_plug_install_dir/.plug.kaklock") ]; then
             printf %s\\n "evaluate-commands -client $kak_client echo -markup '{Information}.plug.kaklock is present. Waiting...'" | kak -p ${kak_session}
         fi
+
         while ! mkdir $(eval echo "$kak_opt_plug_install_dir/.plug.kaklock") 2>/dev/null; do sleep 1; done
         trap 'rmdir $(eval echo "$kak_opt_plug_install_dir/.plug.kaklock")' EXIT
 
@@ -280,7 +266,7 @@ plug-clean -params ..1 -shell-script-candidates %{ ls -1 $(eval echo $kak_opt_pl
                 (cd $(eval echo $kak_opt_plug_install_dir) && rm -rf "${plugin##*/}")
                 printf %s\\n "evaluate-commands -client $kak_client echo -debug 'removed ${plugin##*/}'" | kak -p ${kak_session}
             else
-                printf %s\\n "evaluate-commands -client $kak_client echo -markup '{Error}No such plugin $plugin'" | kak -p ${kak_session}
+                printf %s\\n "evaluate-commands -client $kak_client echo -markup %{{Error}No such plugin '$plugin'}" | kak -p ${kak_session}
                 exit
             fi
         else
@@ -378,15 +364,38 @@ plug-eval-hooks -params 1 %{
 
 define-command -override \
 -docstring "plug-list: list all installed plugins in *plug* buffer" \
-plug-list %{ evaluate-commands %sh{
-    output=$(mktemp -d "${TMPDIR:-/tmp}"/plug-kak.XXXXXXXX)/fifo
-    mkfifo ${output}
-    eval "set -- $kak_opt_plug_plugins"
-    ( while [ $# -gt 0 ]; do
-        printf "%s\n" "$1" >> ${output}
-        shift
-    done ) > /dev/null 2>&1 < /dev/null &
-    printf "%s\n" "evaluate-commands -try-client '$kak_opt_toolsclient' %{
-                   edit! -fifo ${output} -scroll *plug*
-                   hook -always -once buffer BufCloseFifo .* %{ nop %sh{ rm -r $(dirname ${output}) } } }"
+plug-list %{ evaluate-commands -save-regs t %{
+    set-register t %sh{
+        output=$(mktemp -d "${TMPDIR:-/tmp}"/plug-kak.XXXXXXXX)/fifo
+        mkfifo ${output}
+        printf "%s" "${output}"
+        (   eval "set -- $kak_opt_plug_plugins"
+            while [ $# -gt 0 ]; do
+                printf "%s\n" $1 >> ${output}
+                shift
+            done
+        ) > /dev/null 2>&1 < /dev/null &
+    }
+    try %{ delete-buffer *plug* }
+    edit! -fifo %reg{t} *plug*
+    hook -always -once buffer BufCloseFifo .* %{ nop %sh{ rm -rf "${kak_reg_t##*/}" }}
+    map buffer normal "<ret>" ":<space>plug-fifo-operate<ret>"
+}}
+
+define-command -override \
+-docstring "operate on *plug* buffer contents based on current cursor position" \
+plug-fifo-operate %{ evaluate-commands -save-regs t %{
+    execute-keys -save-regs '' "<a-i><a-w>"
+    set-register t %val{selection}
+    evaluate-commands %sh{
+        selection=$kak_reg_t
+        case $arg in
+            */*)
+            printf "%s\n" "plug-update $selection" ;;
+            log)
+                ;;
+            *)
+                ;;
+        esac
+    }
 }}
