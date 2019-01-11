@@ -71,7 +71,6 @@ define-command -override -docstring \
 "plug <plugin> [<branch>|<tag>|<commit>] [<noload>|<load> <subset>] [[<config>] <configurations>]: load <plugin> from ""%opt{plug_install_dir}""
 " \
 plug -params 1.. -shell-script-candidates %{ ls -1 $kak_opt_plug_install_dir } %{
-    set-option -add global plug_plugins "%arg{1} "
     evaluate-commands %sh{
         plugin=$1; shift
         plugin_name="${plugin##*/}"
@@ -80,8 +79,13 @@ plug -params 1.. -shell-script-candidates %{ ls -1 $kak_opt_plug_install_dir } %
         ensure=
         state=
         loaded=$kak_opt_plug_loaded_plugins
+
+        if [ $(expr "${kak_opt_plug_plugins}" : ".*$plugin.*") -eq 0 ]; then
+            printf "%s\n" "set-option -add global plug_plugins \"%arg{1} \""
+        fi
+
         if [ -n "$loaded" ] && [ -z "${loaded##*$plugin*}" ]; then
-            echo "echo -markup %{{Information}${plugin##*/} already loaded}"
+            echo "echo -markup %{{Information}${plugin_name} already loaded}"
             exit
         fi
 
@@ -372,11 +376,21 @@ plug-list %{ evaluate-commands -save-regs t %{
         (   eval "set -- $kak_opt_plug_plugins"
             while [ $# -gt 0 ]; do
                 if [ -d "$kak_opt_plug_install_dir/${1##*/}" ]; then
-                    status="Installed"
+                    (
+                        cd $kak_opt_plug_install_dir/${1##*/}
+                        LOCAL=$(git rev-parse @{0})
+                        REMOTE=$(git rev-parse @{u})
+                        if [ $LOCAL = $REMOTE ]; then
+                            printf "%s: %s\n" $1 "Up to date" >> ${output}
+                        elif [ $LOCAL = $BASE ]; then
+                            printf "%s: %s\n" $1 "Update available" >> ${output}
+                        else
+                            printf "%s: %s\n" $1 "Installed" >> ${output}
+                        fi
+                    )
                 else
-                    status="Not installed"
+                    printf "%s: %s\n" $1 "Not installed" >> ${output}
                 fi
-                printf "%s: %s\n" $1 "$status" >> ${output}
                 shift
             done
         ) > /dev/null 2>&1 < /dev/null &
@@ -385,6 +399,7 @@ plug-list %{ evaluate-commands -save-regs t %{
     edit! -fifo %reg{t} *plug*
     hook -always -once buffer BufCloseFifo .* %{ nop %sh{ rm -rf "${kak_reg_t##*/}" }}
     map buffer normal "<ret>" ":<space>plug-fifo-operate<ret>"
+    execute-keys -draft ged
 }}
 
 define-command -override \
