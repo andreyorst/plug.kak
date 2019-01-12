@@ -70,7 +70,7 @@ hook global WinSetOption filetype=kak %{ try %{
 add-highlighter shared/plug group
 add-highlighter shared/plug/done          regex ^([^:]+)(:)\h+(Up\h+to\h+date|Done)$           1:Default 2:keyword 3:string
 add-highlighter shared/plug/update        regex ^([^:]+)(:)\h+(Update\h+available)$            1:Default 2:keyword 3:type
-add-highlighter shared/plug/not_installed regex ^([^:]+)(:)\h+(Not\h+Installed)$               1:Default 2:keyword 3:Error
+add-highlighter shared/plug/not_installed regex ^([^:]+)(:)\h+(Not\h+installed)$               1:Default 2:keyword 3:Error
 add-highlighter shared/plug/updating      regex ^([^:]+)(:)\h+(Installing|Updating)$           1:Default 2:keyword 3:type
 add-highlighter shared/plug/working       regex ^([^:]+)(:)\h+(Running\h+post-update\h+hooks)$ 1:Default 2:keyword 3:attribute
 
