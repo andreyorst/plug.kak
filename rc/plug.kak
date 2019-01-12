@@ -60,12 +60,26 @@ bool plug_always_ensure false
 hook global WinSetOption filetype=kak %{ try %{
     add-highlighter window/plug_keywords   regex \b(plug|do|config|load)\b\h+((?=")|(?=')|(?=%)|(?=\w)) 0:keyword
     add-highlighter window/plug_attributes regex \b(noload|ensure)\b 0:attribute
+    hook  global WinSetOption filetype=(?!kak).* %{ try %{
+        remove-highlighter window/plug_keywords
+        remove-highlighter window/plug_attributes
+    }}
 }}
 
-hook  global WinSetOption filetype=(?!kak).* %{ try %{
-    remove-highlighter window/plug_keywords
-    remove-highlighter window/plug_attributes
-}}
+# Highlighters
+add-highlighter shared/plug group
+add-highlighter shared/plug/done          regex ^([^:]+)(:)\h+(Up\h+to\h+date|Done)$           1:Default 2:keyword 3:string
+add-highlighter shared/plug/update        regex ^([^:]+)(:)\h+(Update\h+available)$            1:Default 2:keyword 3:type
+add-highlighter shared/plug/not_installed regex ^([^:]+)(:)\h+(Not\h+Installed)$               1:Default 2:keyword 3:error
+add-highlighter shared/plug/updating      regex ^([^:]+)(:)\h+(Installing|Updating)$           1:Default 2:keyword 3:type
+add-highlighter shared/plug/working       regex ^([^:]+)(:)\h+(Running\h+post-update\h+hooks)$ 1:Default 2:keyword 3:attribute
+
+hook -group plug-syntax global WinSetOption filetype=plug %{
+  add-highlighter window/plug ref plug
+  hook -always -once window WinSetOption filetype=.* %{
+    remove-highlighter window/plug
+  }
+}
 
 define-command -override -docstring \
 "plug <plugin> [<branch>|<tag>|<commit>] [<noload>|<load> <subset>] [[<config>] <configurations>]: load <plugin> from ""%opt{plug_install_dir}""
@@ -400,6 +414,7 @@ plug-list -params ..1 %{ evaluate-commands -save-regs t %{
     }
     try %{ delete-buffer *plug* }
     edit! -fifo %reg{t} *plug*
+    set-option window filetype plug
     hook -always -once buffer BufCloseFifo .* %{ nop %sh{ rm -rf "${kak_reg_t##*/}" } }
     map buffer normal "<ret>" ":<space>plug-fifo-operate<ret>"
     execute-keys -draft ged
@@ -419,3 +434,4 @@ plug-fifo-operate %{ evaluate-commands -save-regs t %{
         fi
     }
 }}
+
