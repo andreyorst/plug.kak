@@ -253,7 +253,6 @@ plug-update -params ..1 -shell-script-candidates %{ echo $kak_opt_plug_plugins |
                 cd "$kak_opt_plug_install_dir/${plugin##*/}" && rev=$(git rev-parse HEAD) && git pull -q
                 if [ $rev != $(git rev-parse HEAD) ]; then
                     printf "%s\n" "evaluate-commands -client $kak_client plug-eval-hooks $plugin $fifo" | kak -p ${kak_session}
-                else
                 fi
             ) &
             jobs > $jobs; active=$(wc -l < $jobs)
