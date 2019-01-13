@@ -68,11 +68,11 @@ hook global WinSetOption filetype=kak %{ try %{
 
 # Highlighters
 add-highlighter shared/plug group
-add-highlighter shared/plug/done          regex ^([^:]+)(:)\h+(Up\h+to\h+date|Done)$           1:Default 2:keyword 3:string
-add-highlighter shared/plug/update        regex ^([^:]+)(:)\h+(Update\h+available)$            1:Default 2:keyword 3:type
-add-highlighter shared/plug/not_installed regex ^([^:]+)(:)\h+(Not\h+installed)$               1:Default 2:keyword 3:Error
-add-highlighter shared/plug/updating      regex ^([^:]+)(:)\h+(Installing|Updating)$           1:Default 2:keyword 3:type
-add-highlighter shared/plug/working       regex ^([^:]+)(:)\h+(Running\h+post-update\h+hooks)$ 1:Default 2:keyword 3:attribute
+add-highlighter shared/plug/done          regex ^[^:]+:\h+(Up\h+to\h+date|Done)$           1:string
+add-highlighter shared/plug/update        regex ^[^:]+:\h+(Update\h+available)$            1:keyword
+add-highlighter shared/plug/not_installed regex ^[^:]+:\h+(Not\h+(installed|loaded))$      1:Error
+add-highlighter shared/plug/updating      regex ^[^:]+:\h+(Installing|Updating)$           1:type
+add-highlighter shared/plug/working       regex ^[^:]+:\h+(Running\h+post-update\h+hooks)$ 1:attribute
 
 hook -group plug-syntax global WinSetOption filetype=plug %{
   add-highlighter window/plug ref plug
@@ -396,16 +396,24 @@ plug-list %{ evaluate-commands %sh{
                 (
                     cd $kak_opt_plug_install_dir/${1##*/}
                     if git diff --quiet remotes/origin/HEAD; then
-                        printf "%s: %s\n" $1 "Up to date" >> ${fifo}
+                        printf "%s: Up to date\n" $1 >> ${fifo}
                     else
-                        printf "%s: %s\n" $1 "Update available" >> ${fifo}
+                        printf "%s: Update available\n" $1 >> ${fifo}
                     fi
                 )
             else
-                printf "%s: %s\n" $1 "Not installed" >> ${fifo}
+                printf "%s: Not installed\n" $1 >> ${fifo}
             fi
             shift
         done
+        for installed_plugin in $(echo $kak_opt_plug_install_dir/*); do
+            skip=
+            for enabled_plugin in $kak_opt_plug_plugins; do
+                [ "${installed_plugin##*/}" = "${enabled_plugin##*/}" ] && { skip=1; break; }
+            done
+            [ "$skip" = "1" ] || printf "%s: Not loaded\n" "${installed_plugin##*/}" >> ${fifo}
+        done
+
     ) > /dev/null 2>&1 < /dev/null &
 
     printf "%s\n" "try %{ delete-buffer *plug* }
