@@ -13,15 +13,13 @@
 declare-option -docstring \
 "path where plugins should be installed.
 
-    Default value: '%val{config}/plugins'
-" \
+    Default value: '%val{config}/plugins'" \
 str plug_install_dir "%val{config}/plugins"
 
 declare-option -docstring \
 "default domain to access git repositories. Can be changed to any preferred domain, like gitlab, bitbucket, gitea, etc.
 
-    Default value: 'https://github.com'
-" \
+    Default value: 'https://github.com'" \
 str plug_git_domain 'https://github.com'
 
 declare-option -docstring \
@@ -82,8 +80,7 @@ hook -group plug-syntax global WinSetOption filetype=plug %{
 }
 
 define-command -override -docstring \
-"plug <plugin> [<branch>|<tag>|<commit>] [<noload>|<load> <subset>] [[<config>] <configurations>]: load <plugin> from ""%opt{plug_install_dir}""
-" \
+"plug <plugin> [<branch>|<tag>|<commit>] [<noload>|<load> <subset>] [[<config>] <configurations>]: load <plugin> from ""%opt{plug_install_dir}""" \
 plug -params 1.. -shell-script-candidates %{ ls -1 $kak_opt_plug_install_dir } %{
     evaluate-commands %sh{
         plugin=$1; shift
@@ -222,11 +219,9 @@ plug-install -params ..1 %{
                 ) > /dev/null 2>&1 < /dev/null &
             fi
             jobs > $jobs; active=$(wc -l < $jobs)
-            printf "%s\n" "evaluate-commands -client $kak_client echo -debug '$active'" | kak -p ${kak_session}
             while [ $active -ge $kak_opt_plug_max_simultaneous_downloads ]; do
                 sleep 1
                 jobs > $jobs; active=$(wc -l < $jobs)
-                printf "%s\n" "evaluate-commands -client $kak_client echo -debug '$active'" | kak -p ${kak_session}
             done
         done
         wait
@@ -259,18 +254,19 @@ plug-update -params ..1 -shell-script-candidates %{ echo $kak_opt_plug_plugins |
         fi
 
         for plugin in $plugin_list; do
-            (
-                printf "%s\n" "evaluate-commands -client $kak_client %{ plug-update-fifo %{${plugin}} %{Updating} }" | kak -p ${kak_session}
-                cd "$kak_opt_plug_install_dir/${plugin##*/}" && rev=$(git rev-parse HEAD) && git pull -q
-                wait
-                if [ $rev != $(git rev-parse HEAD) ]; then
-                    printf "%s\n" "evaluate-commands -client $kak_client plug-eval-hooks $plugin" | kak -p ${kak_session}
-                else
-                    printf "%s\n" "evaluate-commands -client $kak_client %{ plug-update-fifo %{${plugin}} %{Done} }" | kak -p ${kak_session}
-                fi
-            ) > /dev/null 2>&1 < /dev/null &
+            if [ -d "$kak_opt_plug_install_dir/${plugin##*/}" ]; then
+                (
+                    printf "%s\n" "evaluate-commands -client $kak_client %{ plug-update-fifo %{${plugin}} %{Updating} }" | kak -p ${kak_session}
+                    cd "$kak_opt_plug_install_dir/${plugin##*/}" && rev=$(git rev-parse HEAD) && git pull -q
+                    wait
+                    if [ $rev != $(git rev-parse HEAD) ]; then
+                        printf "%s\n" "evaluate-commands -client $kak_client plug-eval-hooks $plugin" | kak -p ${kak_session}
+                    else
+                        printf "%s\n" "evaluate-commands -client $kak_client %{ plug-update-fifo %{${plugin}} %{Done} }" | kak -p ${kak_session}
+                    fi
+                ) > /dev/null 2>&1 < /dev/null &
+            fi
             jobs > $jobs; active=$(wc -l < $jobs)
-            printf "%s\n" "evaluate-commands -client $kak_client echo -debug '$active'" | kak -p ${kak_session}
             while [ $active -ge $(expr $kak_opt_plug_max_simultaneous_downloads \* 5) ]; do
                 sleep 1
                 jobs > $jobs; active=$(wc -l < $jobs)
@@ -422,14 +418,13 @@ plug-list %{ evaluate-commands %sh{
         eval "set -- $kak_opt_plug_plugins"
         while [ $# -gt 0 ]; do
             if [ -d "$kak_opt_plug_install_dir/${1##*/}" ]; then
-                (
-                    cd $kak_opt_plug_install_dir/${1##*/}
+                (   cd $kak_opt_plug_install_dir/${1##*/}
                     if git diff --quiet remotes/origin/HEAD; then
                         printf "%s: Up to date\n" $1 >> ${plug_log}
                     else
                         printf "%s: Update available\n" $1 >> ${plug_log}
                     fi
-                ) > /dev/null 2>&1 < /dev/null &
+                )
             else
                 printf "%s: Not installed\n" $1 >> ${plug_log}
             fi
