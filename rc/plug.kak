@@ -194,10 +194,16 @@ plug-install -params ..1 %{
 
         if [ -n "$plugin" ]; then
             plugin_list=$plugin
-            printf "%s\n" "evaluate-commands -client $kak_client echo -markup '{Information}Installing $plugin'" | kak -p ${kak_session}
+            printf "%s\n" "evaluate-commands -buffer *plug* %{
+                try %{
+                    execute-keys /${plugin}<ret>
+                } catch %{
+                    execute-keys gjO${plugin}:<space>Not<space>installed<esc>
+                }
+            }" | kak -p ${kak_session}
+            sleep 0.2
         else
             plugin_list=$kak_opt_plug_plugins
-            printf "%s\n" "evaluate-commands -client $kak_client echo -markup '{Information}Installing plugins in background'" | kak -p ${kak_session}
         fi
 
         for plugin in $plugin_list; do
@@ -440,8 +446,8 @@ plug-fifo-operate %{ evaluate-commands -save-regs t %{
 
 define-command -override \
 -docstring "plug-update-fifo <plugin> <message>" \
-plug-update-fifo -params 2 %{ evaluate-commands -buffer *plug* -save-regs "/""" %{
+plug-update-fifo -params 2 %{ evaluate-commands -buffer *plug* -save-regs "/""" %{ try %{
     set-register / "%arg{1}: "
     set-register dquote %arg{2}
     execute-keys /<ret>lGlR
-}}
+}}}
