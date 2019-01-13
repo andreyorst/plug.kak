@@ -178,6 +178,9 @@ plug-install -params ..1 %{
         plugin=$1
         jobs=$(mktemp ${TMPDIR:-/tmp}/jobs.XXXXXX)
 
+        printf "%s\n" "evaluate-commands -client $kak_client plug-list" | kak -p ${kak_session}
+        sleep 0.2
+
         if [ -d "$kak_opt_plug_install_dir/.plug.kaklock" ]; then
             printf "%s\n" "evaluate-commands -client $kak_client echo -markup '{Information}.plug.kaklock is present. Waiting...'" | kak -p ${kak_session}
         fi
@@ -206,7 +209,9 @@ plug-install -params ..1 %{
             esac
             if [ ! -d "$kak_opt_plug_install_dir/${plugin##*/}" ]; then
                 (
+                    printf "%s\n" "evaluate-commands -client $kak_client %{ plug-update-fifo %{${plugin}} %{Installing} }" | kak -p ${kak_session}
                     cd $kak_opt_plug_install_dir && $git >/dev/null 2>&1
+                    wait
                     printf "%s\n" "evaluate-commands -client $kak_client plug-eval-hooks $plugin" | kak -p ${kak_session}
                     printf "%s\n" "evaluate-commands -client $kak_client plug $plugin" | kak -p ${kak_session}
                 ) &
@@ -230,6 +235,9 @@ plug-update -params ..1 -shell-script-candidates %{ echo $kak_opt_plug_plugins |
         plugin=$1
         jobs=$(mktemp ${TMPDIR:-/tmp}/jobs.XXXXXX)
 
+        printf "%s\n" "evaluate-commands -client $kak_client plug-list" | kak -p ${kak_session}
+        sleep 0.2
+
         if [ -d "$kak_opt_plug_install_dir/.plug.kaklock" ]; then
             printf "%s\n" "evaluate-commands -client $kak_client echo -markup '{Information}.plug.kaklock is present. Waiting...'" | kak -p ${kak_session}
         fi
@@ -244,6 +252,7 @@ plug-update -params ..1 -shell-script-candidates %{ echo $kak_opt_plug_plugins |
         fi
         for plugin in $plugin_list; do
             (
+                printf "%s\n" "evaluate-commands -client $kak_client %{ plug-update-fifo %{${plugin}} %{Updating} }" | kak -p ${kak_session}
                 cd "$kak_opt_plug_install_dir/${plugin##*/}" && rev=$(git rev-parse HEAD) && git pull -q
                 if [ $rev != $(git rev-parse HEAD) ]; then
                     printf "%s\n" "evaluate-commands -client $kak_client plug-eval-hooks $plugin" | kak -p ${kak_session}
@@ -348,6 +357,7 @@ plug-eval-hooks -params 1 %{
             if [ "${1%%:*}" = "$plugin_name" ]; then
                 temp=$(mktemp ${TMPDIR:-/tmp}/$plugin_name-log.XXXXXX)
                 cd "$kak_opt_plug_install_dir/$plugin_name"
+                printf "%s\n" "evaluate-commands -client $kak_client %{ plug-update-fifo %{${plugin}} %{Running post-update hooks} }" | kak -p ${kak_session}
                 IFS=';
 '
                 for cmd in ${1#*:}; do
@@ -361,6 +371,7 @@ plug-eval-hooks -params 1 %{
                 if [ $status -eq 0 ]; then
                     rm -rf $temp
                 else
+                    printf "%s\n" "evaluate-commands -client $kak_client %{ plug-update-fifo %{${plugin}} %{Error} }" | kak -p ${kak_session}
                     printf "%s\n%s\n%s\n" "evaluate-commands -client $kak_client echo -debug %{error occured while evaluation of post-update hooks for $plugin_name:}" \
                     "evaluate-commands -client $kak_client echo -debug %sh{cat $temp; rm -rf $temp}" \
                     "evaluate-commands -client $kak_client echo -debug %{aborting hooks for $plugin_name with code: $status}" | kak -p ${kak_session}
@@ -369,6 +380,7 @@ plug-eval-hooks -params 1 %{
             fi
             shift
         done
+        printf "%s\n" "evaluate-commands -client $kak_client %{ plug-update-fifo %{${plugin}} %{Done} }" | kak -p ${kak_session}
     ) > /dev/null 2>&1 < /dev/null & }
 }
 
@@ -418,3 +430,10 @@ plug-fifo-operate %{ evaluate-commands -save-regs t %{
     }
 }}
 
+define-command -override \
+-docstring "plug-update-fifo <plugin> <message>" \
+plug-update-fifo -params 2 %{ evaluate-commands -buffer *plug* -save-regs "/""" %{
+    set-register / "%arg{1}: "
+    set-register dquote %arg{2}
+    execute-keys /<ret>lGlR
+}}
