@@ -69,7 +69,7 @@ add-highlighter shared/plug group
 add-highlighter shared/plug/done          regex ^[^:]+:\h+(Up\h+to\h+date|Done|Installed)$           1:string
 add-highlighter shared/plug/update        regex ^[^:]+:\h+(Update\h+available|Deleted)$              1:keyword
 add-highlighter shared/plug/not_installed regex ^[^:]+:\h+(Not\h+(installed|loaded)|Error([^\n]+)?)$ 1:Error
-add-highlighter shared/plug/updating      regex ^[^:]+:\h+(Installing|Updating)$                     1:type
+add-highlighter shared/plug/updating      regex ^[^:]+:\h+(Installing|Updating|Local\h+changes)$     1:type
 add-highlighter shared/plug/working       regex ^[^:]+:\h+(Running\h+post-update\h+hooks)$           1:attribute
 
 hook -group plug-syntax global WinSetOption filetype=plug %{
@@ -419,10 +419,9 @@ plug-list %{ evaluate-commands %sh{
         while [ $# -gt 0 ]; do
             if [ -d "$kak_opt_plug_install_dir/${1##*/}" ]; then
                 (   cd $kak_opt_plug_install_dir/${1##*/}
-                    UPSTREAM='@{u}'
                     LOCAL=$(git rev-parse @{0})
-                    REMOTE=$(git rev-parse "$UPSTREAM")
-                    BASE=$(git merge-base @{0} "$UPSTREAM")
+                    REMOTE=$(git rev-parse @{u})
+                    BASE=$(git merge-base @{0} @{u})
 
                     if [ $LOCAL = $REMOTE ]; then
                         printf "%s: Up to date\n" $1 >> ${plug_log}
@@ -433,11 +432,6 @@ plug-list %{ evaluate-commands %sh{
                     else
                         printf "%s: Installed\n" $1 >> ${plug_log}
                     fi
-                    # if git diff --quiet remotes/origin/HEAD; then
-                    #     printf "%s: Up to date\n" $1 >> ${plug_log}
-                    # else
-                    #     printf "%s: Update available\n" $1 >> ${plug_log}
-                    # fi
                 )
             else
                 printf "%s: Not installed\n" $1 >> ${plug_log}
