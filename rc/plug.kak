@@ -419,11 +419,25 @@ plug-list %{ evaluate-commands %sh{
         while [ $# -gt 0 ]; do
             if [ -d "$kak_opt_plug_install_dir/${1##*/}" ]; then
                 (   cd $kak_opt_plug_install_dir/${1##*/}
-                    if git diff --quiet remotes/origin/HEAD; then
+                    UPSTREAM='@{u}'
+                    LOCAL=$(git rev-parse @{0})
+                    REMOTE=$(git rev-parse "$UPSTREAM")
+                    BASE=$(git merge-base @{0} "$UPSTREAM")
+
+                    if [ $LOCAL = $REMOTE ]; then
                         printf "%s: Up to date\n" $1 >> ${plug_log}
-                    else
+                    elif [ $LOCAL = $BASE ]; then
                         printf "%s: Update available\n" $1 >> ${plug_log}
+                    elif [ $REMOTE = $BASE ]; then
+                        printf "%s: Local changes\n" $1 >> ${plug_log}
+                    else
+                        printf "%s: Installed\n" $1 >> ${plug_log}
                     fi
+                    # if git diff --quiet remotes/origin/HEAD; then
+                    #     printf "%s: Up to date\n" $1 >> ${plug_log}
+                    # else
+                    #     printf "%s: Update available\n" $1 >> ${plug_log}
+                    # fi
                 )
             else
                 printf "%s: Not installed\n" $1 >> ${plug_log}
