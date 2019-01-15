@@ -96,33 +96,33 @@ plug -params 1.. -shell-script-candidates %{ ls -1 $kak_opt_plug_install_dir } %
         fi
 
         if [ -n "$loaded" ] && [ -z "${loaded##*$plugin*}" ]; then
-            echo "echo -markup %{{Information}${plugin_name} already loaded}"
+            printf "%s\n" "echo -markup %{{Information}${plugin_name} already loaded}"
             exit
         fi
 
         for arg in $@; do
             case $arg in
                 *branch:*|*tag:*|*commit:*)
-                    branch=$(echo $1 | awk '{print $2}')
+                    branch=$(printf "%s\n" $1 | awk '{print $2}')
                     shift ;;
                 noload)
                     noload=1
                     shift ;;
                 load)
                     shift;
-                    echo "set-option -add global plug_load_files %{$plugin_name:$1}"
+                    printf "%s\n" "set-option -add global plug_load_files %{$plugin_name:$1}"
                     load=1
                     shift ;;
                 do)
                     shift;
-                    echo "set-option -add global plug_post_hooks %{$plugin_name:$1}"
+                    printf "%s\n" "set-option -add global plug_post_hooks %{$plugin_name:$1}"
                     shift ;;
                 ensure)
                     ensure=1
                     shift ;;
                 config)
                     shift
-                    echo "set-option -add global plug_configurations %{$plugin_name:$1}"
+                    printf "%s\n" "set-option -add global plug_configurations %{$plugin_name:$1}"
                     shift ;;
                 *)
                     ;;
@@ -130,17 +130,17 @@ plug -params 1.. -shell-script-candidates %{ ls -1 $kak_opt_plug_install_dir } %
         done
 
         if [ -n "$noload" ] && [ -n "$load" ]; then
-            echo "echo -debug %{plug.kak: warning, using both 'load' and 'noload' for ${plugin##*/} plugin}"
-            echo "echo -debug %{          'load' has higer priority so 'noload' will be ignored.}"
+            printf "%s\n" "echo -debug %{plug.kak: warning, using both 'load' and 'noload' for ${plugin##*/} plugin}"
+            printf "%s\n" "echo -debug %{          'load' has higer priority so 'noload' will be ignored.}"
             noload=
         fi
 
         if [ -z "$load" ]; then
-            echo "set-option -add global plug_load_files %{$plugin_name:*.kak}"
+            printf "%s\n" "set-option -add global plug_load_files %{$plugin_name:*.kak}"
         fi
 
         if [ $# -gt 0 ]; then
-            echo "set-option -add global plug_configurations %{$plugin_name:$1}"
+            printf "%s\n" "set-option -add global plug_configurations %{$plugin_name:$1}"
         fi
 
         if [ -d $kak_opt_plug_install_dir ]; then
@@ -149,16 +149,16 @@ plug -params 1.. -shell-script-candidates %{ ls -1 $kak_opt_plug_install_dir } %
                     (cd "$kak_opt_plug_install_dir/${plugin##*/}"; git checkout $branch >/dev/null 2>&1)
                 fi
                 if [ -z "$noload" ]; then
-                    echo "plug-load $plugin"
+                    printf "%s\n" "plug-load $plugin"
                 fi
-                plug_conf=$(echo "${plugin##*/}" | sed 's:[^a-zA-Z0-9_]:_:g;')
+                plug_conf=$(printf "%s\n" "${plugin##*/}" | sed 's:[^a-zA-Z0-9_]:_:g;')
                 if [ -z "${kak_opt_configurations##*$plug_conf*}" ]; then
-                    echo "plug-configure $plugin"
+                    printf "%s\n" "plug-configure $plugin"
                 fi
-                echo "set-option -add global plug_loaded_plugins %{$plugin }"
+                printf "%s\n" "set-option -add global plug_loaded_plugins %{$plugin }"
             else
                 if [ -n "$ensure" ] || [ "$kak_opt_plug_always_ensure" = "true" ]; then
-                    echo "evaluate-commands -client ${kak_client:-client0} plug-install $plugin" | kak -p ${kak_session}
+                    printf "%s\n" "evaluate-commands -client ${kak_client:-client0} plug-install $plugin" | kak -p ${kak_session}
                 else
                     exit
                 fi
@@ -232,7 +232,7 @@ plug-install -params ..1 %{
 define-command -override -docstring \
 "plug-update [<plugin>]: Update plugin.
 If <plugin> ommited all installed plugins are updated" \
-plug-update -params ..1 -shell-script-candidates %{ echo $kak_opt_plug_plugins | tr ' ' '\n' } %{
+plug-update -params ..1 -shell-script-candidates %{ printf "%s\n" $kak_opt_plug_plugins | tr ' ' '\n' } %{
     evaluate-commands %sh{ (
         plugin=$1
         jobs=$(mktemp ${TMPDIR:-/tmp}/jobs.XXXXXX)
@@ -303,7 +303,7 @@ plug-clean -params ..1 -shell-script-candidates %{ ls -1 $kak_opt_plug_install_d
                 exit
             fi
         else
-            for installed_plugin in $(echo $kak_opt_plug_install_dir/*); do
+            for installed_plugin in $(printf "%s\n" $kak_opt_plug_install_dir/*); do
                 skip=
                 for enabled_plugin in $kak_opt_plug_plugins; do
                     [ "${installed_plugin##*/}" = "${enabled_plugin##*/}" ] && { skip=1; break; }
@@ -328,7 +328,7 @@ plug-configure -params 1 %{ evaluate-commands %sh{
             IFS='
 '
             for cmd in ${1#*:}; do
-                echo "$cmd"
+                printf "%s\n" "$cmd"
             done
             break
         fi
@@ -350,7 +350,7 @@ plug-load -params 1 %{ evaluate-commands %sh{
                 file="${file#"${file%%[![:space:]]*}"}"
                 file="${file%"${file##*[![:space:]]}"}"
                 for script in $(find -L $kak_opt_plug_install_dir/$plugin -type f -name "$file" | awk -F/ '{print NF-1, $0}' | sort -n | cut -d' ' -f2); do
-                    echo source "$script"
+                    printf "source '%s'\n" $script
                 done
             done
             break
@@ -424,7 +424,7 @@ plug-list -params ..1 %{ evaluate-commands %sh{
         fi
         shift
     done
-    for exitsting_plugin in $(echo $kak_opt_plug_install_dir/*); do
+    for exitsting_plugin in $(printf "%s\n" $kak_opt_plug_install_dir/*); do
         skip=
         for loaded_plugin in $kak_opt_plug_plugins; do
             [ "${exitsting_plugin##*/}" = "${loaded_plugin##*/}" ] && { skip=1; break; }
