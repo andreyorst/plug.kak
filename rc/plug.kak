@@ -175,7 +175,7 @@ plug-install -params ..1 %{
         plugin=$1
         jobs=$(mktemp ${TMPDIR:-/tmp}/jobs.XXXXXX)
 
-        printf "%s\n" "evaluate-commands -client $kak_client %{ plug-list %{noupdate} }" | kak -p ${kak_session}
+        printf "%s\n" "evaluate-commands -client $kak_client %{ try %{ buffer *plug* } catch %{ plug-list %{noupdate} } }" | kak -p ${kak_session}
         sleep 0.2
 
         if [ -d "$kak_opt_plug_install_dir/.plug.kaklock" ]; then
@@ -237,7 +237,7 @@ plug-update -params ..1 -shell-script-candidates %{ printf "%s\n" $kak_opt_plug_
         plugin=$1
         jobs=$(mktemp ${TMPDIR:-/tmp}/jobs.XXXXXX)
 
-        printf "%s\n" "evaluate-commands -client $kak_client %{ plug-list %{noupdate} }" | kak -p ${kak_session}
+        printf "%s\n" "evaluate-commands -client $kak_client %{ try %{ buffer *plug* } catch %{ plug-list %{noupdate} } }" | kak -p ${kak_session}
         sleep 0.2
 
         if [ -d "$kak_opt_plug_install_dir/.plug.kaklock" ]; then
