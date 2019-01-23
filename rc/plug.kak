@@ -284,7 +284,7 @@ plug-clean -params ..1 -shell-script-candidates %{ ls -1 $kak_opt_plug_install_d
     nop %sh{ (
         plugin=$1
 
-        printf "%s\n" "evaluate-commands -client $kak_client %{ plug-list %{noupdate} }" | kak -p ${kak_session}
+        printf "%s\n" "evaluate-commands -client $kak_client %{ try %{ buffer *plug* } catch %{ plug-list %{noupdate} } }" | kak -p ${kak_session}
         sleep 0.2
 
         if [ -d "$kak_opt_plug_install_dir/.plug.kaklock" ]; then
