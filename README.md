@@ -3,10 +3,8 @@
 ![license](https://img.shields.io/github/license/andreyorst/plug.kak.svg)
 
 **plug.kak** is a plugin manager for Kakoune editor, that aims to work somewhat
-similar to [vim-plug](https://github.com/junegunn/vim-plug). This is development
-branch that keeps track of Kakoune's master branch changes.
-All features that are being development here will be eventually backported to
-**plug.kak** branches of two latest Kakoune stable releases.
+similar to [vim-plug](https://github.com/junegunn/vim-plug). This brach keeps track
+is being tested against current stable release: v2019.01.20.
 
 ## Installation
 
