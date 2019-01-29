@@ -2,11 +2,15 @@
 [![GitHub issues](https://img.shields.io/github/issues/andreyorst/plug.kak.svg)](https://github.com/andreyorst/plug.kak/issues)
 ![license](https://img.shields.io/github/license/andreyorst/plug.kak.svg)
 
-**plug.kak** is a plugin manager for Kakoune editor, that aims to work somewhat
-similar to [vim-plug](https://github.com/junegunn/vim-plug). This is development
-branch that keeps track of Kakoune's master branch changes.
-All features that are being development here will be eventually backported to
-**plug.kak** branches of two latest Kakoune stable releases.
+![image](https://user-images.githubusercontent.com/19470159/51197223-f2c26a80-1901-11e9-9494-b79ce823a364.png)
+
+**plug.kak** is a plugin manager for Kakoune editor, that aims to work somewhat similar to
+[vim-plug](https://github.com/junegunn/vim-plug). This plugin currently supports two latest
+releases of Kakoune and Kakoune git branch. Default branch is latest release, named accordingly.
+This branch is tested agains Kakoune v2018.10.27. If you're using Kakoune builds from Github repo, please use
+[kakoune-git](https://github.com/andreyorst/plug.kak/tree/kakoune-git) branch.
+All development process of **plug.kak** happens in kakoune-git branch, and features are being
+backported to two latest releases.
 
 ## Installation
 
@@ -156,29 +160,26 @@ Default value is `https://github.com`
 - `plug-update` - Update installed plugins;
 - `plug-clean` - Remove plugins, that are installed, but disabled in
   configuration files;
-- `plug` - Load plugin from plugin installation directory.
+- `plug-list` - List all installed plugins, and check for updates;
+- `plug` - Load plugin from plugin installation directory by its name.
 
 Here are some examples:
 
 ### Installing new plugin
 
 1. Add `plug "github_username/reponame"` to your `kakrc`;
-2. Source your `kakrc` with `source` command, or restart Kakoune to tell
-  **plug.kak** that configuration is changed;
-3. Execute `plug-install` command. Plugins will be loaded and configured
-  accordingly to your kakrc;
+2. Source your `kakrc` with `source` command, or restart Kakoune to tell **plug.kak** that configuration is changed;
+3. Execute `plug-install` command, the `*plug*` buffer will show up to illustrate progress. Plugins will be loaded and configured accordingly to your kakrc;
 
 ### Updating installed plugins
 
-1. Execute `plug-update` command;
+1. Execute `plug-update` command, the `*plug*` buffer will show up to illustrate progress;
 2. Restart Kakoune to load updated plugins.
 
 ### Removing unneeded plugins
 
-1. Delete desired `plug` entry from your `kakrc` or comment it;
-2. Source your `kakrc` with `source` command, or restart Kakoune to tell
-  **plug.kak** that configuration is changed;
-3. Execute `plug-clean` command;
-4. (Optional) If you didn't restarted Kakoune at 2. restart it to unload
-  uninstalled plugins.
+1. Delete desired `plug` entry from your `kakrc` or prefix it with `nop`, or just comment it;
+2. Source your `kakrc` with `source` command, or restart Kakoune to tell **plug.kak** that configuration is changed;
+3. Execute `plug-clean` command, the `*plug*` buffer will show up to illustrate progress;
+4. (Optional) If you didn't restarted Kakoune at 2. restart it to unload uninstalled plugins.
 

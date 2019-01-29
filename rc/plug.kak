@@ -1,6 +1,6 @@
 # ╭─────────────╥──────────╥─────────────╮
 # │ Author:     ║ File:    ║ Branch:     │
-# │ Andrey Orst ║ plug.kak ║ kakoune-git │
+# │ Andrey Orst ║ plug.kak ║ v2018.10.27 │
 # ╞═════════════╩══════════╩═════════════╡
 # │ plug.kak is a plugin manager for     │
 # │ Kakoune. It can install plugins      │
@@ -210,6 +210,7 @@ plug-install -params ..1 %{
                 *)
                     git="git clone $kak_opt_plug_git_domain/$plugin" ;;
             esac
+            
             if [ ! -d "$kak_opt_plug_install_dir/${plugin##*/}" ]; then
                 (
                     printf "%s\n" "evaluate-commands -client $kak_client %{ plug-update-fifo %{${plugin}} %{Installing} }" | kak -p ${kak_session}
