@@ -7,9 +7,7 @@
 **plug.kak** is a plugin manager for Kakoune editor, that aims to work somewhat similar to
 [vim-plug](https://github.com/junegunn/vim-plug). This plugin currently supports two latest
 releases of Kakoune and Kakoune git branch. Default branch is latest release, named accordingly.
-This branch is tested agains Kakoune v2018.10.27. If you're using Kakoune builds from Github repo, please use
-[kakoune-git](https://github.com/andreyorst/plug.kak/tree/kakoune-git) branch.
-All development process of **plug.kak** happens in kakoune-git branch, and features are being
+All development process of **plug.kak** happens in this branch branch, and features are being
 backported to two latest releases.
 
 ## Installation
@@ -71,10 +69,8 @@ These are keywords to use:
 
 #### Branch, Tag or Commit
 `plug` can checkout a plugin to desired branch, commit or tag before load. To do
-so, add this after plugin name: `"branch: branch_name"`, `tag: tag_name` or
-`commit: commit_hash`. Note that this must be a single parameter, and the
-syntax is very restrictive - you need to specify a keyword separated with a `: `
-(colon space) from it's argument. Other keywords are not that restrictive.
+so, add this after plugin name: `branch "branch_name"`, `tag "tag_name"` or
+`commit "commit_hash"`.
 
 #### Loading subset of files from plugin repository
 If you want to load only part of a plugin (assuming that plugin allows this) you
