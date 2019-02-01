@@ -2,13 +2,14 @@
 [![GitHub issues](https://img.shields.io/github/issues/andreyorst/plug.kak.svg)](https://github.com/andreyorst/plug.kak/issues)
 ![license](https://img.shields.io/github/license/andreyorst/plug.kak.svg)
 
+
+![image](https://user-images.githubusercontent.com/19470159/51197223-f2c26a80-1901-11e9-9494-b79ce823a364.png)
+
 **plug.kak** is a plugin manager for Kakoune editor, that aims to work somewhat similar to
 [vim-plug](https://github.com/junegunn/vim-plug). This plugin currently supports two latest
 releases of Kakoune and Kakoune git branch. Default branch is latest release, named accordingly.
 This branch is tested agains Kakoune v2019.01.20. If you're using Kakoune builds from Github repo, please use
 [kakoune-git](https://github.com/andreyorst/plug.kak/tree/kakoune-git) branch.
-All development process of **plug.kak** happens in kakoune-git branch, and features are being
-backported to two latest releases.
 
 ## Installation
 
@@ -69,10 +70,8 @@ These are keywords to use:
 
 #### Branch, Tag or Commit
 `plug` can checkout a plugin to desired branch, commit or tag before load. To do
-so, add this after plugin name: `"branch: branch_name"`, `tag: tag_name` or
-`commit: commit_hash`. Note that this must be a single parameter, and the
-syntax is very restrictive - you need to specify a keyword separated with a `: `
-(colon space) from it's argument. Other keywords are not that restrictive.
+so, add this after plugin name: `branch "branch_name"`, `tag "tag_name"` or
+`commit "commit_hash"`.
 
 #### Loading subset of files from plugin repository
 If you want to load only part of a plugin (assuming that plugin allows this) you
@@ -158,29 +157,26 @@ Default value is `https://github.com`
 - `plug-update` - Update installed plugins;
 - `plug-clean` - Remove plugins, that are installed, but disabled in
   configuration files;
-- `plug` - Load plugin from plugin installation directory.
+- `plug-list` - List all installed plugins, and check for updates;
+- `plug` - Load plugin from plugin installation directory by its name.
 
 Here are some examples:
 
 ### Installing new plugin
 
 1. Add `plug "github_username/reponame"` to your `kakrc`;
-2. Source your `kakrc` with `source` command, or restart Kakoune to tell
-  **plug.kak** that configuration is changed;
-3. Execute `plug-install` command. Plugins will be loaded and configured
-  accordingly to your kakrc;
+2. Source your `kakrc` with `source` command, or restart Kakoune to tell **plug.kak** that configuration is changed;
+3. Execute `plug-install` command, the `*plug*` buffer will show up to illustrate progress. Plugins will be loaded and configured accordingly to your kakrc;
 
 ### Updating installed plugins
 
-1. Execute `plug-update` command;
+1. Execute `plug-update` command, the `*plug*` buffer will show up to illustrate progress;
 2. Restart Kakoune to load updated plugins.
 
 ### Removing unneeded plugins
 
-1. Delete desired `plug` entry from your `kakrc` or comment it;
-2. Source your `kakrc` with `source` command, or restart Kakoune to tell
-  **plug.kak** that configuration is changed;
-3. Execute `plug-clean` command;
-4. (Optional) If you didn't restarted Kakoune at 2. restart it to unload
-  uninstalled plugins.
+1. Delete desired `plug` entry from your `kakrc` or prefix it with `nop`, or just comment it;
+2. Source your `kakrc` with `source` command, or restart Kakoune to tell **plug.kak** that configuration is changed;
+3. Execute `plug-clean` command, the `*plug*` buffer will show up to illustrate progress;
+4. (Optional) If you didn't restarted Kakoune at 2. restart it to unload uninstalled plugins.
 
