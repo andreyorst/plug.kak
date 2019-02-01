@@ -57,7 +57,7 @@ bool plug_always_ensure false
 
 hook global WinSetOption filetype=kak %{ try %{
     add-highlighter window/plug_keywords   regex \b(plug|do|config|load)\b\h+((?=")|(?=')|(?=%)|(?=\w)) 0:keyword
-    add-highlighter window/plug_attributes regex \b(noload|ensure)\b 0:attribute
+    add-highlighter window/plug_attributes regex \b(noload|ensure|branch)\b 0:attribute
     hook  global WinSetOption filetype=(?!kak).* %{ try %{
         remove-highlighter window/plug_keywords
         remove-highlighter window/plug_attributes
@@ -89,6 +89,7 @@ plug -params 1.. -shell-script-candidates %{ ls -1 $kak_opt_plug_install_dir } %
         load=
         ensure=
         state=
+        branch=
         loaded=$kak_opt_plug_loaded_plugins
 
         if [ $(expr "${kak_opt_plug_plugins}" : ".*$plugin.*") -eq 0 ]; then
@@ -102,8 +103,9 @@ plug -params 1.. -shell-script-candidates %{ ls -1 $kak_opt_plug_install_dir } %
 
         for arg in $@; do
             case $arg in
-                *branch:*|*tag:*|*commit:*)
-                    branch=$(printf "%s\n" $1 | awk '{print $2}')
+                branch|tag|commit)
+                    shift
+                    branch="$1"
                     shift ;;
                 noload)
                     noload=1
@@ -146,7 +148,7 @@ plug -params 1.. -shell-script-candidates %{ ls -1 $kak_opt_plug_install_dir } %
         if [ -d $kak_opt_plug_install_dir ]; then
             if [ -d "$kak_opt_plug_install_dir/${plugin##*/}" ]; then
                 if [ -n "$branch" ]; then
-                    (cd "$kak_opt_plug_install_dir/${plugin##*/}"; git checkout $branch >/dev/null 2>&1)
+                    (cd "$kak_opt_plug_install_dir/${plugin##*/}"; git fetch >/dev/null 2>&1; git checkout $branch >/dev/null 2>&1)
                 fi
                 if [ -z "$noload" ]; then
                     printf "%s\n" "plug-load $plugin"
@@ -210,7 +212,7 @@ plug-install -params ..1 %{
                 *)
                     git="git clone $kak_opt_plug_git_domain/$plugin" ;;
             esac
-            
+
             if [ ! -d "$kak_opt_plug_install_dir/${plugin##*/}" ]; then
                 (
                     printf "%s\n" "evaluate-commands -client $kak_client %{ plug-update-fifo %{${plugin}} %{Installing} }" | kak -p ${kak_session}
