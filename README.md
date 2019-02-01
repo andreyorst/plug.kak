@@ -2,13 +2,14 @@
 [![GitHub issues](https://img.shields.io/github/issues/andreyorst/plug.kak.svg)](https://github.com/andreyorst/plug.kak/issues)
 ![license](https://img.shields.io/github/license/andreyorst/plug.kak.svg)
 
+
 ![image](https://user-images.githubusercontent.com/19470159/51197223-f2c26a80-1901-11e9-9494-b79ce823a364.png)
 
 **plug.kak** is a plugin manager for Kakoune editor, that aims to work somewhat similar to
 [vim-plug](https://github.com/junegunn/vim-plug). This plugin currently supports two latest
 releases of Kakoune and Kakoune git branch. Default branch is latest release, named accordingly.
-All development process of **plug.kak** happens in this branch branch, and features are being
-backported to two latest releases.
+This branch is tested agains Kakoune v2019.01.20. If you're using Kakoune builds from Github repo, please use
+[kakoune-git](https://github.com/andreyorst/plug.kak/tree/kakoune-git) branch.
 
 ## Installation
 
