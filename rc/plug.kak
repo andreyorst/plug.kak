@@ -104,6 +104,7 @@ plug -params 1.. -shell-script-candidates %{ ls -1 $kak_opt_plug_install_dir } %
         for arg in $@; do
             case $arg in
                 branch|tag|commit)
+                    branch_type=$1
                     shift
                     branch="$1"
                     shift ;;
@@ -148,7 +149,16 @@ plug -params 1.. -shell-script-candidates %{ ls -1 $kak_opt_plug_install_dir } %
         if [ -d $kak_opt_plug_install_dir ]; then
             if [ -d "$kak_opt_plug_install_dir/${plugin##*/}" ]; then
                 if [ -n "$branch" ]; then
-                    (cd "$kak_opt_plug_install_dir/${plugin##*/}"; git fetch >/dev/null 2>&1; git checkout $branch >/dev/null 2>&1)
+                    (
+                        cd "$kak_opt_plug_install_dir/${plugin##*/}"
+                        if [ "$branch_type" = "branch" ]; then
+                            current_branch=$(git branch | awk '/^\*/ { print $2 }')
+                            if [ "$current_branch" != "$branch" ]; then
+                                git fetch >/dev/null 2>&1
+                            fi
+                        fi
+                        git checkout $branch >/dev/null 2>&1
+                    )
                 fi
                 if [ -z "$noload" ]; then
                     printf "%s\n" "plug-load $plugin"
