@@ -1,6 +1,6 @@
 # ╭─────────────╥──────────╥─────────────╮
 # │ Author:     ║ File:    ║ Branch:     │
-# │ Andrey Orst ║ plug.kak ║ v2018.10.27 │
+# │ Andrey Orst ║ plug.kak ║ kakoune-git │
 # ╞═════════════╩══════════╩═════════════╡
 # │ plug.kak is a plugin manager for     │
 # │ Kakoune. It can install plugins      │
@@ -57,7 +57,7 @@ bool plug_always_ensure false
 
 hook global WinSetOption filetype=kak %{ try %{
     add-highlighter window/plug_keywords   regex \b(plug|do|config|load)\b\h+((?=")|(?=')|(?=%)|(?=\w)) 0:keyword
-    add-highlighter window/plug_attributes regex \b(noload|ensure|branch)\b 0:attribute
+    add-highlighter window/plug_attributes regex \b(noload|ensure|branch|tag|commit)\b 0:attribute
     hook  global WinSetOption filetype=(?!kak).* %{ try %{
         remove-highlighter window/plug_keywords
         remove-highlighter window/plug_attributes
