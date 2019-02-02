@@ -104,6 +104,7 @@ plug -params 1.. -shell-script-candidates %{ ls -1 $kak_opt_plug_install_dir } %
         for arg in $@; do
             case $arg in
                 branch|tag|commit)
+                    branch_type=$1
                     shift
                     branch="$1"
                     shift ;;
@@ -186,6 +187,14 @@ plug-install -params ..1 %{
         plugin=$1
         jobs=$(mktemp ${TMPDIR:-/tmp}/jobs.XXXXXX)
 
+        if [ ! -d $kak_opt_plug_install_dir ]; then
+            if ! mkdir -p $kak_opt_plug_install_dir >/dev/null 2>&1; then
+                printf "%s\n" "evaluate-commands -client $kak_client echo -markup '{Error}unable to create directory to host plugins'" | kak -p ${kak_session}
+                printf "%s\n" "evaluate-commands -client $kak_client echo -debug 'plug.kak Error: unable to create directory to host plugins'" | kak -p ${kak_session}
+                exit
+            fi
+        fi
+
         printf "%s\n" "evaluate-commands -client $kak_client %{ try %{ buffer *plug* } catch %{ plug-list %{noupdate} } }" | kak -p ${kak_session}
         sleep 0.2
 
@@ -195,10 +204,6 @@ plug-install -params ..1 %{
 
         while ! mkdir "$kak_opt_plug_install_dir/.plug.kaklock" 2>/dev/null; do sleep 1; done
         trap 'rmdir "$kak_opt_plug_install_dir/.plug.kaklock"' EXIT
-
-        if [ ! -d $kak_opt_plug_install_dir ]; then
-            mkdir -p $kak_opt_plug_install_dir
-        fi
 
         if [ -n "$plugin" ]; then
             plugin_list=$plugin
