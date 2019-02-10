@@ -127,7 +127,8 @@ plug "andreyorst/fzf.kak" config %{
 ### Plugin installation directory
 
 You can specify where to install plugins, in case you don't like default
-`~/.config/kak/plugins/` path, you can use option `plug_install_dir`:(note: if you want to use shell variables in the path, consider using shell expansion like in this example)
+`~/.config/kak/plugins/` path, you can use option `plug_install_dir`:
+(note: if you want to use shell variables in the path, consider using shell expansion like in this example)
 
 ```kak
 set-option global plug_install_dir %sh{ echo $HOME/.cache/kakoune_plugins }
