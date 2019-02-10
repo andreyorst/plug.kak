@@ -134,6 +134,7 @@ You can specify where to install plugins, in case you don't like default
 set-option global plug_install_dir %sh{ echo $HOME/.cache/kakoune_plugins }
 ```
 
+
 Or any other path.
 
 ### Maximum downloads
