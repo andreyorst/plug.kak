@@ -66,11 +66,11 @@ hook global WinSetOption filetype=kak %{ try %{
 
 # Highlighters
 add-highlighter shared/plug group
-add-highlighter shared/plug/done          regex ^[^:]+:\h+(Up\h+to\h+date|Done|Installed)$           1:string
-add-highlighter shared/plug/update        regex ^[^:]+:\h+(Update\h+available|Deleted)$              1:keyword
-add-highlighter shared/plug/not_installed regex ^[^:]+:\h+(Not\h+(installed|loaded)|Error([^\n]+)?)$ 1:Error
-add-highlighter shared/plug/updating      regex ^[^:]+:\h+(Installing|Updating|Local\h+changes)$     1:type
-add-highlighter shared/plug/working       regex ^[^:]+:\h+(Running\h+post-update\h+hooks)$           1:attribute
+add-highlighter shared/plug/done          regex [^:]+:\h+(Up\h+to\h+date|Done|Installed)$           1:string
+add-highlighter shared/plug/update        regex [^:]+:\h+(Update\h+available|Deleted)$              1:keyword
+add-highlighter shared/plug/not_installed regex [^:]+:\h+(Not\h+(installed|loaded)|Error([^\n]+)?)$ 1:Error
+add-highlighter shared/plug/updating      regex [^:]+:\h+(Installing|Updating|Local\h+changes)$     1:type
+add-highlighter shared/plug/working       regex [^:]+:\h+(Running\h+post-update\h+hooks)$           1:attribute
 
 hook -group plug-syntax global WinSetOption filetype=plug %{
   add-highlighter window/plug ref plug
@@ -84,6 +84,7 @@ define-command -override -docstring \
 plug -params 1.. -shell-script-candidates %{ ls -1 $kak_opt_plug_install_dir } %{
     evaluate-commands %sh{
         plugin=$1; shift
+        plugin="${plugin%%.git}"
         plugin_name="${plugin##*/}"
         noload=
         load=
@@ -93,7 +94,7 @@ plug -params 1.. -shell-script-candidates %{ ls -1 $kak_opt_plug_install_dir } %
         loaded=$kak_opt_plug_loaded_plugins
 
         if [ $(expr "${kak_opt_plug_plugins}" : ".*$plugin.*") -eq 0 ]; then
-            printf "%s\n" "set-option -add global plug_plugins \"%arg{1} \""
+            printf "%s\n" "set-option -add global plug_plugins \"$plugin \""
         fi
 
         if [ -n "$loaded" ] && [ -z "${loaded##*$plugin*}" ]; then
@@ -434,7 +435,8 @@ plug-list -params ..1 %{ evaluate-commands %sh{
 
     eval "set -- $kak_opt_plug_plugins"
     while [ $# -gt 0 ]; do
-        if [ -d "$kak_opt_plug_install_dir/${1##*/}" ]; then
+        plugin="${1##*/}"
+        if [ -d "$kak_opt_plug_install_dir/$plugin" ]; then
             printf "%s: Installed\n" $1 >> ${plug_log}
         else
             printf "%s: Not installed\n" $1 >> ${plug_log}
@@ -455,8 +457,9 @@ plug-list -params ..1 %{ evaluate-commands %sh{
         (
             eval "set -- $kak_opt_plug_plugins"
             while [ $# -gt 0 ]; do
-                if [ -d "$kak_opt_plug_install_dir/${1##*/}" ]; then
-                    (   cd $kak_opt_plug_install_dir/${1##*/}
+                plugin="${1##*/}"
+                if [ -d "$kak_opt_plug_install_dir/$plugin" ]; then
+                    (   cd $kak_opt_plug_install_dir/$plugin
                         git fetch > /dev/null 2>&1
                         LOCAL=$(git rev-parse @{0})
                         REMOTE=$(git rev-parse @{u})
