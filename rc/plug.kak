@@ -66,11 +66,11 @@ hook global WinSetOption filetype=kak %{ try %{
 
 # Highlighters
 add-highlighter shared/plug group
-add-highlighter shared/plug/done          regex [^:]+:\h+(Up\h+to\h+date|Done|Installed)$           1:string
-add-highlighter shared/plug/update        regex [^:]+:\h+(Update\h+available|Deleted)$              1:keyword
-add-highlighter shared/plug/not_installed regex [^:]+:\h+(Not\h+(installed|loaded)|Error([^\n]+)?)$ 1:Error
-add-highlighter shared/plug/updating      regex [^:]+:\h+(Installing|Updating|Local\h+changes)$     1:type
-add-highlighter shared/plug/working       regex [^:]+:\h+(Running\h+post-update\h+hooks)$           1:attribute
+add-highlighter shared/plug/done          regex [^:]+:\h+(Up\h+to\h+date|Done|Installed)$                    1:string
+add-highlighter shared/plug/update        regex [^:]+:\h+(Update\h+available|Deleted)$                       1:keyword
+add-highlighter shared/plug/not_installed regex [^:]+:\h+(Not\h+(installed|loaded)|(\w+\h+)?Error([^\n]+)?)$ 1:Error
+add-highlighter shared/plug/updating      regex [^:]+:\h+(Installing|Updating|Local\h+changes)$              1:type
+add-highlighter shared/plug/working       regex [^:]+:\h+(Running\h+post-update\h+hooks)$                    1:attribute
 
 hook -group plug-syntax global WinSetOption filetype=plug %{
   add-highlighter window/plug ref plug
@@ -238,7 +238,7 @@ plug-install -params ..1 %{
                     cd $kak_opt_plug_install_dir && $git >/dev/null 2>&1
                     status=$?
                     if [ $status -ne 0 ]; then
-                        printf "%s\n" "evaluate-commands -client $kak_client %{ plug-update-fifo %{${plugin}} %{Error: $status} }" | kak -p ${kak_session}
+                        printf "%s\n" "evaluate-commands -client $kak_client %{ plug-update-fifo %{${plugin}} %{Download Error: $status} }" | kak -p ${kak_session}
                     else
                         printf "%s\n" "evaluate-commands -client $kak_client plug-eval-hooks $plugin" | kak -p ${kak_session}
                         printf "%s\n" "evaluate-commands -client $kak_client plug $plugin" | kak -p ${kak_session}
@@ -289,7 +289,7 @@ plug-update -params ..1 -shell-script-candidates %{ printf "%s\n" $kak_opt_plug_
                     cd "$kak_opt_plug_install_dir/${plugin##*/}" && rev=$(git rev-parse HEAD) && git pull -q
                     status=$?
                     if [ $status -ne 0 ]; then
-                        printf "%s\n" "evaluate-commands -client $kak_client %{ plug-update-fifo %{${plugin}} %{Error: $status} }" | kak -p ${kak_session}
+                        printf "%s\n" "evaluate-commands -client $kak_client %{ plug-update-fifo %{${plugin}} %{Update Error: $status} }" | kak -p ${kak_session}
                     else
                         if [ $rev != $(git rev-parse HEAD) ]; then
                             printf "%s\n" "evaluate-commands -client $kak_client plug-eval-hooks $plugin" | kak -p ${kak_session}
@@ -452,9 +452,9 @@ plug-list -params ..1 %{ evaluate-commands %sh{
     while [ $# -gt 0 ]; do
         plugin="${1##*/}"
         if [ -d "$kak_opt_plug_install_dir/$plugin" ]; then
-            printf "%s: Installed\n" $1 >> ${plug_log}
+            printf "%s: Installed\n" "$1" >> ${plug_log}
         else
-            printf "%s: Not installed\n" $1 >> ${plug_log}
+            printf "%s: Not installed\n" "$1" >> ${plug_log}
         fi
         shift
     done
@@ -493,7 +493,7 @@ plug-list -params ..1 %{ evaluate-commands %sh{
                                 printf "%s\n" "evaluate-commands -client $kak_client %{ plug-update-fifo %{$1} %{Installed} }" | kak -p ${kak_session}
                             fi
                         else
-                            printf "%s\n" "evaluate-commands -client $kak_client %{ plug-update-fifo %{$1} %{Error: $status} }" | kak -p ${kak_session}
+                            printf "%s\n" "evaluate-commands -client $kak_client %{ plug-update-fifo %{$1} %{Fetch Error: $status} }" | kak -p ${kak_session}
                         fi
                     ) > /dev/null 2>&1 < /dev/null &
                 fi
