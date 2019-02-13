@@ -238,7 +238,7 @@ plug-install -params ..1 %{
                     cd $kak_opt_plug_install_dir && $git >/dev/null 2>&1
                     status=$?
                     if [ $status -ne 0 ]; then
-                        printf "%s\n" "evaluate-commands -client $kak_client %{ plug-update-fifo %{${plugin}} %{Download Error: $status} }" | kak -p ${kak_session}
+                        printf "%s\n" "evaluate-commands -client $kak_client %{ plug-update-fifo %{${plugin}} %{Download Error ($status)} }" | kak -p ${kak_session}
                     else
                         printf "%s\n" "evaluate-commands -client $kak_client plug-eval-hooks $plugin" | kak -p ${kak_session}
                         printf "%s\n" "evaluate-commands -client $kak_client plug $plugin" | kak -p ${kak_session}
@@ -289,7 +289,7 @@ plug-update -params ..1 -shell-script-candidates %{ printf "%s\n" $kak_opt_plug_
                     cd "$kak_opt_plug_install_dir/${plugin##*/}" && rev=$(git rev-parse HEAD) && git pull -q
                     status=$?
                     if [ $status -ne 0 ]; then
-                        printf "%s\n" "evaluate-commands -client $kak_client %{ plug-update-fifo %{${plugin}} %{Update Error: $status} }" | kak -p ${kak_session}
+                        printf "%s\n" "evaluate-commands -client $kak_client %{ plug-update-fifo %{${plugin}} %{Update Error ($status)} }" | kak -p ${kak_session}
                     else
                         if [ $rev != $(git rev-parse HEAD) ]; then
                             printf "%s\n" "evaluate-commands -client $kak_client plug-eval-hooks $plugin" | kak -p ${kak_session}
@@ -420,7 +420,7 @@ plug-eval-hooks -params 1 %{
                 else
                     printf "%s\n%s\n%s\n" "evaluate-commands -client $kak_client %{ echo -debug %{error occured while evaluation of post-update hooks for $plugin_name:} }" \
                     "evaluate-commands -client $kak_client %{ echo -debug %sh{cat $temp; rm -rf $temp} }" \
-                    "evaluate-commands -client $kak_client %{ echo -debug %{aborting hooks for $plugin_name with code: $status} }" | kak -p ${kak_session}
+                    "evaluate-commands -client $kak_client %{ echo -debug %{aborting hooks for $plugin_name with code $status} }" | kak -p ${kak_session}
                 fi
                 break
             fi
@@ -466,7 +466,7 @@ plug-list -params ..1 %{ evaluate-commands %sh{
         [ "$skip" = "1" ] || printf "%s: Not loaded\n" "${exitsting_plugin##*/}" >> ${plug_log}
     done
 
-    ( sort ${plug_log} > ${fifo}; rm -rf ${plug-log} )  > /dev/null 2>&1 < /dev/null &
+    ( sort ${plug_log} > ${fifo}; rm -rf ${plug_log} )  > /dev/null 2>&1 < /dev/null &
 
     if [ -z "$noupdate" ]; then
         (
@@ -493,7 +493,7 @@ plug-list -params ..1 %{ evaluate-commands %sh{
                                 printf "%s\n" "evaluate-commands -client $kak_client %{ plug-update-fifo %{$1} %{Installed} }" | kak -p ${kak_session}
                             fi
                         else
-                            printf "%s\n" "evaluate-commands -client $kak_client %{ plug-update-fifo %{$1} %{Fetch Error: $status} }" | kak -p ${kak_session}
+                            printf "%s\n" "evaluate-commands -client $kak_client %{ plug-update-fifo %{$1} %{Fetch Error ($status)} }" | kak -p ${kak_session}
                         fi
                     ) > /dev/null 2>&1 < /dev/null &
                 fi
