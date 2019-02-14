@@ -55,6 +55,9 @@ declare-option -docstring \
 "always ensure sthat all plugins are installed" \
 bool plug_always_ensure false
 
+declare-option -docstring "name of the client in which utilities display information" \
+str toolsclient
+
 hook global WinSetOption filetype=kak %{ try %{
     add-highlighter window/plug_keywords   regex \b(plug|do|config|load)\b\h+((?=")|(?=')|(?=%)|(?=\w)) 0:keyword
     add-highlighter window/plug_attributes regex \b(noload|ensure|branch|tag|commit)\b 0:attribute
@@ -311,8 +314,8 @@ plug-update -params ..1 -shell-script-candidates %{ printf "%s\n" $kak_opt_plug_
 }
 
 define-command -override -docstring \
-"plug-delete [<plugin>]: delete <plugin>.
-If <plugin> ommited deletes all plugins that are not presented in configuration files" \
+"plug-clean [<plugin>]: delete <plugin>.
+If <plugin> ommited deletes all plugins that are installed but not presented in configuration files" \
 plug-clean -params ..1 -shell-script-candidates %{ ls -1 $kak_opt_plug_install_dir } %{
     nop %sh{ (
         plugin=$1
@@ -436,14 +439,13 @@ plug-eval-hooks -params 1 %{
 
 define-command -override \
 -docstring "plug-list [<noupdate>]: list all installed plugins in *plug* buffer. Chacks updates by default unless <noupdate> is specified." \
-plug-list -params ..1 %{ evaluate-commands %sh{
+plug-list -params ..1 %{ evaluate-commands -try-client %opt{toolsclient} %sh{
     noupdate=$1
     fifo=$(mktemp -d "${TMPDIR:-/tmp}"/plug-kak.XXXXXXXX)/fifo
     plug_log=$(mktemp "${TMPDIR:-/tmp}"/plug-log.XXXXXXXX)
     mkfifo ${fifo}
 
-    printf "%s\n" "try %{ delete-buffer *plug* }
-                   edit! -fifo ${fifo} *plug*
+    printf "%s\n" "edit! -fifo ${fifo} *plug*
                    set-option window filetype plug
                    hook -always -once buffer BufCloseFifo .* %{ nop %sh{ rm -r ${fifo%/*} } }
                    map buffer normal '<ret>' ':<space>plug-fifo-operate<ret>'"
