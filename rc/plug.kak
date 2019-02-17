@@ -55,6 +55,9 @@ declare-option -docstring \
 "always ensure sthat all plugins are installed" \
 bool plug_always_ensure false
 
+declare-option -docstring "name of the client in which utilities display information" \
+str toolsclient
+
 hook global WinSetOption filetype=kak %{ try %{
     add-highlighter window/plug_keywords   regex \b(plug|do|config|load)\b\h+((?=")|(?=')|(?=%)|(?=\w)) 0:keyword
     add-highlighter window/plug_attributes regex \b(noload|ensure|branch|tag|commit)\b 0:attribute
@@ -66,11 +69,11 @@ hook global WinSetOption filetype=kak %{ try %{
 
 # Highlighters
 add-highlighter shared/plug group
-add-highlighter shared/plug/done          regex [^:]+:\h+(Up\h+to\h+date|Done|Installed)$           1:string
-add-highlighter shared/plug/update        regex [^:]+:\h+(Update\h+available|Deleted)$              1:keyword
-add-highlighter shared/plug/not_installed regex [^:]+:\h+(Not\h+(installed|loaded)|Error([^\n]+)?)$ 1:Error
-add-highlighter shared/plug/updating      regex [^:]+:\h+(Installing|Updating|Local\h+changes)$     1:type
-add-highlighter shared/plug/working       regex [^:]+:\h+(Running\h+post-update\h+hooks)$           1:attribute
+add-highlighter shared/plug/done          regex [^:]+:\h+(Up\h+to\h+date|Done|Installed)$                    1:string
+add-highlighter shared/plug/update        regex [^:]+:\h+(Update\h+available|Deleted)$                       1:keyword
+add-highlighter shared/plug/not_installed regex [^:]+:\h+(Not\h+(installed|loaded)|(\w+\h+)?Error([^\n]+)?)$ 1:Error
+add-highlighter shared/plug/updating      regex [^:]+:\h+(Installing|Updating|Local\h+changes)$              1:type
+add-highlighter shared/plug/working       regex [^:]+:\h+(Running\h+post-update\h+hooks)$                    1:attribute
 
 hook -group plug-syntax global WinSetOption filetype=plug %{
   add-highlighter window/plug ref plug
@@ -92,6 +95,8 @@ plug -params 1.. -shell-script-candidates %{ ls -1 $kak_opt_plug_install_dir } %
         state=
         branch=
         loaded=$kak_opt_plug_loaded_plugins
+
+        [ -z "$GIT_TERMINAL_PROMPT" ] && export GIT_TERMINAL_PROMPT=0
 
         if [ $(expr "${kak_opt_plug_plugins}" : ".*$plugin.*") -eq 0 ]; then
             printf "%s\n" "set-option -add global plug_plugins \"$plugin \""
@@ -188,6 +193,8 @@ plug-install -params ..1 %{
         plugin=$1
         jobs=$(mktemp ${TMPDIR:-/tmp}/jobs.XXXXXX)
 
+        [ -z "$GIT_TERMINAL_PROMPT" ] && export GIT_TERMINAL_PROMPT=0
+
         if [ ! -d $kak_opt_plug_install_dir ]; then
             if ! mkdir -p $kak_opt_plug_install_dir >/dev/null 2>&1; then
                 printf "%s\n" "evaluate-commands -client $kak_client echo -markup '{Error}unable to create directory to host plugins'" | kak -p ${kak_session}
@@ -232,8 +239,13 @@ plug-install -params ..1 %{
                 (
                     printf "%s\n" "evaluate-commands -client $kak_client %{ plug-update-fifo %{${plugin}} %{Installing} }" | kak -p ${kak_session}
                     cd $kak_opt_plug_install_dir && $git >/dev/null 2>&1
-                    printf "%s\n" "evaluate-commands -client $kak_client plug-eval-hooks $plugin" | kak -p ${kak_session}
-                    printf "%s\n" "evaluate-commands -client $kak_client plug $plugin" | kak -p ${kak_session}
+                    status=$?
+                    if [ $status -ne 0 ]; then
+                        printf "%s\n" "evaluate-commands -client $kak_client %{ plug-update-fifo %{${plugin}} %{Download Error ($status)} }" | kak -p ${kak_session}
+                    else
+                        printf "%s\n" "evaluate-commands -client $kak_client plug-eval-hooks $plugin" | kak -p ${kak_session}
+                        printf "%s\n" "evaluate-commands -client $kak_client plug $plugin" | kak -p ${kak_session}
+                    fi
                 ) > /dev/null 2>&1 < /dev/null &
             fi
             jobs > $jobs; active=$(wc -l < $jobs)
@@ -254,6 +266,8 @@ plug-update -params ..1 -shell-script-candidates %{ printf "%s\n" $kak_opt_plug_
     evaluate-commands %sh{ (
         plugin=$1
         jobs=$(mktemp ${TMPDIR:-/tmp}/jobs.XXXXXX)
+
+        [ -z "$GIT_TERMINAL_PROMPT" ] && export GIT_TERMINAL_PROMPT=0
 
         printf "%s\n" "evaluate-commands -client $kak_client %{ try %{ buffer *plug* } catch %{ plug-list %{noupdate} } }" | kak -p ${kak_session}
         sleep 0.2
@@ -276,11 +290,15 @@ plug-update -params ..1 -shell-script-candidates %{ printf "%s\n" $kak_opt_plug_
                 (
                     printf "%s\n" "evaluate-commands -client $kak_client %{ plug-update-fifo %{${plugin}} %{Updating} }" | kak -p ${kak_session}
                     cd "$kak_opt_plug_install_dir/${plugin##*/}" && rev=$(git rev-parse HEAD) && git pull -q
-                    wait
-                    if [ $rev != $(git rev-parse HEAD) ]; then
-                        printf "%s\n" "evaluate-commands -client $kak_client plug-eval-hooks $plugin" | kak -p ${kak_session}
+                    status=$?
+                    if [ $status -ne 0 ]; then
+                        printf "%s\n" "evaluate-commands -client $kak_client %{ plug-update-fifo %{${plugin}} %{Update Error ($status)} }" | kak -p ${kak_session}
                     else
-                        printf "%s\n" "evaluate-commands -client $kak_client %{ plug-update-fifo %{${plugin}} %{Done} }" | kak -p ${kak_session}
+                        if [ $rev != $(git rev-parse HEAD) ]; then
+                            printf "%s\n" "evaluate-commands -client $kak_client plug-eval-hooks $plugin" | kak -p ${kak_session}
+                        else
+                            printf "%s\n" "evaluate-commands -client $kak_client %{ plug-update-fifo %{${plugin}} %{Done} }" | kak -p ${kak_session}
+                        fi
                     fi
                 ) > /dev/null 2>&1 < /dev/null &
             fi
@@ -296,8 +314,8 @@ plug-update -params ..1 -shell-script-candidates %{ printf "%s\n" $kak_opt_plug_
 }
 
 define-command -override -docstring \
-"plug-delete [<plugin>]: delete <plugin>.
-If <plugin> ommited deletes all plugins that are not presented in configuration files" \
+"plug-clean [<plugin>]: delete <plugin>.
+If <plugin> ommited deletes all plugins that are installed but not presented in configuration files" \
 plug-clean -params ..1 -shell-script-candidates %{ ls -1 $kak_opt_plug_install_dir } %{
     nop %sh{ (
         plugin=$1
@@ -405,7 +423,7 @@ plug-eval-hooks -params 1 %{
                 else
                     printf "%s\n%s\n%s\n" "evaluate-commands -client $kak_client %{ echo -debug %{error occured while evaluation of post-update hooks for $plugin_name:} }" \
                     "evaluate-commands -client $kak_client %{ echo -debug %sh{cat $temp; rm -rf $temp} }" \
-                    "evaluate-commands -client $kak_client %{ echo -debug %{aborting hooks for $plugin_name with code: $status} }" | kak -p ${kak_session}
+                    "evaluate-commands -client $kak_client %{ echo -debug %{aborting hooks for $plugin_name with code $status} }" | kak -p ${kak_session}
                 fi
                 break
             fi
@@ -421,14 +439,13 @@ plug-eval-hooks -params 1 %{
 
 define-command -override \
 -docstring "plug-list [<noupdate>]: list all installed plugins in *plug* buffer. Chacks updates by default unless <noupdate> is specified." \
-plug-list -params ..1 %{ evaluate-commands %sh{
+plug-list -params ..1 %{ evaluate-commands -try-client %opt{toolsclient} %sh{
     noupdate=$1
     fifo=$(mktemp -d "${TMPDIR:-/tmp}"/plug-kak.XXXXXXXX)/fifo
     plug_log=$(mktemp "${TMPDIR:-/tmp}"/plug-log.XXXXXXXX)
     mkfifo ${fifo}
 
-    printf "%s\n" "try %{ delete-buffer *plug* }
-                   edit! -fifo ${fifo} *plug*
+    printf "%s\n" "edit! -fifo ${fifo} *plug*
                    set-option window filetype plug
                    hook -always -once buffer BufCloseFifo .* %{ nop %sh{ rm -r ${fifo%/*} } }
                    map buffer normal '<ret>' ':<space>plug-fifo-operate<ret>'"
@@ -437,9 +454,9 @@ plug-list -params ..1 %{ evaluate-commands %sh{
     while [ $# -gt 0 ]; do
         plugin="${1##*/}"
         if [ -d "$kak_opt_plug_install_dir/$plugin" ]; then
-            printf "%s: Installed\n" $1 >> ${plug_log}
+            printf "%s: Installed\n" "$1" >> ${plug_log}
         else
-            printf "%s: Not installed\n" $1 >> ${plug_log}
+            printf "%s: Not installed\n" "$1" >> ${plug_log}
         fi
         shift
     done
@@ -451,28 +468,34 @@ plug-list -params ..1 %{ evaluate-commands %sh{
         [ "$skip" = "1" ] || printf "%s: Not loaded\n" "${exitsting_plugin##*/}" >> ${plug_log}
     done
 
-    ( sort ${plug_log} > ${fifo}; rm -rf ${plug-log} )  > /dev/null 2>&1 < /dev/null &
+    ( sort ${plug_log} > ${fifo}; rm -rf ${plug_log} )  > /dev/null 2>&1 < /dev/null &
 
     if [ -z "$noupdate" ]; then
         (
+            [ -z "$GIT_TERMINAL_PROMPT" ] && export GIT_TERMINAL_PROMPT=0
             eval "set -- $kak_opt_plug_plugins"
             while [ $# -gt 0 ]; do
                 plugin="${1##*/}"
                 if [ -d "$kak_opt_plug_install_dir/$plugin" ]; then
                     (   cd $kak_opt_plug_install_dir/$plugin
                         git fetch > /dev/null 2>&1
-                        LOCAL=$(git rev-parse @{0})
-                        REMOTE=$(git rev-parse @{u})
-                        BASE=$(git merge-base @{0} @{u})
+                        status=$?
+                        if [ $status -eq 0 ]; then
+                            LOCAL=$(git rev-parse @{0})
+                            REMOTE=$(git rev-parse @{u})
+                            BASE=$(git merge-base @{0} @{u})
 
-                        if [ $LOCAL = $REMOTE ]; then
-                            printf "%s\n" "evaluate-commands -client $kak_client %{ plug-update-fifo %{$1} %{Up to date} }" | kak -p ${kak_session}
-                        elif [ $LOCAL = $BASE ]; then
-                            printf "%s\n" "evaluate-commands -client $kak_client %{ plug-update-fifo %{$1} %{Update available} }" | kak -p ${kak_session}
-                        elif [ $REMOTE = $BASE ]; then
-                            printf "%s\n" "evaluate-commands -client $kak_client %{ plug-update-fifo %{$1} %{Local changes} }" | kak -p ${kak_session}
+                            if [ $LOCAL = $REMOTE ]; then
+                                printf "%s\n" "evaluate-commands -client $kak_client %{ plug-update-fifo %{$1} %{Up to date} }" | kak -p ${kak_session}
+                            elif [ $LOCAL = $BASE ]; then
+                                printf "%s\n" "evaluate-commands -client $kak_client %{ plug-update-fifo %{$1} %{Update available} }" | kak -p ${kak_session}
+                            elif [ $REMOTE = $BASE ]; then
+                                printf "%s\n" "evaluate-commands -client $kak_client %{ plug-update-fifo %{$1} %{Local changes} }" | kak -p ${kak_session}
+                            else
+                                printf "%s\n" "evaluate-commands -client $kak_client %{ plug-update-fifo %{$1} %{Installed} }" | kak -p ${kak_session}
+                            fi
                         else
-                            printf "%s\n" "evaluate-commands -client $kak_client %{ plug-update-fifo %{$1} %{Installed} }" | kak -p ${kak_session}
+                            printf "%s\n" "evaluate-commands -client $kak_client %{ plug-update-fifo %{$1} %{Fetch Error ($status)} }" | kak -p ${kak_session}
                         fi
                     ) > /dev/null 2>&1 < /dev/null &
                 fi
