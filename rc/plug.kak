@@ -408,7 +408,7 @@ plug-eval-hooks -params 1 %{
                 temp=$(mktemp ${TMPDIR:-/tmp}/$plugin_name-log.XXXXXX)
                 cd "$kak_opt_plug_install_dir/$plugin_name"
                 printf "%s\n" "evaluate-commands -client $kak_client %{ plug-update-fifo %{${plugin}} %{Running post-update hooks} }" | kak -p ${kak_session}
-                IFS=';
+                IFS='
 '
                 for cmd in ${1#*:}; do
                     eval "$cmd" >$temp 2>&1
