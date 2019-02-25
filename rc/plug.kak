@@ -58,28 +58,24 @@ bool plug_always_ensure false
 declare-option -docstring "name of the client in which utilities display information" \
 str toolsclient
 
-hook global WinSetOption filetype=kak %{ try %{
-    add-highlighter window/plug_keywords   regex \b(plug|do|config|load)\b\h+((?=")|(?=')|(?=%)|(?=\w)) 0:keyword
-    add-highlighter window/plug_attributes regex \b(noload|ensure|branch|tag|commit)\b 0:attribute
-    hook  global WinSetOption filetype=(?!kak).* %{ try %{
-        remove-highlighter window/plug_keywords
-        remove-highlighter window/plug_attributes
-    }}
-}}
+# kakrc highlighters
+add-highlighter shared/kakrc/code/plug_keywords   regex \b(plug|do|config|load)\b\h+((?=")|(?=')|(?=%)|(?=\w)) 0:keyword
+add-highlighter shared/kakrc/code/plug_attributes regex \b(noload|ensure|branch|tag|commit)\b 0:attribute
+add-highlighter shared/kakrc/plug_post_hooks      region -recurse '\{' '\bdo\h+%\{' '\}' ref sh
 
-# Highlighters
-add-highlighter shared/plug group
-add-highlighter shared/plug/done          regex [^:]+:\h+(Up\h+to\h+date|Done|Installed)$                    1:string
-add-highlighter shared/plug/update        regex [^:]+:\h+(Update\h+available|Deleted)$                       1:keyword
-add-highlighter shared/plug/not_installed regex [^:]+:\h+(Not\h+(installed|loaded)|(\w+\h+)?Error([^\n]+)?)$ 1:Error
-add-highlighter shared/plug/updating      regex [^:]+:\h+(Installing|Updating|Local\h+changes)$              1:type
-add-highlighter shared/plug/working       regex [^:]+:\h+(Running\h+post-update\h+hooks)$                    1:attribute
+# *plug* highlighters
+add-highlighter shared/plug_buffer group
+add-highlighter shared/plug_buffer/done          regex [^:]+:\h+(Up\h+to\h+date|Done|Installed)$                    1:string
+add-highlighter shared/plug_buffer/update        regex [^:]+:\h+(Update\h+available|Deleted)$                       1:keyword
+add-highlighter shared/plug_buffer/not_installed regex [^:]+:\h+(Not\h+(installed|loaded)|(\w+\h+)?Error([^\n]+)?)$ 1:Error
+add-highlighter shared/plug_buffer/updating      regex [^:]+:\h+(Installing|Updating|Local\h+changes)$              1:type
+add-highlighter shared/plug_buffer/working       regex [^:]+:\h+(Running\h+post-update\h+hooks)$                    1:attribute
 
 hook -group plug-syntax global WinSetOption filetype=plug %{
-  add-highlighter window/plug ref plug
-  hook -always -once window WinSetOption filetype=.* %{
-    remove-highlighter window/plug
-  }
+    add-highlighter window/plug_buffer ref plug_buffer
+    hook -always -once window WinSetOption filetype=.* %{
+        remove-highlighter window/plug_buffer
+    }
 }
 
 define-command -override -docstring \
