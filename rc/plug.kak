@@ -148,7 +148,7 @@ plug -params 1.. -shell-script-candidates %{ ls -1 ${kak_opt_plug_install_dir} }
                 printf "%s\n" "plug-load %{${plugin}} %{${load_files}}"
             fi
             if [ -n "${configurations}" ]; then
-                printf "%s\n" "plug-configure %{${configurations}}"
+                printf "%s\n" "${configurations}"
             fi
             printf "%s\n" "set-option -add global plug_loaded_plugins %{${plugin} }"
         else
@@ -327,12 +327,6 @@ plug-clean -params ..1 -shell-script-candidates %{ ls -1 ${kak_opt_plug_install_
         fi
     ) > /dev/null 2>&1 < /dev/null & }
 }
-
-define-command -override -hidden \
--docstring "plug-configure: wrapper for configuring plugin" \
-plug-configure -params 1 %{ evaluate-commands %sh{
-    printf "%s\n" "$1"
-}}
 
 define-command -override -hidden \
 -docstring "plug-load: load selected subset of files from repository" \
