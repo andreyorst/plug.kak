@@ -44,6 +44,14 @@ declare-option -hidden -docstring \
 str-list plug_post_hooks ''
 
 declare-option -hidden -docstring \
+"List of themes" \
+str-list plug_themes ''
+
+declare-option -hidden -docstring \
+"List of plugins to skip" \
+str-list plug_skip_load ''
+
+declare-option -hidden -docstring \
 "List of configurations for all mentioned plugins" \
 str-list plug_configurations ''
 
@@ -60,7 +68,7 @@ str toolsclient
 
 # kakrc highlighters
 add-highlighter shared/kakrc/code/plug_keywords   regex \b(plug|do|config|load)\b\h+((?=")|(?=')|(?=%)|(?=\w)) 0:keyword
-add-highlighter shared/kakrc/code/plug_attributes regex \b(noload|ensure|branch|tag|commit)\b 0:attribute
+add-highlighter shared/kakrc/code/plug_attributes regex \b(noload|ensure|branch|tag|commit|theme)\b 0:attribute
 add-highlighter shared/kakrc/plug_post_hooks      region -recurse '\{' '\bdo\h+%\{' '\}' ref sh
 
 # *plug* highlighters
@@ -102,6 +110,7 @@ plug -params 1.. -shell-script-candidates %{ ls -1 ${kak_opt_plug_install_dir} }
                     branch_type=$1; shift
                     checkout="$1"; shift ;;
                 noload)
+                    printf "%s\n" "set-option -add global plug_skip_load %{${plugin} }"
                     noload=1; shift ;;
                 load)
                     load=1; shift
@@ -110,6 +119,12 @@ plug -params 1.. -shell-script-candidates %{ ls -1 ${kak_opt_plug_install_dir} }
                     shift; printf "%s\n" "set-option -add global plug_post_hooks %{${plugin_name}} %{$1}"; shift ;;
                 ensure)
                     ensure=1; shift ;;
+                theme)
+                    shift
+                    hooks="mkdir -p ${kak_config}/colors
+                           find -type f -name '*.kak' -exec cp {} ${kak_config}/colors/ \;"
+                    printf "%s\n" "set-option -add global plug_post_hooks %{${plugin_name}} %{${hooks}}"
+                    printf "%s\n" "set-option -add global plug_themes %{${plugin} }" ;;
                 config)
                     shift; configurations="$1"; shift ;;
                 *)
@@ -140,9 +155,9 @@ plug -params 1.. -shell-script-candidates %{ ls -1 ${kak_opt_plug_install_dir} }
                     git checkout ${checkout} >/dev/null 2>&1
                 )
             fi
-            if [ -z "${noload}" ]; then
+            # if [ -z "${noload}" ]; then
                 printf "%s\n" "plug-load %{${plugin}} %{${load_files}}"
-            fi
+            # fi
             if [ -n "${configurations}" ]; then
                 printf "%s\n" "${configurations}"
             fi
@@ -329,6 +344,12 @@ define-command -override -hidden \
 plug-load -params 2 %{ evaluate-commands %sh{
     plugin_dir="${1##*/}"
     load_files=$2
+
+    # do nothing if plugin is a theme
+    [ $(expr "${kak_opt_plug_themes}" : ".*$1.*") -ne 0 ] && exit
+    # do nothing if plugin was specified with noload
+    [ $(expr "${kak_opt_plug_skip_load}" : ".*$1.*") -ne 0 ] && exit
+
     IFS='
 '
     set -f # set noglob

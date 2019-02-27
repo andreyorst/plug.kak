@@ -66,6 +66,7 @@ These are keywords to use:
 - [load](#Loading-subset-of-files-from-plugin-repository)
 - [noload](#Skipping-loading-of-a-plugin)
 - [do](#Automatically-do-certain-tasks-on-install-or-update)
+- [theme](#Installing-color-schemes)
 - [config](#Handling-user-configurations)
 
 #### Branch, Tag or Commit
@@ -104,6 +105,20 @@ that need to compile some parts of it.
 plug "ul/kak-lsp" noload do %{cargo build --release}
 ```
 
+#### Installing color schemes
+**plug.kak** is capable  of installing color schemes. To  tell **plug.kak** that
+plugin  is a  color scheme,  a `theme`  switch should  be passed  to the  `plug`
+command.  **plug.kak**  will copy color  scheme files to the  `colors` directory
+located at `%val{config}/colors`.
+
+```kak
+plug "alexherbo2/kakoune-dracula-theme" theme
+
+plug "andreyorst/base16-gruvbox.kak" theme %{
+    colorscheme base16-gruvbox-dark-soft
+}
+```
+
 #### Handling user configurations
 **plug.kak** also capable to handle plugin configurations. You can specify them
 by using `config` keyword and list of configurations, or via last parameter,
@@ -121,6 +136,10 @@ plug "andreyorst/fzf.kak" config %{
     }
 }
 ```
+
+There  may be  many blocks  of  configurations, but  there's one  strict rule  -
+configurations, that are not specified with `config` must be the last parameters
+of `plug` command.
 
 ## Configuration
 
@@ -181,4 +200,3 @@ Here are some examples:
 2. Source your `kakrc` with `source` command, or restart Kakoune to tell **plug.kak** that configuration is changed;
 3. Execute `plug-clean` command, the `*plug*` buffer will show up to illustrate progress;
 4. (Optional) If you didn't restarted Kakoune at 2. restart it to unload uninstalled plugins.
-
