@@ -10,6 +10,7 @@
 # │ GitHub.com/andreyorst/plug.kak       │
 # ╰──────────────────────────────────────╯
 
+# Public options
 declare-option -docstring \
 "path where plugins should be installed.
 
@@ -23,11 +24,19 @@ declare-option -docstring \
 str plug_git_domain 'https://github.com'
 
 declare-option -docstring \
-"Maximum amount of simultaneous downloads when installing or updating plugins
+"Maximum amount of simultaneously active downloads when installing or updating all plugins
     Default value: 10
 " \
 int plug_max_active_downloads 10
 
+declare-option -docstring \
+"always ensure that all plugins are installed. If this option specified, all uninstalled plugins are being installed when Kakoune starts." \
+bool plug_always_ensure false
+
+declare-option -docstring "name of the client in which utilities display information" \
+str toolsclient
+
+# Private options
 declare-option -hidden -docstring \
 "Array of all plugins, mentioned in any configuration file.
 Empty by default, and erased on reload of main Kakoune configuration, to track if some plugins were disabled
@@ -36,12 +45,8 @@ str plug_plugins ''
 
 declare-option -hidden -docstring \
 "List of loaded plugins. Has no default value.
-Should not be cleared during update of configuration files. Shluld not be modified by user." \
+Should not be cleared during update of configuration files. Should not be modified by user." \
 str plug_loaded_plugins
-
-declare-option -hidden -docstring \
-"List of post update/install hooks to be executed" \
-str-list plug_post_hooks ''
 
 declare-option -hidden -docstring \
 "List of themes" \
@@ -51,12 +56,9 @@ declare-option -hidden -docstring \
 "List of plugins to skip" \
 str-list plug_skip_load ''
 
-declare-option -docstring \
-"always ensure sthat all plugins are installed" \
-bool plug_always_ensure false
-
-declare-option -docstring "name of the client in which utilities display information" \
-str toolsclient
+declare-option -hidden -docstring \
+"List of post update/install hooks to be executed" \
+str-list plug_post_hooks ''
 
 # kakrc highlighters
 add-highlighter shared/kakrc/code/plug_keywords   regex \b(plug|do|config|load)\b\h+((?=")|(?=')|(?=%)|(?=\w)) 0:keyword
@@ -85,6 +87,7 @@ plug -params 1.. -shell-script-candidates %{ ls -1 ${kak_opt_plug_install_dir} }
         plugin="${1%%.git}"
         shift
         plugin_name="${plugin##*/}"
+        plugin_opt_name=$(printf "%s\n" "${plugin_name}" | awk '{ gsub(/[^a-zA-Z0-9_]/, "_", $0); print $0 }')
         load_files='*.kak'
 
         if [ -n "${kak_opt_plug_loaded_plugins}" ] && [ -z "${kak_opt_plug_loaded_plugins##*$plugin*}" ]; then
@@ -92,7 +95,7 @@ plug -params 1.. -shell-script-candidates %{ ls -1 ${kak_opt_plug_install_dir} }
             exit
         fi
 
-        if [ $(expr "${kak_opt_plug_plugins}" : ".*$plugin.*") -eq 0 ]; then
+        if [ $(expr "${kak_opt_plug_plugins}" : ".*${plugin}.*") -eq 0 ]; then
             printf "%s\n" "set-option -add global plug_plugins %{${plugin} }"
         fi
 
@@ -125,15 +128,14 @@ plug -params 1.. -shell-script-candidates %{ ls -1 ${kak_opt_plug_install_dir} }
         done
 
         while [ $# -gt 0 ]; do
-            configurations="$configurations $1"
+            configurations="${configurations} $1"
             shift
         done
 
         # bake configuration options
-        plugin_opt_name=$(printf "%s\n" "$plugin_name" | sed -E "s/[^a-zA-Z0-9_]/_/g")
         printf "%s\n" "declare-option -hidden str plug_${plugin_opt_name}_conf"
         if [ -n "${configurations}" ]; then
-            printf "%s\n" "set-option global plug_${plugin_opt_name}_conf %{$configurations}"
+            printf "%s\n" "set-option global plug_${plugin_opt_name}_conf %{${configurations}}"
         fi
 
         if [ -n "${noload}" ] && [ -n "${load}" ]; then
@@ -169,7 +171,7 @@ plug -params 1.. -shell-script-candidates %{ ls -1 ${kak_opt_plug_install_dir} }
 
 define-command -override -docstring \
 "plug-install [<plugin>]: install <plugin>.
-If <plugin> ommited installs all plugins mentioned in configuration files" \
+If <plugin> omitted installs all plugins mentioned in configuration files" \
 plug-install -params ..1 %{
     nop %sh{ (
         plugin=$1
@@ -246,7 +248,7 @@ plug-install -params ..1 %{
 
 define-command -override -docstring \
 "plug-update [<plugin>]: Update plugin.
-If <plugin> ommited all installed plugins are updated" \
+If <plugin> omitted all installed plugins are updated" \
 plug-update -params ..1 -shell-script-candidates %{ printf "%s\n" ${kak_opt_plug_plugins} | tr ' ' '\n' } %{
     evaluate-commands %sh{ (
         plugin=$1
@@ -297,7 +299,7 @@ plug-update -params ..1 -shell-script-candidates %{ printf "%s\n" ${kak_opt_plug
 
 define-command -override -docstring \
 "plug-clean [<plugin>]: delete <plugin>.
-If <plugin> ommited deletes all plugins that are installed but not presented in configuration files" \
+If <plugin> omitted deletes all plugins that are installed but not presented in configuration files" \
 plug-clean -params ..1 -shell-script-candidates %{ ls -1 ${kak_opt_plug_install_dir} } %{
     nop %sh{ (
         plugin=$1
