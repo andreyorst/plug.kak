@@ -174,12 +174,16 @@ plug-install -params ..1 %{
 
         printf "%s\n" "evaluate-commands -client ${kak_client} %{ try %{ buffer *plug* } catch %{ plug-list noupdate } }" | kak -p ${kak_session}
 
-        if [ -d "${kak_opt_plug_install_dir}/.plug.kaklock" ]; then
-            printf "%s\n" "evaluate-commands -client ${kak_client} echo -markup '{Information}.plug.kaklock is present. Waiting...'" | kak -p ${kak_session}
+        if [ -d "${kak_opt_plug_install_dir}/.plug.kak.lock" ]; then
+            lock=1
+            printf "%s\n" "evaluate-commands -client ${kak_client} echo -markup '{Information}.plug.kak.lock is present. Waiting...'" | kak -p ${kak_session}
         fi
 
-        while ! mkdir "${kak_opt_plug_install_dir}/.plug.kaklock" 2>/dev/null; do sleep 1; done
-        trap 'rmdir "${kak_opt_plug_install_dir}/.plug.kaklock"' EXIT
+        while ! mkdir "${kak_opt_plug_install_dir}/.plug.kak.lock" 2>/dev/null; do sleep 1; done
+        trap 'rmdir "${kak_opt_plug_install_dir}/.plug.kak.lock"' EXIT
+
+        # this will clear the lock waiting message in case user didn't cleared it
+        [ -n "${lock}" ] &&  printf "%s\n" "evaluate-commands -client ${kak_client} echo" | kak -p ${kak_session}
 
         if [ -n "${plugin}" ]; then
             plugin_list=${plugin}
@@ -240,19 +244,16 @@ plug-update -params ..1 -shell-script-candidates %{ printf "%s\n" ${kak_opt_plug
 
         printf "%s\n" "evaluate-commands -client ${kak_client} %{ try %{ buffer *plug* } catch %{ plug-list noupdate } }" | kak -p ${kak_session}
 
-        if [ -d "${kak_opt_plug_install_dir}/.plug.kaklock" ]; then
-            printf "%s\n" "evaluate-commands -client ${kak_client} echo -markup '{Information}.plug.kaklock is present. Waiting...'" | kak -p ${kak_session}
+        if [ -d "${kak_opt_plug_install_dir}/.plug.kak.lock" ]; then
+            lock=1
+            printf "%s\n" "evaluate-commands -client ${kak_client} echo -markup '{Information}.plug.kak.lock is present. Waiting...'" | kak -p ${kak_session}
         fi
 
-        while ! mkdir "${kak_opt_plug_install_dir}/.plug.kaklock" 2>/dev/null; do sleep 1; done
-        trap 'rmdir "${kak_opt_plug_install_dir}/.plug.kaklock"' EXIT
+        while ! mkdir "${kak_opt_plug_install_dir}/.plug.kak.lock" 2>/dev/null; do sleep 1; done
+        trap 'rmdir "${kak_opt_plug_install_dir}/.plug.kak.lock"' EXIT
+        [ -n "${lock}" ] &&  printf "%s\n" "evaluate-commands -client ${kak_client} echo" | kak -p ${kak_session}
 
-        if [ -n "${plugin}" ]; then
-            plugin_list=${plugin}
-        else
-            plugin_list=${kak_opt_plug_plugins}
-        fi
-
+        [ -n "${plugin}" ] && plugin_list=${plugin} || plugin_list=${kak_opt_plug_plugins}
         for plugin in ${plugin_list}; do
             plugin_name="${plugin##*/}"
             if [ -d "${kak_opt_plug_install_dir}/${plugin_name}" ]; then
@@ -288,20 +289,21 @@ If <plugin> ommited deletes all plugins that are installed but not presented in 
 plug-clean -params ..1 -shell-script-candidates %{ ls -1 ${kak_opt_plug_install_dir} } %{
     nop %sh{ (
         plugin=$1
+        plugin_name="${plugin##*/}"
 
         printf "%s\n" "evaluate-commands -client ${kak_client} %{ try %{ buffer *plug* } catch %{ plug-list noupdate } }" | kak -p ${kak_session}
 
-        if [ -d "${kak_opt_plug_install_dir}/.plug.kaklock" ]; then
-            printf "%s\n" "evaluate-commands -client ${kak_client} echo -markup '{Information}.plug.kaklock is present. Waiting...'" | kak -p ${kak_session}
+        if [ -d "${kak_opt_plug_install_dir}/.plug.kak.lock" ]; then
+            printf "%s\n" "evaluate-commands -client ${kak_client} echo -markup '{Information}.plug.kak.lock is present. Waiting...'" | kak -p ${kak_session}
         fi
 
-        while ! mkdir "${kak_opt_plug_install_dir}/.plug.kaklock" 2>/dev/null; do sleep 1; done
-        trap 'rmdir "${kak_opt_plug_install_dir}/.plug.kaklock"' EXIT
+        while ! mkdir "${kak_opt_plug_install_dir}/.plug.kak.lock" 2>/dev/null; do sleep 1; done
+        trap 'rmdir "${kak_opt_plug_install_dir}/.plug.kak.lock"' EXIT
 
         if [ -n "${plugin}" ]; then
-            if [ -d "${kak_opt_plug_install_dir}/${plugin##*/}" ]; then
-                printf "%s\n" "evaluate-commands -client ${kak_client} %{ plug-update-fifo %{${plugin##*/}} %{Deleted} }" | kak -p ${kak_session}
-                (cd ${kak_opt_plug_install_dir} && rm -rf "${plugin##*/}")
+            if [ -d "${kak_opt_plug_install_dir}/${plugin_name}" ]; then
+                printf "%s\n" "evaluate-commands -client ${kak_client} %{ plug-update-fifo %{${plugin_name}} %{Deleted} }" | kak -p ${kak_session}
+                (cd ${kak_opt_plug_install_dir} && rm -rf "${plugin_name}")
             else
                 printf "%s\n" "evaluate-commands -client ${kak_client} echo -markup %{{Error}No such plugin '${plugin}'}" | kak -p ${kak_session}
                 exit
@@ -331,6 +333,7 @@ plug-load -params 2 %{ evaluate-commands %sh{
 '
     set -f # set noglob
     for file in "$2"; do
+        # trim leading and trailing whitespaces
         file="${file#"${file%%[![:space:]]*}"}"
         file="${file%"${file##*[![:space:]]}"}"
         for script in $(find -L ${kak_opt_plug_install_dir}/${plugin_dir} -type f -name "${file}" | awk -F/ '{ print NF-1, $0 }' | sort -n | cut -d' ' -f2); do
@@ -364,7 +367,7 @@ plug-eval-hooks -params 1 %{
                 if [ ${status} -eq 0 ]; then
                     rm -rf ${temp}
                 else
-                    printf "%s\n%s\n%s\n" "evaluate-commands -client ${kak_client} %{ echo -debug %{error occured while evaluation of post-update hooks for ${plugin_name}:} }" \
+                    printf "%s\n%s\n%s\n" "evaluate-commands -client ${kak_client} %{ echo -debug %{plug.kak: error occured while evaluation of post-update hooks for ${plugin_name}:} }" \
                     "evaluate-commands -client ${kak_client} %{ echo -debug %sh{cat ${temp}; rm -rf ${temp}} }" \
                     "evaluate-commands -client ${kak_client} %{ echo -debug %{aborting hooks for ${plugin_name} with code ${status}} }" | kak -p ${kak_session}
                 fi
@@ -373,10 +376,11 @@ plug-eval-hooks -params 1 %{
             shift
         done
         if [ ${status} -ne 0 ]; then
-            printf "%s\n" "evaluate-commands -client ${kak_client} %{ plug-update-fifo %{${plugin_name}} %{Error} }" | kak -p ${kak_session}
+            message="Error (${status})"
         else
-            printf "%s\n" "evaluate-commands -client ${kak_client} %{ plug-update-fifo %{${plugin_name}} %{Done} }" | kak -p ${kak_session}
+            message="Done"
         fi
+        printf "%s\n" "evaluate-commands -client ${kak_client} %{ plug-update-fifo %{${plugin_name}} %{${message}} }" | kak -p ${kak_session}
     ) > /dev/null 2>&1 < /dev/null & }
 }
 
