@@ -51,14 +51,6 @@ declare-option -hidden -docstring \
 "List of plugins to skip" \
 str-list plug_skip_load ''
 
-declare-option -hidden -docstring \
-"List of configurations for all mentioned plugins" \
-str-list plug_configurations ''
-
-declare-option -hidden -docstring \
-"List of filest to load for all mentioned plugins" \
-str-list plug_load_files ''
-
 declare-option -docstring \
 "always ensure sthat all plugins are installed" \
 bool plug_always_ensure false
@@ -137,6 +129,13 @@ plug -params 1.. -shell-script-candidates %{ ls -1 ${kak_opt_plug_install_dir} }
             shift
         done
 
+        # bake configuration options
+        plugin_opt_name=$(printf "%s\n" "$plugin_name" | sed -E "s/[^a-zA-Z0-9_]/_/g")
+        printf "%s\n" "declare-option -hidden str plug_${plugin_opt_name}_conf"
+        if [ -n "${configurations}" ]; then
+            printf "%s\n" "set-option global plug_${plugin_opt_name}_conf %{$configurations}"
+        fi
+
         if [ -n "${noload}" ] && [ -n "${load}" ]; then
             printf "%s\n" "echo -debug %{plug.kak: warning, using both 'load' and 'noload' for ${plugin##*/} plugin}"
             printf "%s\n" "echo -debug %{'load' has higer priority so 'noload' will be ignored.}"
@@ -155,12 +154,10 @@ plug -params 1.. -shell-script-candidates %{ ls -1 ${kak_opt_plug_install_dir} }
                     git checkout ${checkout} >/dev/null 2>&1
                 )
             fi
-            # if [ -z "${noload}" ]; then
+            if [ -z "${noload}" ]; then
                 printf "%s\n" "plug-load %{${plugin}} %{${load_files}}"
-            # fi
-            if [ -n "${configurations}" ]; then
-                printf "%s\n" "${configurations}"
             fi
+            printf "%s\n" "evaluate-commands \"%opt{plug_${plugin_opt_name}_conf}\""
             printf "%s\n" "set-option -add global plug_loaded_plugins %{${plugin} }"
         else
             if [ -n "${ensure}" ] || [ "${kak_opt_plug_always_ensure}" = "true" ]; then
