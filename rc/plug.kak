@@ -429,17 +429,18 @@ plug-list -params ..1 %{ evaluate-commands -try-client %opt{toolsclient} %sh{
                         BASE=$(git merge-base @{0} @{u})
 
                         if [ ${LOCAL} = ${REMOTE} ]; then
-                            printf "%s\n" "evaluate-commands -client ${kak_client} %{ plug-update-fifo %{$1} %{Up to date} }" | kak -p ${kak_session}
+                            message="Up to date"
                         elif [ ${LOCAL} = ${BASE} ]; then
-                            printf "%s\n" "evaluate-commands -client ${kak_client} %{ plug-update-fifo %{$1} %{Update available} }" | kak -p ${kak_session}
+                            message="Update available"
                         elif [ ${REMOTE} = ${BASE} ]; then
-                            printf "%s\n" "evaluate-commands -client ${kak_client} %{ plug-update-fifo %{$1} %{Local changes} }" | kak -p ${kak_session}
+                            message="Local changes"
                         else
-                            printf "%s\n" "evaluate-commands -client ${kak_client} %{ plug-update-fifo %{$1} %{Installed} }" | kak -p ${kak_session}
+                            message="Installed"
                         fi
                     else
-                        printf "%s\n" "evaluate-commands -client ${kak_client} %{ plug-update-fifo %{$1} %{Fetch Error (${status})} }" | kak -p ${kak_session}
+                        message="Fetch Error (${status})"
                     fi
+                    printf "%s\n" "evaluate-commands -client ${kak_client} %{ plug-update-fifo %{$1} %{${message}} }" | kak -p ${kak_session}
                 ) > /dev/null 2>&1 < /dev/null & fi
                 shift
             done
