@@ -26,7 +26,7 @@ declare-option -docstring \
 "Maximum amount of simultaneous downloads when installing or updating plugins
     Default value: 10
 " \
-int plug_max_simultaneous_downloads 10
+int plug_max_active_downloads 10
 
 declare-option -hidden -docstring \
 "Array of all plugins, mentioned in any configuration file.
@@ -107,15 +107,11 @@ plug -params 1.. -shell-script-candidates %{ ls -1 ${kak_opt_plug_install_dir} }
                     load=1; shift
                     load_files="$1"; shift ;;
                 do)
-                    shift;
-                    printf "%s\n" "set-option -add global plug_post_hooks %{${plugin_name}} %{$1}"
-                    shift ;;
+                    shift; printf "%s\n" "set-option -add global plug_post_hooks %{${plugin_name}} %{$1}"; shift ;;
                 ensure)
                     ensure=1; shift ;;
                 config)
-                    shift
-                    configurations="$1"
-                    shift ;;
+                    shift; configurations="$1"; shift ;;
                 *)
                     ;;
             esac
@@ -165,19 +161,18 @@ If <plugin> ommited installs all plugins mentioned in configuration files" \
 plug-install -params ..1 %{
     nop %sh{ (
         plugin=$1
-        jobs=$(mktemp ${TMPDIR:-/tmp}/jobs.XXXXXX)
+        jobs=$(mktemp ${TMPDIR:-/tmp}/plug.kak.jobs.XXXXXX)
 
         [ -z "${GIT_TERMINAL_PROMPT}" ] && export GIT_TERMINAL_PROMPT=0
 
         if [ ! -d ${kak_opt_plug_install_dir} ]; then
             if ! mkdir -p ${kak_opt_plug_install_dir} >/dev/null 2>&1; then
-                printf "%s\n" "evaluate-commands -client ${kak_client} echo -markup '{Error}unable to create directory to host plugins'" | kak -p ${kak_session}
                 printf "%s\n" "evaluate-commands -client ${kak_client} echo -debug 'plug.kak Error: unable to create directory to host plugins'" | kak -p ${kak_session}
                 exit
             fi
         fi
 
-        printf "%s\n" "evaluate-commands -client ${kak_client} %{ try %{ buffer *plug* } catch %{ plug-list %{noupdate} } }" | kak -p ${kak_session}
+        printf "%s\n" "evaluate-commands -client ${kak_client} %{ try %{ buffer *plug* } catch %{ plug-list noupdate } }" | kak -p ${kak_session}
         sleep 0.2
 
         if [ -d "${kak_opt_plug_install_dir}/.plug.kaklock" ]; then
@@ -202,28 +197,29 @@ plug-install -params ..1 %{
         fi
 
         for plugin in ${plugin_list}; do
-            case ${plugin} in
-                http*|git*)
-                    git="git clone ${plugin}" ;;
-                *)
-                    git="git clone ${kak_opt_plug_git_domain}/${plugin}" ;;
-            esac
-
+            plugin_name="${plugin##*/}"
             if [ ! -d "${kak_opt_plug_install_dir}/${plugin##*/}" ]; then
+                case ${plugin} in
+                    http*|git*)
+                        git="git clone ${plugin}" ;;
+                    *)
+                        git="git clone ${kak_opt_plug_git_domain}/${plugin}" ;;
+                esac
+
                 (
-                    printf "%s\n" "evaluate-commands -client ${kak_client} %{ plug-update-fifo %{${plugin##*/}} %{Installing} }" | kak -p ${kak_session}
+                    printf "%s\n" "evaluate-commands -client ${kak_client} %{ plug-update-fifo %{${plugin_name}} %{Installing} }" | kak -p ${kak_session}
                     cd ${kak_opt_plug_install_dir} && ${git} >/dev/null 2>&1
                     status=$?
                     if [ ${status} -ne 0 ]; then
-                        printf "%s\n" "evaluate-commands -client ${kak_client} %{ plug-update-fifo %{${plugin##*/}} %{Download Error (${status})} }" | kak -p ${kak_session}
+                        printf "%s\n" "evaluate-commands -client ${kak_client} %{ plug-update-fifo %{${plugin_name}} %{Download Error (${status})} }" | kak -p ${kak_session}
                     else
-                        printf "%s\n" "evaluate-commands -client ${kak_client} plug-eval-hooks ${plugin##*/}" | kak -p ${kak_session}
+                        printf "%s\n" "evaluate-commands -client ${kak_client} plug-eval-hooks ${plugin_name}" | kak -p ${kak_session}
                         printf "%s\n" "evaluate-commands -client ${kak_client} plug ${plugin}" | kak -p ${kak_session}
                     fi
                 ) > /dev/null 2>&1 < /dev/null &
             fi
             jobs > ${jobs}; active=$(wc -l < ${jobs})
-            while [ ${active} -ge ${kak_opt_plug_max_simultaneous_downloads} ]; do
+            while [ ${active} -ge ${kak_opt_plug_max_active_downloads} ]; do
                 sleep 1
                 jobs > ${jobs}; active=$(wc -l < ${jobs})
             done
@@ -243,7 +239,7 @@ plug-update -params ..1 -shell-script-candidates %{ printf "%s\n" ${kak_opt_plug
 
         [ -z "${GIT_TERMINAL_PROMPT}" ] && export GIT_TERMINAL_PROMPT=0
 
-        printf "%s\n" "evaluate-commands -client ${kak_client} %{ try %{ buffer *plug* } catch %{ plug-list %{noupdate} } }" | kak -p ${kak_session}
+        printf "%s\n" "evaluate-commands -client ${kak_client} %{ try %{ buffer *plug* } catch %{ plug-list noupdate } }" | kak -p ${kak_session}
         sleep 0.2
 
         if [ -d "${kak_opt_plug_install_dir}/.plug.kaklock" ]; then
@@ -260,24 +256,25 @@ plug-update -params ..1 -shell-script-candidates %{ printf "%s\n" ${kak_opt_plug
         fi
 
         for plugin in ${plugin_list}; do
-            if [ -d "${kak_opt_plug_install_dir}/${plugin##*/}" ]; then
+            plugin_name="${plugin##*/}"
+            if [ -d "${kak_opt_plug_install_dir}/${plugin_name}" ]; then
                 (
-                    printf "%s\n" "evaluate-commands -client ${kak_client} %{ plug-update-fifo %{${plugin##*/}} %{Updating} }" | kak -p ${kak_session}
-                    cd "${kak_opt_plug_install_dir}/${plugin##*/}" && rev=$(git rev-parse HEAD) && git pull -q
+                    printf "%s\n" "evaluate-commands -client ${kak_client} %{ plug-update-fifo %{${plugin_name}} %{Updating} }" | kak -p ${kak_session}
+                    cd "${kak_opt_plug_install_dir}/${plugin_name}" && rev=$(git rev-parse HEAD) && git pull -q
                     status=$?
                     if [ ${status} -ne 0 ]; then
-                        printf "%s\n" "evaluate-commands -client ${kak_client} %{ plug-update-fifo %{${plugin##*/}} %{Update Error (${status})} }" | kak -p ${kak_session}
+                        printf "%s\n" "evaluate-commands -client ${kak_client} %{ plug-update-fifo %{${plugin_name}} %{Update Error (${status})} }" | kak -p ${kak_session}
                     else
                         if [ ${rev} != $(git rev-parse HEAD) ]; then
-                            printf "%s\n" "evaluate-commands -client ${kak_client} plug-eval-hooks ${plugin#**/}" | kak -p ${kak_session}
+                            printf "%s\n" "evaluate-commands -client ${kak_client} plug-eval-hooks ${plugin_name}" | kak -p ${kak_session}
                         else
-                            printf "%s\n" "evaluate-commands -client ${kak_client} %{ plug-update-fifo %{${plugin##*/}} %{Done} }" | kak -p ${kak_session}
+                            printf "%s\n" "evaluate-commands -client ${kak_client} %{ plug-update-fifo %{${plugin_name}} %{Done} }" | kak -p ${kak_session}
                         fi
                     fi
                 ) > /dev/null 2>&1 < /dev/null &
             fi
             jobs > ${jobs}; active=$(wc -l < ${jobs})
-            while [ ${active} -ge $(expr ${kak_opt_plug_max_simultaneous_downloads} \* 5) ]; do
+            while [ ${active} -ge $(expr ${kak_opt_plug_max_active_downloads} \* 5) ]; do
                 sleep 1
                 jobs > ${jobs}; active=$(wc -l < ${jobs})
             done
@@ -294,7 +291,7 @@ plug-clean -params ..1 -shell-script-candidates %{ ls -1 ${kak_opt_plug_install_
     nop %sh{ (
         plugin=$1
 
-        printf "%s\n" "evaluate-commands -client ${kak_client} %{ try %{ buffer *plug* } catch %{ plug-list %{noupdate} } }" | kak -p ${kak_session}
+        printf "%s\n" "evaluate-commands -client ${kak_client} %{ try %{ buffer *plug* } catch %{ plug-list noupdate } }" | kak -p ${kak_session}
         sleep 0.2
 
         if [ -d "${kak_opt_plug_install_dir}/.plug.kaklock" ]; then
