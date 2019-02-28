@@ -87,10 +87,10 @@ plug -params 1.. -shell-script-candidates %{ ls -1 ${kak_opt_plug_install_dir} }
         plugin="${1%%.git}"
         shift
         plugin_name="${plugin##*/}"
-        plugin_opt_name=$(printf "%s\n" "${plugin_name}" | awk '{ gsub(/[^a-zA-Z0-9_]/, "_", $0); print $0 }')
+        plugin_opt_name=$(printf "%s\n" "${plugin_name}" | sed 's/[^a-zA-Z0-9_]/_/g')
         load_files='*.kak'
 
-        if [ -n "${kak_opt_plug_loaded_plugins}" ] && [ -z "${kak_opt_plug_loaded_plugins##*$plugin*}" ]; then
+        if [ $(expr "${kak_opt_plug_loaded_plugins}" : ".*${plugin}.*") -ne 0 ]; then
             printf "%s\n" "echo -markup %{{Information}${plugin_name} already loaded}"
             exit
         fi
@@ -99,43 +99,43 @@ plug -params 1.. -shell-script-candidates %{ ls -1 ${kak_opt_plug_install_dir} }
             printf "%s\n" "set-option -add global plug_plugins %{${plugin} }"
         fi
 
-        for arg in $@; do
-            case ${arg} in
+        while [ $# -gt 0 ]; do
+            case $1 in
                 branch|tag|commit)
-                    branch_type=$1; shift
-                    checkout="$1"; shift ;;
+                    branch_type=$1
+                    shift
+                    checkout="$1" ;;
                 noload)
                     printf "%s\n" "set-option -add global plug_skip_load %{${plugin} }"
-                    noload=1; shift ;;
+                    noload=1 ;;
                 load)
-                    load=1; shift
-                    load_files="$1"; shift ;;
-                do)
-                    shift; printf "%s\n" "set-option -add global plug_post_hooks %{${plugin_name}} %{$1}"; shift ;;
-                ensure)
-                    ensure=1; shift ;;
-                theme)
                     shift
+                    load=1
+                    load_files="$1" ;;
+                do)
+                    shift
+                    printf "%s\n" "set-option -add global plug_post_hooks %{${plugin_name}} %{$1}" ;;
+                ensure)
+                    ensure=1 ;;
+                theme)
                     hooks="mkdir -p ${kak_config}/colors
                            find -type f -name '*.kak' -exec cp {} ${kak_config}/colors/ \;"
                     printf "%s\n" "set-option -add global plug_post_hooks %{${plugin_name}} %{${hooks}}"
                     printf "%s\n" "set-option -add global plug_themes %{${plugin} }" ;;
                 config)
-                    shift; configurations="$1"; shift ;;
+                    shift
+                    configurations="${configurations} $1" ;;
                 *)
-                    ;;
+                    configurations="${configurations} $1" ;;
             esac
-        done
-
-        while [ $# -gt 0 ]; do
-            configurations="${configurations} $1"
             shift
         done
 
         # bake configuration options
-        printf "%s\n" "declare-option -hidden str plug_${plugin_opt_name}_conf"
         if [ -n "${configurations}" ]; then
-            printf "%s\n" "set-option global plug_${plugin_opt_name}_conf %{${configurations}}"
+            printf "%s\n" "declare-option -hidden str plug_${plugin_opt_name}_conf %{${configurations}}"
+        else
+            printf "%s\n" "declare-option -hidden str plug_${plugin_opt_name}_conf"
         fi
 
         if [ -n "${noload}" ] && [ -n "${load}" ]; then
@@ -354,9 +354,8 @@ plug-load -params 2 %{ evaluate-commands %sh{
     set -f # set noglob
     for file in "$2"; do
         # trim leading and trailing whitespaces
-        file="${file#"${file%%[![:space:]]*}"}"
-        file="${file%"${file##*[![:space:]]}"}"
-        for script in $(find -L ${kak_opt_plug_install_dir}/${plugin_dir} -type f -name "${file}" | awk -F/ '{ print NF-1, $0 }' | sort -n | cut -d' ' -f2); do
+        file=$(printf "%s\n" "${file}" | sed 's/^\s\+//;s/\s\+$//')
+        for script in $(find -L ${kak_opt_plug_install_dir}/${plugin_dir} -type f -name "${file}" -printf "%d %p\n" | sort -n | cut -d ' ' -f 2); do
             printf "source '%s'\n" ${script}
         done
     done
