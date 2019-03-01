@@ -161,11 +161,6 @@ plug -params 1.. -shell-script-candidates %{ ls -1 ${kak_opt_plug_install_dir} }
                     file="${file#"${file%%[![:space:]]*}"}"
                     file="${file%"${file##*[![:space:]]}"}"
                     # performance hungry place. We need to sort find's output by depth.
-                    # I use `awk' here to calculate amount of `/' in the path, and consturct
-                    # a line NUMBER\0PATH to pass it to the `sort -n', and then use `awk' again
-                    # to strip numbers away. If `sort -n' could be implemented within `awk'
-                    # this line would perform faster, because we don't need to pipe relults
-                    # between `awk', `sort', and back to `awk'. Maybe use Perl here.
                     find -L ${kak_opt_plug_install_dir}/${plugin_name} -path '*/.git' -prune -o -type f -name "${file}" -print | perl -e '
                         @sorted = map { $_->[0] }
                                   sort { $a->[1] <=> $b->[1] }
