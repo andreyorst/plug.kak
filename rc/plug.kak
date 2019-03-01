@@ -166,7 +166,11 @@ plug -params 1.. -shell-script-candidates %{ ls -1 ${kak_opt_plug_install_dir} }
                     # to strip numbers away. If `sort -n' could be implemented within `awk'
                     # this line would perform faster, because we don't need to pipe relults
                     # between `awk', `sort', and back to `awk'. Maybe use Perl here.
-                    find -L ${kak_opt_plug_install_dir}/${plugin_name} -path '*/.git' -prune -o -type f -name "${file}" -print | awk -F '/' '{ print NF-1"\0"$0 }' | sort -n | awk -F'\0' '{ print "source \"" $2 "\"" }'
+                    find -L ${kak_opt_plug_install_dir}/${plugin_name} -path '*/.git' -prune -o -type f -name "${file}" -print | perl -pe '
+                        print map { $_->[0] }
+                        sort { $a->[1] <=> $b->[1] }
+                        map  { [$_, ($_ =~ s/\//\//g)] }
+                             <>;'
                 done
             } fi
             printf "%s\n" "evaluate-commands \"%opt{plug_${plugin_opt_name}_conf}\""
