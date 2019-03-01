@@ -162,14 +162,12 @@ plug -params 1.. -shell-script-candidates %{ ls -1 ${kak_opt_plug_install_dir} }
                     file="${file%"${file##*[![:space:]]}"}"
                     # performance hungry place. We need to sort find's output by depth.
                     find -L ${kak_opt_plug_install_dir}/${plugin_name} -path '*/.git' -prune -o -type f -name "${file}" -print | perl -e '
-                        @sorted = map { $_->[0] }
+                        @sorted = map  { $_->[0] }
                                   sort { $a->[1] <=> $b->[1] }
                                   map  { [$_, ($_ =~ s/\//\//g)] }
                                        <>;
                         chomp(@sorted);
-                        for(@sorted) {
-                            print "source \"", $_, "\"\n"
-                        }'
+                        print "source \"", $_, "\"\n" for @sorted;'
                 done
             } fi
             printf "%s\n" "evaluate-commands \"%opt{plug_${plugin_opt_name}_conf}\""
