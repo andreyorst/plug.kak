@@ -154,7 +154,7 @@ plug -params 1.. -shell-script-candidates %{ ls -1 ${kak_opt_plug_install_dir} }
                 for file in "${load_files}"; do
                     # trim leading and trailing whitespaces
                     file=$(printf "%s\n" "${file}" | sed 's/^\s\+//;s/\s\+$//')
-                    find -L ${kak_opt_plug_install_dir}/${plugin_name} -path '*/.git*' -prune -o -type f -name "${file}" -printf "%d %p\n" | sort -n | awk '{ print "source " $2 }'
+                    find -L ${kak_opt_plug_install_dir}/${plugin_name} -path '*/.git*' -prune -o -type f -name "${file}" -printf "%d %p\n" | sort -n | awk '{ print "source \"" $2 "\"" }'
                 done
             } fi
             printf "%s\n" "evaluate-commands \"%opt{plug_${plugin_opt_name}_conf}\""
