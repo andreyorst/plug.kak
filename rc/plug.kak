@@ -49,14 +49,6 @@ Should not be cleared during update of configuration files. Should not be modifi
 str plug_loaded_plugins
 
 declare-option -hidden -docstring \
-"List of themes" \
-str-list plug_themes ''
-
-declare-option -hidden -docstring \
-"List of plugins to skip" \
-str-list plug_skip_load ''
-
-declare-option -hidden -docstring \
 "List of post update/install hooks to be executed" \
 str-list plug_post_hooks ''
 
@@ -106,7 +98,6 @@ plug -params 1.. -shell-script-candidates %{ ls -1 ${kak_opt_plug_install_dir} }
                     shift
                     checkout="$1" ;;
                 noload)
-                    printf "%s\n" "set-option -add global plug_skip_load %{${plugin} }"
                     noload=1 ;;
                 load)
                     shift
@@ -118,10 +109,10 @@ plug -params 1.. -shell-script-candidates %{ ls -1 ${kak_opt_plug_install_dir} }
                 ensure)
                     ensure=1 ;;
                 theme)
+                    noload=1
                     hooks="mkdir -p ${kak_config}/colors
                            find -type f -name '*.kak' -exec cp {} ${kak_config}/colors/ \;"
-                    printf "%s\n" "set-option -add global plug_post_hooks %{${plugin_name}} %{${hooks}}"
-                    printf "%s\n" "set-option -add global plug_themes %{${plugin} }" ;;
+                    printf "%s\n" "set-option -add global plug_post_hooks %{${plugin_name}} %{${hooks}}" ;;
                 config)
                     shift
                     configurations="${configurations} $1" ;;
@@ -156,9 +147,16 @@ plug -params 1.. -shell-script-candidates %{ ls -1 ${kak_opt_plug_install_dir} }
                     git checkout ${checkout} >/dev/null 2>&1
                 )
             fi
-            if [ -z "${noload}" ]; then
-                printf "%s\n" "plug-load %{${plugin}} %{${load_files}}"
-            fi
+            if [ -z "${noload}" ]; then {
+                IFS='
+'
+                set -f # set noglob
+                for file in "${load_files}"; do
+                    # trim leading and trailing whitespaces
+                    file=$(printf "%s\n" "${file}" | sed 's/^\s\+//;s/\s\+$//')
+                    find -L ${kak_opt_plug_install_dir}/${plugin_name} -path '*/.git*' -prune -o -type f -name "${file}" -printf "%d %p\n" | sort -n | awk '{ print "source " $2 }'
+                done
+            } fi
             printf "%s\n" "evaluate-commands \"%opt{plug_${plugin_opt_name}_conf}\""
             printf "%s\n" "set-option -add global plug_loaded_plugins %{${plugin} }"
         else
@@ -337,29 +335,6 @@ plug-clean -params ..1 -shell-script-candidates %{ ls -1 ${kak_opt_plug_install_
         fi
     ) > /dev/null 2>&1 < /dev/null & }
 }
-
-define-command -override -hidden \
--docstring "plug-load: load selected subset of files from repository" \
-plug-load -params 2 %{ evaluate-commands %sh{
-    plugin_dir="${1##*/}"
-    load_files=$2
-
-    # do nothing if plugin is a theme
-    [ $(expr "${kak_opt_plug_themes}" : ".*$1.*") -ne 0 ] && exit
-    # do nothing if plugin was specified with noload
-    [ $(expr "${kak_opt_plug_skip_load}" : ".*$1.*") -ne 0 ] && exit
-
-    IFS='
-'
-    set -f # set noglob
-    for file in "$2"; do
-        # trim leading and trailing whitespaces
-        file=$(printf "%s\n" "${file}" | sed 's/^\s\+//;s/\s\+$//')
-        for script in $(find -L ${kak_opt_plug_install_dir}/${plugin_dir} -type f -name "${file}" -printf "%d %p\n" | sort -n | cut -d ' ' -f 2); do
-            printf "source '%s'\n" ${script}
-        done
-    done
-}}
 
 define-command -override -hidden \
 -docstring "plug-eval-hooks: wrapper for post update/install hooks" \
