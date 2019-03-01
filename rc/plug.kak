@@ -105,14 +105,14 @@ plug -params 1.. -shell-script-candidates %{ ls -1 ${kak_opt_plug_install_dir} }
                     load_files="$1" ;;
                 do)
                     shift
-                    printf "%s\n" "set-option -add global plug_post_hooks %{${plugin_name}} %{$1}" ;;
+                    hooks="${hooks} %{${plugin_name}} %{$1}" ;;
                 ensure)
                     ensure=1 ;;
                 theme)
                     noload=1
-                    hooks="mkdir -p ${kak_config}/colors
+                    theme_hooks="mkdir -p ${kak_config}/colors
                            find -type f -name '*.kak' -exec cp {} ${kak_config}/colors/ \;"
-                    printf "%s\n" "set-option -add global plug_post_hooks %{${plugin_name}} %{${hooks}}" ;;
+                    hooks="${hooks} %{${plugin_name}} %{${theme_hooks}}" ;;
                 config)
                     shift
                     configurations="${configurations} $1" ;;
@@ -122,16 +122,21 @@ plug -params 1.. -shell-script-candidates %{ ls -1 ${kak_opt_plug_install_dir} }
             shift
         done
 
-        # bake configuration options
+        # bake configuration options. We need this in case plugins are not installed, but
+        # their configurations are known to `plug.kak', so it can load those after installation
+        # automatically.
         if [ -n "${configurations}" ]; then
             printf "%s\n" "declare-option -hidden str plug_${plugin_opt_name}_conf %{${configurations}}"
         else
             printf "%s\n" "declare-option -hidden str plug_${plugin_opt_name}_conf"
         fi
 
+        if [ -n "${hooks}" ]; then
+            printf "%s\n" "set-option -add global plug_post_hooks ${hooks}"
+        fi
+
         if [ -n "${noload}" ] && [ -n "${load}" ]; then
-            printf "%s\n" "echo -debug %{plug.kak: warning, using both 'load' and 'noload' for ${plugin##*/} plugin}"
-            printf "%s\n" "echo -debug %{'load' has higer priority so 'noload' will be ignored.}"
+            printf "%s\n" "echo -debug %{Warning: plug.kak: ${plugin_name}: 'load' has higer priority than 'noload'}"
             noload=
         fi
 
@@ -152,8 +157,15 @@ plug -params 1.. -shell-script-candidates %{ ls -1 ${kak_opt_plug_install_dir} }
 '
                 set -f # set noglob
                 for file in "${load_files}"; do
-                    # trim leading and trailing whitespaces
-                    file=$(printf "%s\n" "${file}" | sed 's/^\s\+//;s/\s\+$//')
+                    # trim leading and trailing whitespaces. faster than `sed'
+                    file="${file#"${file%%[![:space:]]*}"}"
+                    file="${file%"${file##*[![:space:]]}"}"
+                    # performance hungry place. We need to sort find's output by depth.
+                    # I use `awk' here to calculate amount of `/' in the path, and consturct
+                    # a line NUMBER\0PATH to pass it to the `sort -n', and then use `awk' again
+                    # to strip numbers away. If `sort -n' could be implemented within `awk'
+                    # this line would perform faster, because we don't need to pipe relults
+                    # between `awk', `sort', and back to `awk'. Maybe use Perl here.
                     find -L ${kak_opt_plug_install_dir}/${plugin_name} -path '*/.git' -prune -o -type f -name "${file}" -print | awk -F '/' '{ print NF-1"\0"$0 }' | sort -n | awk -F'\0' '{ print "source \"" $2 "\"" }'
                 done
             } fi
