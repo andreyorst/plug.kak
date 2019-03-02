@@ -274,22 +274,38 @@ I've mentioned that `plug` is a command. Indeed you can call `plug` from the
 Kakoune command prompt, as long as other **plug.kak** commands.
 
 ## Commands
-**plug.kak** adds four commands to the Kakoune:
+**plug.kak** adds five new commands to Kakoune. I wanted to make it simple, so
+commands are pretty much self explained by their names, but there are some notes
+that I still need to mention.
 
-- `plug-install` - Install all plugins specified in any configuration file. This
-  command accepts optional argument, which is plugin name or URL. It can be used
-  to install plugin without restarting Kakoune. This plugin will be enabled
-  automatically.
-- `plug-update` - Update installed plugins. This command accepts optional
-  argument, which is a plugin name. It can be used to update single plugin. When
-  called from prompt, it shows all installed plugins in the completion menu.
-- `plug-clean` - Remove plugins, that are installed, but disabled in
-  configuration files. This command accepts optional argument, which is a plugin
-  name, and can be used to remove any installed plugin.
-- `plug-list` - List all installed plugins, and check for updates. In this list,
-  you can use <kbd>Enter</kbd> key to install/update selected plugin.
-- And last but not least - `plug` - Load plugin from plugin installation
-  directory by its name.
+### `plug-install`
+This command installs all plugins that were specified in any configuration
+file. It accepts optional argument, which is plugin name or URL, so it could be
+used to install plugin from command prompt without restarting Kakoune. This
+plugin will be enabled automatically, but you still need to add `plug` command
+to your configuration files in order to use that plugin after the restart.
+
+### `plug-update`
+This commands updates all installed plugins. It accepts one optional argument,
+which is a plugin name, so it could be used to update single plugin. When called
+from prompt, it shows all installed plugins in the completion menu. This command
+is used by default with the <kbd>Enter</kbd> key on any plugin that is installed
+in the `*plug*` buffer.
+
+### `plug-clean`
+Remove plugins, that are installed, but disabled or missing in configuration
+files. This command also accepts optional argument, which is a plugin name, and
+can be used to remove any installed plugin.
+
+### `plug-list`
+This command can be used to manually invoke the `*plug*` buffer. In this buffer
+all installed plugins are listed, and checked for updates. The <kbd>Enter</kbd>
+key is remapped to execute `plug-update` or `plug-install` command for selected
+plugin, depending on its state. This command accepts an optional argument
+`noupdate`, and if it is specified, check for updates will not be performed.
+
+### `plug`
+And last but not least: `plug`. Load plugin from plugin installation directory by its name.
 
 [1]:https://img.shields.io/github/issues/andreyorst/plug.kak.svg
 [2]:https://github.com/andreyorst/plug.kak/issues
