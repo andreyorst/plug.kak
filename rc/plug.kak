@@ -74,7 +74,7 @@ hook -group plug-syntax global WinSetOption filetype=plug %{
 
 define-command -override -docstring \
 "plug <plugin> [<branch>|<tag>|<commit>] [<noload>|<load> <subset>] [[<config>] <configurations>]: load <plugin> from ""%opt{plug_install_dir}""" \
-plug -params 1.. -shell-script-candidates %{ ls -1 ${kak_opt_plug_install_dir} } %{
+plug -params 1.. -shell-script-candidates %{ ls -1 ${kak_opt_plug_install_dir} } %{ try %{
     evaluate-commands %sh{
         plugin="${1%%.git}"
         shift
@@ -178,7 +178,9 @@ plug -params 1.. -shell-script-candidates %{ ls -1 ${kak_opt_plug_install_dir} }
             fi
         fi
     }
-}
+} catch %{
+    echo -debug "Error occured while loading %arg{1} plugin"
+}}
 
 define-command -override -docstring \
 "plug-install [<plugin>]: install <plugin>.
