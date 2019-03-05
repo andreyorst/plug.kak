@@ -63,7 +63,7 @@ add-highlighter shared/plug_buffer/done          regex [^:]+:\h+(Up\h+to\h+date|
 add-highlighter shared/plug_buffer/update        regex [^:]+:\h+(Update\h+available|Deleted)$                       1:keyword
 add-highlighter shared/plug_buffer/not_installed regex [^:]+:\h+(Not\h+(installed|loaded)|(\w+\h+)?Error([^\n]+)?)$ 1:Error
 add-highlighter shared/plug_buffer/updating      regex [^:]+:\h+(Installing|Updating|Local\h+changes)$              1:type
-add-highlighter shared/plug_buffer/working       regex [^:]+:\h+(Running\h+post-update\h+hooks)$                    1:attribute
+add-highlighter shared/plug_buffer/working       regex [^:]+:\h+(Running\h+post-update\h+hooks|Waiting[^\n]+)$                    1:attribute
 
 hook -group plug-syntax global WinSetOption filetype=plug %{
     add-highlighter window/plug_buffer ref plug_buffer
@@ -162,12 +162,10 @@ plug -params 1.. -shell-script-candidates %{ ls -1 ${kak_opt_plug_install_dir} }
                     file="${file%"${file##*[![:space:]]}"}"
                     # performance hungry place. We need to sort find's output by depth.
                     find -L ${kak_opt_plug_install_dir}/${plugin_name} -path '*/.git' -prune -o -type f -name "${file}" -print | perl -e '
-                        @sorted = map  { $_->[0] }
-                                  sort { $a->[1] <=> $b->[1] }
-                                  map  { [$_, ($_ =~ s/\//\//g)] }
-                                       <>;
-                        chomp(@sorted);
-                        print "source \"", $_, "\"\n" for @sorted;'
+                        print map  { $_->[0] }
+                              sort { $a->[1] <=> $b->[1] }
+                              map  { [$_, ($_ =~ s/^/source "/ && $_ =~ s/$/"/ && $_ =~ s/\//\//g)] }
+                                       <>;'
                 done
             } fi
             printf "%s\n" "evaluate-commands \"%opt{plug_${plugin_opt_name}_conf}\""
@@ -203,14 +201,11 @@ plug-install -params ..1 %{
 
         if [ -d "${kak_opt_plug_install_dir}/.plug.kak.lock" ]; then
             lock=1
-            printf "%s\n" "evaluate-commands -client ${kak_client} echo -markup '{Information}.plug.kak.lock is present. Waiting...'" | kak -p ${kak_session}
+            printf "%s\n" "evaluate-commands -client ${kak_client} %{ plug-update-fifo %{${plugin##*/}} %{Waiting for .plug.kak.lock} }" | kak -p ${kak_session}
         fi
 
         while ! mkdir "${kak_opt_plug_install_dir}/.plug.kak.lock" 2>/dev/null; do sleep 1; done
         trap 'rmdir "${kak_opt_plug_install_dir}/.plug.kak.lock"' EXIT
-
-        # this will clear the lock waiting message in case user didn't cleared it
-        [ -n "${lock}" ] &&  printf "%s\n" "evaluate-commands -client ${kak_client} echo" | kak -p ${kak_session}
 
         if [ -n "${plugin}" ]; then
             plugin_list=${plugin}
@@ -273,12 +268,11 @@ plug-update -params ..1 -shell-script-candidates %{ printf "%s\n" ${kak_opt_plug
 
         if [ -d "${kak_opt_plug_install_dir}/.plug.kak.lock" ]; then
             lock=1
-            printf "%s\n" "evaluate-commands -client ${kak_client} echo -markup '{Information}.plug.kak.lock is present. Waiting...'" | kak -p ${kak_session}
+            printf "%s\n" "evaluate-commands -client ${kak_client} %{ plug-update-fifo %{${plugin##*/}} %{Waiting for .plug.kak.lock} }" | kak -p ${kak_session}
         fi
 
         while ! mkdir "${kak_opt_plug_install_dir}/.plug.kak.lock" 2>/dev/null; do sleep 1; done
         trap 'rmdir "${kak_opt_plug_install_dir}/.plug.kak.lock"' EXIT
-        [ -n "${lock}" ] &&  printf "%s\n" "evaluate-commands -client ${kak_client} echo" | kak -p ${kak_session}
 
         [ -n "${plugin}" ] && plugin_list=${plugin} || plugin_list=${kak_opt_plug_plugins}
         for plugin in ${plugin_list}; do
