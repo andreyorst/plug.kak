@@ -53,7 +53,7 @@ declare-option -hidden -docstring \
 str-list plug_post_hooks ''
 
 # kakrc highlighters
-add-highlighter shared/kakrc/code/plug_keywords   regex \b(plug|do|config|load)\b\h+((?=")|(?=')|(?=%)|(?=\w)) 0:keyword
+add-highlighter shared/kakrc/code/plug_keywords   regex \b(plug|do|config|load)\b(\h+)?((?=")|(?=')|(?=%)|(?=\w)) 0:keyword
 add-highlighter shared/kakrc/code/plug_attributes regex \b(noload|ensure|branch|tag|commit|theme)\b 0:attribute
 add-highlighter shared/kakrc/plug_post_hooks      region -recurse '\{' '\bdo\h+%\{' '\}' ref sh
 
