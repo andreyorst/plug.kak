@@ -53,9 +53,14 @@ declare-option -hidden -docstring \
 str-list plug_post_hooks ''
 
 # kakrc highlighters
-add-highlighter shared/kakrc/code/plug_keywords   regex \b(plug|do|config|load)\b(\h+)?((?=")|(?=')|(?=%)|(?=\w)) 0:keyword
-add-highlighter shared/kakrc/code/plug_attributes regex \b(noload|ensure|branch|tag|commit|theme)\b 0:attribute
-add-highlighter shared/kakrc/plug_post_hooks      region -recurse '\{' '\bdo\h+%\{' '\}' ref sh
+try %<
+    add-highlighter shared/kakrc/code/plug_keywords   regex \b(plug|do|config|load)\b(\h+)?((?=")|(?=')|(?=%)|(?=\w)) 0:keyword
+    add-highlighter shared/kakrc/code/plug_attributes regex \b(noload|ensure|branch|tag|commit|theme)\b 0:attribute
+    add-highlighter shared/kakrc/plug_post_hooks      region -recurse '\{' '\bdo\h+%\{' '\}' ref sh
+> catch %{
+    echo -debug "plug.kak: Can't declare highlighters for kakrc."
+    try %{ echo -debug "          Detailed error: %val{error}" }
+}
 
 # *plug* highlighters
 add-highlighter shared/plug_buffer group
@@ -177,7 +182,8 @@ plug -params 1.. -shell-script-candidates %{ ls -1 ${kak_opt_plug_install_dir} }
         fi
     }
 } catch %{
-    echo -debug "Error occured while loading %arg{1} plugin"
+    echo -debug "plug.kak: Error occured while loading %arg{1} plugin:"
+    try %{ echo -debug "          Detailed error message: %val{error}" }
 }}
 
 define-command -override -docstring \
