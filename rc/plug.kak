@@ -1,6 +1,6 @@
 # ╭─────────────╥──────────╥─────────────╮
 # │ Author:     ║ File:    ║ Branch:     │
-# │ Andrey Orst ║ plug.kak ║ v2019.01.20 │
+# │ Andrey Orst ║ plug.kak ║ kakoune-git │
 # ╞═════════════╩══════════╩═════════════╡
 # │ plug.kak is a plugin manager for     │
 # │ Kakoune. It can install plugins      │
@@ -403,6 +403,10 @@ plug-list -params ..1 %{ evaluate-commands -try-client %opt{toolsclient} %sh{
 
     printf "%s\n" "edit! -fifo ${fifo} *plug*
                    set-option window filetype plug
+                   try %{
+                       remove-highlighter window/wrap
+                       remove-highlighter window/numbers
+                   }
                    hook -always -once buffer BufCloseFifo .* %{ nop %sh{ rm -r ${fifo%/*} } }
                    map buffer normal '<ret>' ':<space>plug-fifo-operate<ret>'"
 
