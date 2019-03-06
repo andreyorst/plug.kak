@@ -63,13 +63,17 @@ try %<
 }
 
 # *plug* highlighters
-add-highlighter shared/plug_buffer group
-add-highlighter shared/plug_buffer/done          regex [^:]+:\h+(Up\h+to\h+date|Done|Installed)$                    1:string
-add-highlighter shared/plug_buffer/update        regex [^:]+:\h+(Update\h+available|Deleted)$                       1:keyword
-add-highlighter shared/plug_buffer/not_installed regex [^:]+:\h+(Not\h+(installed|loaded)|(\w+\h+)?Error([^\n]+)?)$ 1:Error
-add-highlighter shared/plug_buffer/updating      regex [^:]+:\h+(Installing|Updating|Local\h+changes)$              1:type
-add-highlighter shared/plug_buffer/working       regex [^:]+:\h+(Running\h+post-update\h+hooks|Waiting[^\n]+)$                    1:attribute
-
+try %<
+    add-highlighter shared/plug_buffer group
+    add-highlighter shared/plug_buffer/done          regex [^:]+:\h+(Up\h+to\h+date|Done|Installed)$                    1:string
+    add-highlighter shared/plug_buffer/update        regex [^:]+:\h+(Update\h+available|Deleted)$                       1:keyword
+    add-highlighter shared/plug_buffer/not_installed regex [^:]+:\h+(Not\h+(installed|loaded)|(\w+\h+)?Error([^\n]+)?)$ 1:Error
+    add-highlighter shared/plug_buffer/updating      regex [^:]+:\h+(Installing|Updating|Local\h+changes)$              1:type
+    add-highlighter shared/plug_buffer/working       regex [^:]+:\h+(Running\h+post-update\h+hooks|Waiting[^\n]+)$                    1:attribute
+> catch %{
+    echo -debug "plug.kak: Can't declare highlighters for *plug*."
+    try %{ echo -debug "          Detailed error: %val{error}" }
+}
 hook -group plug-syntax global WinSetOption filetype=plug %{
     add-highlighter window/plug_buffer ref plug_buffer
     hook -always -once window WinSetOption filetype=.* %{
@@ -403,12 +407,15 @@ plug-list -params ..1 %{ evaluate-commands -try-client %opt{toolsclient} %sh{
 
     printf "%s\n" "edit! -fifo ${fifo} *plug*
                    set-option window filetype plug
+                   plug-show-help
                    try %{
                        remove-highlighter window/wrap
                        remove-highlighter window/numbers
                    }
                    hook -always -once buffer BufCloseFifo .* %{ nop %sh{ rm -r ${fifo%/*} } }
-                   map buffer normal '<ret>' ':<space>plug-fifo-operate<ret>'"
+                   map buffer normal '<ret>' ':<space>plug-fifo-operate update<ret>'
+                   map buffer normal 'H' ':<space>plug-show-help<ret>'
+                   map buffer normal 'D' ':<space>plug-fifo-operate clean<ret>'"
 
     # get those plugins which were loaded by plug.kak
     eval "set -- ${kak_opt_plug_plugins}"
@@ -468,23 +475,43 @@ plug-list -params ..1 %{ evaluate-commands -try-client %opt{toolsclient} %sh{
 
 define-command -override \
 -docstring "operate on *plug* buffer contents based on current cursor position" \
-plug-fifo-operate %{ evaluate-commands -save-regs t %{
+plug-fifo-operate -params 1 %{ evaluate-commands -save-regs t %{
     execute-keys -save-regs '' "<a-h><a-l>"
     set-register t %val{selection}
     evaluate-commands %sh{
         plugin="${kak_reg_t%:*}"
-        if [ -d "${kak_opt_plug_install_dir}/${plugin##*/}" ]; then
-            printf "%s\n" "plug-update ${plugin}'"
-        else
-            printf "%s\n" "plug-install ${plugin}'"
-        fi
+        case $1 in
+        update)
+            if [ -d "${kak_opt_plug_install_dir}/${plugin##*/}" ]; then
+                printf "%s\n" "plug-update ${plugin}'"
+            else
+                printf "%s\n" "plug-install ${plugin}'"
+            fi ;;
+        clean)
+            if [ -d "${kak_opt_plug_install_dir}/${plugin##*/}" ]; then
+                printf "%s\n" "plug-clean ${plugin}'"
+            else
+                printf "%s\n" "plug-update-fifo %{${plugin}} %{Already deleted}"
+            fi ;;
+        *)
+            ;;
+        esac
     }
 }}
 
-define-command -override \
+define-command -hidden -override \
 -docstring "plug-update-fifo <plugin> <message>" \
 plug-update-fifo -params 2 %{ evaluate-commands -buffer *plug* -save-regs "/""" %{ try %{
     set-register / "%arg{1}: "
     set-register dquote %arg{2}
     execute-keys /<ret>lGlR
 }}}
+
+define-command -override \
+-docstring "displays help message" \
+plug-show-help %{
+    info -title "plug.kak Help" "h,j,k,l - Move
+<ret> - Update or install plugin
+D - clean plugin
+H - Show this message"
+}
