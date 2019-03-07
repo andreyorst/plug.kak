@@ -187,7 +187,7 @@ plug -params 1.. -shell-script-candidates %{ ls -1 ${kak_opt_plug_install_dir} }
     }
 } catch %{
     echo -debug "plug.kak: Error occured while loading %arg{1} plugin:"
-    try %{ echo -debug "          Detailed error message: %val{error}" }
+    try %{ echo -debug "          %val{error}" }
 }}
 
 define-command -override -docstring \
@@ -413,8 +413,10 @@ plug-list -params ..1 %{ evaluate-commands -try-client %opt{toolsclient} %sh{
                        remove-highlighter window/numbers
                    }
                    hook -always -once buffer BufCloseFifo .* %{ nop %sh{ rm -r ${fifo%/*} } }
-                   map buffer normal '<ret>' ':<space>plug-fifo-operate update<ret>'
+                   map buffer normal '<ret>' ':<space>plug-fifo-operate install-update<ret>'
                    map buffer normal 'H' ':<space>plug-show-help<ret>'
+                   map buffer normal 'U' ':<space>plug-fifo-operate update<ret>'
+                   map buffer normal 'I' ':<space>plug-fifo-operate install<ret>'
                    map buffer normal 'D' ':<space>plug-fifo-operate clean<ret>'"
 
     # get those plugins which were loaded by plug.kak
@@ -481,11 +483,23 @@ plug-fifo-operate -params 1 %{ evaluate-commands -save-regs t %{
     evaluate-commands %sh{
         plugin="${kak_reg_t%:*}"
         case $1 in
-        update)
+        install-update)
             if [ -d "${kak_opt_plug_install_dir}/${plugin##*/}" ]; then
                 printf "%s\n" "plug-update ${plugin}'"
             else
                 printf "%s\n" "plug-install ${plugin}'"
+            fi ;;
+        update)
+            if [ -d "${kak_opt_plug_install_dir}/${plugin##*/}" ]; then
+                printf "%s\n" "plug-update ${plugin}'"
+            else
+                printf "%s\n" "echo -markup %{{Information}${plugin}' is not installed}"
+            fi ;;
+        install)
+            if [ ! -d "${kak_opt_plug_install_dir}/${plugin##*/}" ]; then
+                printf "%s\n" "plug-install ${plugin}'"
+            else
+                printf "%s\n" "echo -markup %{{Information}${plugin}' already installed}"
             fi ;;
         clean)
             if [ -d "${kak_opt_plug_install_dir}/${plugin##*/}" ]; then
@@ -512,6 +526,8 @@ define-command -override \
 plug-show-help %{
     info -title "plug.kak Help" "h,j,k,l - Move
 <ret> - Update or install plugin
+I - Install plugin
+U - Update plugin
 D - clean plugin
 H - Show this message"
 }
