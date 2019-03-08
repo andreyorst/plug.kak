@@ -218,7 +218,7 @@ plug-install -params ..1 %{ nop %sh{ (
     # of the same plugin, but will allow install different plugins without waiting for eachother.
     # Should be fine, since different plugins doesn't interfere with eachother.
     while ! mkdir "${lockfile}" 2>/dev/null; do sleep 1; done
-    trap 'rmdir "'${lockfile}'"' EXIT
+    trap "rmdir '${lockfile}'" EXIT
 
     # if plugin specified as an argument add it to the *plug* buffer, if it isn't there already
     # otherwise update all plugins
@@ -226,7 +226,6 @@ plug-install -params ..1 %{ nop %sh{ (
         plugin_list=${plugin}
         # TODO: rework this sleep. We need it in case that plug_always_ensure option is set
         # to avoid souble list of plugins
-        sleep 0.2
         printf "%s\n" "evaluate-commands -buffer *plug* %{
             try %{
                 execute-keys /${plugin}<ret>
@@ -293,7 +292,7 @@ plug-update -params ..1 -shell-script-candidates %{ printf "%s\n" ${kak_opt_plug
         fi
 
         while ! mkdir "${lockfile}" 2>/dev/null; do sleep 1; done
-        trap 'rmdir "${lockfile}"' EXIT
+        trap "rmdir '${lockfile}'" EXIT
 
         [ -n "${plugin}" ] && plugin_list=${plugin} || plugin_list=${kak_opt_plug_plugins}
         for plugin in ${plugin_list}; do
@@ -344,7 +343,7 @@ plug-clean -params ..1 -shell-script-candidates %{ ls -1 ${kak_opt_plug_install_
     fi
 
     while ! mkdir "${lockfile}" 2>/dev/null; do sleep 1; done
-    trap 'rmdir "${lockfile}"' EXIT
+    trap "rmdir '${lockfile}'" EXIT
 
     if [ -n "${plugin}" ]; then
         if [ -d "${kak_opt_plug_install_dir}/${plugin_name}" ]; then
