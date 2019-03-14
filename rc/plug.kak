@@ -1,6 +1,6 @@
 # ╭─────────────╥──────────╥─────────────╮
 # │ Author:     ║ File:    ║ Branch:     │
-# │ Andrey Orst ║ plug.kak ║ kakoune-git │
+# │ Andrey Orst ║ plug.kak ║ v2019.01.20 │
 # ╞═════════════╩══════════╩═════════════╡
 # │ plug.kak is a plugin manager for     │
 # │ Kakoune. It can install plugins      │
@@ -400,6 +400,7 @@ plug-eval-hooks -params 1 %{ nop %sh{ (
         fi
         shift
     done
+
     if [ ${status} -ne 0 ]; then
         message="Error (${status})"
     else
