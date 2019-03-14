@@ -115,6 +115,8 @@ plug "lenormf/kakoune-extra" load %{
 }
 ```
 
+Filenames must be specified one per line.
+
 #### Skipping loading of a plugin
 Sometimes plugin should be installed, but not loaded until certain event.  In
 such case use `noload` attribute to skip loading of installed plugin. Useful
