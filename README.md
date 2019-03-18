@@ -139,7 +139,7 @@ installation of one. Useful for plugins that need to compile some parts of it.
 ```kak
 plug "ul/kak-lsp" do %{
     cargo build --release --locked
-    cargo install --force
+    cargo install --force --path .
 }
 ```
 
