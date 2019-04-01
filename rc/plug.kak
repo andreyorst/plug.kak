@@ -287,7 +287,6 @@ plug-update -params ..1 -shell-script-candidates %{ printf "%s\n" ${kak_opt_plug
         printf "%s\n" "evaluate-commands -client ${kak_client:-client0} %{ try %{ buffer *plug* } catch %{ plug-list noupdate } }" | kak -p ${kak_session}
 
         lockfile="${kak_opt_plug_install_dir}/.${plugin_name:-global}.plug.kak.lock"
-        echo "echo -debug %{$lockfile}" | kak -p $kak_session
         if [ -d "${lockfile}" ]; then
             printf "%s\n" "evaluate-commands -client ${kak_client:-client0} %{ plug-update-fifo %{${plugin##*/}} %{Waiting for .plug.kak.lock} }" | kak -p ${kak_session}
         fi
@@ -339,9 +338,8 @@ plug-clean -params ..1 -shell-script-candidates %{ ls -1 ${kak_opt_plug_install_
     printf "%s\n" "evaluate-commands -client ${kak_client:-client0} %{ try %{ buffer *plug* } catch %{ plug-list noupdate } }" | kak -p ${kak_session}
 
     lockfile="${kak_opt_plug_install_dir}/.${plugin_name:-global}.plug.kak.lock"
-    echo "echo -debug %{$lockfile}" | kak -p $kak_session
     if [ -d "${lockfile}" ]; then
-        printf "%s\n" "evaluate-commands -client ${kak_client:-client0} %{ plug-update-fifo %{${plugin##*/}} %{Waiting for .plug.kak.lock} }" | kak -p ${kak_session}
+        printf "%s\n" "evaluate-commands -client ${kak_client:-client0} %{ plug-update-fifo %{${plugin_name}} %{Waiting for .plug.kak.lock} }" | kak -p ${kak_session}
     fi
 
     while ! mkdir "${lockfile}" 2>/dev/null; do sleep 1; done
@@ -349,8 +347,10 @@ plug-clean -params ..1 -shell-script-candidates %{ ls -1 ${kak_opt_plug_install_
 
     if [ -n "${plugin}" ]; then
         if [ -d "${kak_opt_plug_install_dir}/${plugin_name}" ]; then
-            printf "%s\n" "evaluate-commands -client ${kak_client:-client0} %{ plug-update-fifo %{${plugin_name}} %{Deleted} }" | kak -p ${kak_session}
-            (cd ${kak_opt_plug_install_dir} && rm -rf "${plugin_name}")
+            (
+                cd "${kak_opt_plug_install_dir}" && rm -rf "${plugin_name}"
+                printf "%s\n" "evaluate-commands -client ${kak_client:-client0} %{ plug-update-fifo %{${plugin_name}} %{Deleted} }" | kak -p ${kak_session}
+            )
         else
             printf "%s\n" "evaluate-commands -client ${kak_client:-client0} echo -markup %{{Error}No such plugin '${plugin}'}" | kak -p ${kak_session}
             exit
@@ -364,7 +364,7 @@ plug-clean -params ..1 -shell-script-candidates %{ ls -1 ${kak_opt_plug_install_
             [ "${skip}" = "1" ] || plugins_to_remove=${plugins_to_remove}" ${installed_plugin}"
         done
         for plugin in ${plugins_to_remove}; do
-            printf "%s\n" "evaluate-commands -client ${kak_client:-client0} %{ plug-update-fifo %{${plugin_name}} %{Deleted} }" | kak -p ${kak_session}
+            printf "%s\n" "evaluate-commands -client ${kak_client:-client0} %{ plug-update-fifo %{${plugin##*/}} %{Deleted} }" | kak -p ${kak_session}
             rm -rf ${plugin}
         done
     fi
@@ -516,9 +516,7 @@ plug-fifo-operate -params 1 %{ evaluate-commands -save-regs t %{
                 printf "%s\n" "echo -markup %{{Information}${plugin}' already installed}"
             fi ;;
         clean)
-            if [ -d "${kak_opt_plug_install_dir}/${plugin##*/}" ]; then
-                printf "%s\n" "plug-clean ${plugin}'"
-            fi ;;
+                printf "%s\n" "plug-clean ${plugin}'" ;;
         log)
             printf "%s\n" "plug-display-log ${plugin}'" ;;
         *)
