@@ -1,6 +1,6 @@
 # ╭─────────────╥──────────╥─────────────╮
 # │ Author:     ║ File:    ║ Branch:     │
-# │ Andrey Orst ║ plug.kak ║ v2019.01.20 │
+# │ Andrey Orst ║ plug.kak ║ master      │
 # ╞═════════════╩══════════╩═════════════╡
 # │ plug.kak is a plugin manager for     │
 # │ Kakoune. It can install plugins      │

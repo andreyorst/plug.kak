@@ -10,7 +10,7 @@ can run post-update actions, and isolates plugin configuration within itself.
 The release model of **plug.kak** supports two latest releases of Kakoune, and
 the development version. Default branch is always in sync with latest stable
 release of Kakoune. If you're using Kakoune builds from GitHub repository,
-please switch to [kakoune-git][7] branch.
+please switch to [dev][7] branch.
 
 ## Installation
 **plug.kak** can be installed anywhere in your system, but to manage itself
@@ -337,7 +337,7 @@ And last but not least: `plug`. Load plugin from plugin installation directory b
 [4]: https://user-images.githubusercontent.com/19470159/51197223-f2c26a80-1901-11e9-9494-b79ce823a364.png
 [5]: https://github.com/junegunn/vim-plug
 [6]: https://github.com/jwiegley/use-package
-[7]: https://github.com/andreyorst/plug.kak/tree/kakoune-git
+[7]: https://github.com/andreyorst/plug.kak/tree/dev
 [8]: https://github.com/andreyorst/plug.kak
 
 [9]: #Branch-Tag-or-Commit
