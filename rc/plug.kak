@@ -24,6 +24,10 @@ declare-option -docstring \
 str plug_git_domain 'https://github.com'
 
 declare-option -docstring \
+"sort sourced files by depth" \
+bool plug_depth_sort false
+
+declare-option -docstring \
 "Maximum amount of simultaneously active downloads when installing or updating all plugins
     Default value: 10
 " \
@@ -55,7 +59,7 @@ str-list plug_post_hooks ''
 # kakrc highlighters
 try %<
     add-highlighter shared/kakrc/code/plug_keywords   regex \b(plug|do|config|load)\b(\h+)?((?=")|(?=')|(?=%)|(?=\w)) 0:keyword
-    add-highlighter shared/kakrc/code/plug_attributes regex \b(noload|ensure|branch|tag|commit|theme)\b 0:attribute
+    add-highlighter shared/kakrc/code/plug_attributes regex \b(noload|ensure|branch|tag|commit|theme|(no-)?depth-sort)\b 0:attribute
     add-highlighter shared/kakrc/plug_post_hooks      region -recurse '\{' '\bdo\h+%\{' '\}' ref sh
 > catch %{
     echo -debug "plug.kak: Can't declare highlighters for kakrc."
@@ -100,6 +104,8 @@ plug -params 1.. -shell-script-candidates %{ ls -1 ${kak_opt_plug_install_dir} }
             printf "%s\n" "set-option -add global plug_plugins %{${plugin} }"
         fi
 
+        [ "$kak_opt_plug_depth_sort" = "true" ] && depth_sort="true" || depth_sort="false"
+
         while [ $# -gt 0 ]; do
             case $1 in
                 branch|tag|commit)
@@ -122,6 +128,10 @@ plug -params 1.. -shell-script-candidates %{ ls -1 ${kak_opt_plug_install_dir} }
                     theme_hooks="mkdir -p ${kak_config}/colors
                            find -type f -name '*.kak' -exec cp {} ${kak_config}/colors/ \;"
                     hooks="${hooks} %{${plugin_name}} %{${theme_hooks}}" ;;
+                depth-sort)
+                    depth_sort="true" ;;
+                no-depth-sort)
+                    depth_sort="false" ;;
                 config)
                     shift
                     configurations="${configurations} $1" ;;
@@ -169,12 +179,20 @@ plug -params 1.. -shell-script-candidates %{ ls -1 ${kak_opt_plug_install_dir} }
                     # trim leading and trailing whitespaces. Looks ugly, but faster than `sed'
                     file="${file#"${file%%[![:space:]]*}"}"
                     file="${file%"${file##*[![:space:]]}"}"
-                    # performance hungry place. We need to sort find's output by depth.
-                    find -L ${kak_opt_plug_install_dir}/${plugin_name} -path '*/.git' -prune -o -type f -name "${file}" -print | perl -e '
-                        print map  { $_->[0] }
-                              sort { $a->[1] <=> $b->[1] }
-                              map  { [$_, ($_ =~ s/^/source "/ && $_ =~ s/$/"/ && $_ =~ s/\//\//g)] }
-                                       <>;'
+                    if [ "$depth_sort" = "true" ]; then
+                        echo "echo -debug %{depth-sorting $plugin_name}"
+                        # performance hungry place.
+                        find -L ${kak_opt_plug_install_dir}/${plugin_name} -path '*/.git' -prune -o -type f -name "${file}" -print | perl -e '
+                            print map  { $_->[0] }
+                                  sort { $a->[1] <=> $b->[1] }
+                                  map  { [$_, ($_ =~ s/^/source "/ && $_ =~ s/$/"/ && $_ =~ s/\//\//g)] }
+                                           <>;'
+                    else
+                        echo "echo -debug %{no depth-sorting $plugin_name}"
+                        # source files in order that `find' is returning
+                        # may break some plugins
+                        find -L ${kak_opt_plug_install_dir}/${plugin_name} -path '*/.git' -prune -o -type f -name "${file}" -exec printf 'source "%s"\n' {} \;
+                    fi
                 done
             } fi
             printf "%s\n" "evaluate-commands \"%opt{plug_${plugin_opt_name}_conf}\""
