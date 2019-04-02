@@ -95,6 +95,7 @@ These are available keywords:
 - [do][12]
 - [theme][13]
 - [config][14]
+- [depth-sort][19] and [no-depth-sort][19]
 - [ensure][15]
 
 #### Branch, Tag or Commit
@@ -168,6 +169,36 @@ Here we install two themes, the `kakoune-dracula-theme` and a set of
 `plug` that we want to set our theme to `base16-gruvbox-dark-soft` within the
 `config` block.
 
+#### Depth sorting sourced files
+Some plugins (ahem, my plugins) sometimes use module structure, that is based on
+depth. What this means is that if plugin declares a modules, it does it deeper
+in file tree. For example, if main script is placed in `rc/plugin.kak` then
+modules will be declared in `rc/modules/module.kak`. If module uses something
+that is prepared by base script it's logical to `source` it first. But `find`
+program, that is used to get list of plugin files can return them in any
+order. For that **plug.kak** provides `perl` based depth-sorting algorithm. It
+adds a bit of overhead, but can save the day sometimes. You can enable it for
+all plugins with `plug_depth_sort` option set to `true`, and on per-plugin basis
+by using `depth-sort` attribute of `plug` command:
+
+```kak
+plug "andreyorst/fzf.kak" depth-sort
+plug "andreyorst/powerline.kak" no-depth-sort
+```
+
+Disabling depth-sorting on per-plugin is available with `no-depth-sort`
+attribute.
+
+#### Ensure that plugins are installed
+`plug` command can be explicitly told to install the plugin on loading with the
+`ensure` keyword. This is handy in case you don't isolated the configuration of
+the plugin, so you want this plugin to be installed and enabled in any
+situation.
+
+You also can configure **plug.kak** `plug_always_ensure` option to perform this
+for each and every plugin in your configuration file. This is handy when you
+want to install new plugins without calling the `plug-install` command.
+
 Now, let's discuss configuration of plugins with `plug` command.
 
 #### Handling user configurations
@@ -210,24 +241,15 @@ expansion as usual. Everything within the `config %{ }` block is ordinary kakscr
 The `config` keyword is optional, you can skip it if you want. Multiple `config`
 blocks are supported as well.
 
-### Ensure that plugins are installed
-`plug` command can be explicitly told to install the plugin on loading with the
-`ensure` keyword. This is handy in case you don't isolated the configuration of
-the plugin, so you want this plugin to be installed and enabled in any
-situation.
-
-You also can configure **plug.kak** `plug_always_ensure` option to perform this
-for each and every plugin in your configuration file. This is handy when you
-want to install new plugins without calling the `plug-install` command.
-
-Since we've touched the configuration of **plug.kak** itself, let's discuss this topic.
+Since we've touched the configuration of **plug.kak** itself, let's discuss this
+topic.
 
 ## **plug.kak** Configuration
 You can change some bits of **plug.kak** behavior:
 - Change [plugin installation directory][16]
 - Limit the [maximum amount of active downloads][17]
 - Specify [default git domain][18]
-- And already mentioned, [Ensure that plugins are installed][15]
+- And already mentioned, [Ensure that plugins are installed][15] and [Depth sorting][19]
 
 To change these options, I'm recommending to call **plug.kak** before all
 plugins with the `plug` command, specified with `noload` switch and `config`
@@ -309,23 +331,24 @@ plugin, depending on its state. This command accepts an optional argument
 ### `plug`
 And last but not least: `plug`. Load plugin from plugin installation directory by its name.
 
-[1]:https://img.shields.io/github/issues/andreyorst/plug.kak.svg
-[2]:https://github.com/andreyorst/plug.kak/issues
-[3]:https://img.shields.io/github/license/andreyorst/plug.kak.svg
-[4]:https://user-images.githubusercontent.com/19470159/51197223-f2c26a80-1901-11e9-9494-b79ce823a364.png
-[5]:https://github.com/junegunn/vim-plug
-[6]:https://github.com/jwiegley/use-package
-[7]:https://github.com/andreyorst/plug.kak/tree/kakoune-git
-[8]:https://github.com/andreyorst/plug.kak
+[1]: https://img.shields.io/github/issues/andreyorst/plug.kak.svg
+[2]: https://github.com/andreyorst/plug.kak/issues
+[3]: https://img.shields.io/github/license/andreyorst/plug.kak.svg
+[4]: https://user-images.githubusercontent.com/19470159/51197223-f2c26a80-1901-11e9-9494-b79ce823a364.png
+[5]: https://github.com/junegunn/vim-plug
+[6]: https://github.com/jwiegley/use-package
+[7]: https://github.com/andreyorst/plug.kak/tree/kakoune-git
+[8]: https://github.com/andreyorst/plug.kak
 
-[9]:#Branch-Tag-or-Commit
-[10]:#Loading-subset-of-files-from-plugin-repository
-[11]:#Skipping-loading-of-a-plugin
-[12]:#Automatically-do-certain-tasks-on-install-or-update
-[13]:#Installing-color-schemes
-[14]:#Handling-user-configurations
-[15]:#Ensuring-that-plugin-is-installed
+[9]: #Branch-Tag-or-Commit
+[10]: #Loading-subset-of-files-from-plugin-repository
+[11]: #Skipping-loading-of-a-plugin
+[12]: #Automatically-do-certain-tasks-on-install-or-update
+[13]: #Installing-color-schemes
+[14]: #Handling-user-configurations
+[15]: #Ensuring-that-plugin-is-installed
 
-[16]:#Plugin-installation-directory
-[17]:#Maximum-downloads
-[18]:#Default-git-domain
+[16]: #Plugin-installation-directory
+[17]: #Maximum-downloads
+[18]: #Default-git-domain
+[19]: #Depth-sorting-sourced-files
