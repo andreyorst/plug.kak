@@ -180,7 +180,6 @@ plug -params 1.. -shell-script-candidates %{ ls -1 ${kak_opt_plug_install_dir} }
                     file="${file#"${file%%[![:space:]]*}"}"
                     file="${file%"${file##*[![:space:]]}"}"
                     if [ "$depth_sort" = "true" ]; then
-                        echo "echo -debug %{depth-sorting $plugin_name}"
                         # performance hungry place.
                         find -L ${kak_opt_plug_install_dir}/${plugin_name} -path '*/.git' -prune -o -type f -name "${file}" -print | perl -e '
                             print map  { $_->[0] }
@@ -188,9 +187,8 @@ plug -params 1.. -shell-script-candidates %{ ls -1 ${kak_opt_plug_install_dir} }
                                   map  { [$_, ($_ =~ s/^/source "/ && $_ =~ s/$/"/ && $_ =~ s/\//\//g)] }
                                            <>;'
                     else
-                        echo "echo -debug %{no depth-sorting $plugin_name}"
                         # source files in order that `find' is returning
-                        # may break some plugins
+                        # may or may not break some plugins
                         find -L ${kak_opt_plug_install_dir}/${plugin_name} -path '*/.git' -prune -o -type f -name "${file}" -exec printf 'source "%s"\n' {} \;
                     fi
                 done
