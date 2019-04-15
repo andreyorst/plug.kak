@@ -96,6 +96,7 @@ These are available keywords:
 - [theme][13]
 - [config][14]
 - [depth-sort][19] and [no-depth-sort][19]
+- [domain][20]
 - [ensure][15]
 
 #### Branch, Tag or Commit
@@ -188,6 +189,24 @@ plug "andreyorst/powerline.kak" no-depth-sort
 
 Disabling depth-sorting on per-plugin is available with `no-depth-sort`
 attribute.
+
+#### Specifying Git domain on per-plugin basis
+When you want to install plugin from a domain that is different from your
+`%opt{plug_git_domain}` you may use two different methods. First one is to pass
+URL directly to `plug` command like so:
+
+```kak
+plug "https://gitlab.com/screwtapello/kakoune-inc-dec.git"
+plug "https://bitbucket.org/KJ_Duncan/kakoune-kotlin.kak.git"
+```
+
+The other is essentially the same, but I find it prettier, and it looks better
+in `plug-list` output:
+
+```kak
+plug "screwtapello/kakoune-inc-dec" domain "gitlab.com"
+plug "KJ_Duncan/kakoune-kotlin.kak" domain "bitbucket.org"
+```
 
 #### Ensure that plugins are installed
 `plug` command can be explicitly told to install the plugin on loading with the
@@ -352,3 +371,4 @@ And last but not least: `plug`. Load plugin from plugin installation directory b
 [17]: #Maximum-downloads
 [18]: #Default-git-domain
 [19]: #Depth-sorting-sourced-files
+[20]: #Specifying-git-domain-on-per-plugin-basis
