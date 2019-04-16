@@ -56,9 +56,13 @@ declare-option -hidden -docstring \
 "List of post update/install hooks to be executed" \
 str-list plug_post_hooks ''
 
+declare-option -hidden -docstring \
+"List of post update/install hooks to be executed" \
+str-list plug_domains ''
+
 # kakrc highlighters
 try %<
-    add-highlighter shared/kakrc/code/plug_keywords   regex \b(plug|do|config|load)\b(\h+)?((?=")|(?=')|(?=%)|(?=\w)) 0:keyword
+    add-highlighter shared/kakrc/code/plug_keywords   regex \b(plug|do|config|load|domain)\b(\h+)?((?=")|(?=')|(?=%)|(?=\w)) 0:keyword
     add-highlighter shared/kakrc/code/plug_attributes regex \b(noload|ensure|branch|tag|commit|theme|(no-)?depth-sort)\b 0:attribute
     add-highlighter shared/kakrc/plug_post_hooks      region -recurse '\{' '\bdo\h+%\{' '\}' ref sh
 > catch %{
@@ -132,6 +136,9 @@ plug -params 1.. -shell-script-candidates %{ ls -1 ${kak_opt_plug_install_dir} }
                     depth_sort="true" ;;
                 no-depth-sort)
                     depth_sort="false" ;;
+                domain)
+                    shift
+                    domains="${domains} %{${plugin_name}} %{$1}" ;;
                 config)
                     shift
                     configurations="${configurations} $1" ;;
@@ -152,6 +159,10 @@ plug -params 1.. -shell-script-candidates %{ ls -1 ${kak_opt_plug_install_dir} }
 
         if [ -n "${hooks}" ]; then
             printf "%s\n" "set-option -add global plug_post_hooks ${hooks}"
+        fi
+
+        if [ -n "${domains}" ]; then
+            printf "%s\n" "set-option -add global plug_domains ${domains}"
         fi
 
         if [ -n "${noload}" ] && [ -n "${load}" ]; then
@@ -255,12 +266,23 @@ plug-install -params ..1 %{ nop %sh{ (
 
     for plugin in ${plugin_list}; do
         plugin_name="${plugin##*/}"
+        git_domain=${kak_opt_plug_git_domain}
+
+        eval "set -- ${kak_opt_plug_domains}"
+        while [ $# -ne 0 ]; do
+            if [ "$1" = "${plugin_name}" ]; then
+                git_domain="https://$2"
+                break
+            fi
+            shift
+        done
+
         if [ ! -d "${kak_opt_plug_install_dir}/${plugin_name}" ]; then
             case ${plugin} in
                 http*|git*)
                     git="git clone ${plugin}" ;;
                 *)
-                    git="git clone ${kak_opt_plug_git_domain}/${plugin}" ;;
+                    git="git clone ${git_domain}/${plugin}" ;;
             esac
 
             (
