@@ -60,28 +60,32 @@ declare-option -hidden -docstring \
 "List of post update/install hooks to be executed" \
 str-list plug_domains ''
 
+# since we want to add highlighters to kak filetype we need to require kak module
+require-module kak
+
 # kakrc highlighters
-try %<
+try %[
     add-highlighter shared/kakrc/code/plug_keywords   regex \b(plug|do|config|load|domain)\b(\h+)?((?=")|(?=')|(?=%)|(?=\w)) 0:keyword
     add-highlighter shared/kakrc/code/plug_attributes regex \b(noload|ensure|branch|tag|commit|theme|(no-)?depth-sort)\b 0:attribute
     add-highlighter shared/kakrc/plug_post_hooks      region -recurse '\{' '\bdo\h+%\{' '\}' ref sh
-> catch %{
+] catch %{
     echo -debug "plug.kak: Can't declare highlighters for kakrc."
     try %{ echo -debug "          Detailed error: %val{error}" }
 }
 
 # *plug* highlighters
-try %<
+try %{
     add-highlighter shared/plug_buffer group
     add-highlighter shared/plug_buffer/done          regex [^:]+:\h+(Up\h+to\h+date|Done|Installed)$                    1:string
     add-highlighter shared/plug_buffer/update        regex [^:]+:\h+(Update\h+available|Deleted)$                       1:keyword
     add-highlighter shared/plug_buffer/not_installed regex [^:]+:\h+(Not\h+(installed|loaded)|(\w+\h+)?Error([^\n]+)?)$ 1:red+b
     add-highlighter shared/plug_buffer/updating      regex [^:]+:\h+(Installing|Updating|Local\h+changes)$              1:type
     add-highlighter shared/plug_buffer/working       regex [^:]+:\h+(Running\h+post-update\h+hooks|Waiting[^\n]+)$      1:attribute
-> catch %{
+} catch %{
     echo -debug "plug.kak: Can't declare highlighters for *plug*."
     try %{ echo -debug "          Detailed error: %val{error}" }
 }
+
 hook -group plug-syntax global WinSetOption filetype=plug %{
     add-highlighter window/plug_buffer ref plug_buffer
     hook -always -once window WinSetOption filetype=.* %{
