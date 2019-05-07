@@ -87,9 +87,9 @@ try %{
 }
 
 hook -group plug-syntax global WinSetOption filetype=plug %{
-    add-highlighter window/plug_buffer ref plug_buffer
-    hook -always -once window WinSetOption filetype=.* %{
-        remove-highlighter window/plug_buffer
+    add-highlighter buffer/plug_buffer ref plug_buffer
+    hook -always -once buffer WinSetOption filetype=.* %{
+        remove-highlighter buffer/plug_buffer
     }
 }
 
@@ -461,12 +461,8 @@ plug-list -params ..1 %{ evaluate-commands -try-client %opt{toolsclient} %sh{
     mkfifo ${fifo}
 
     printf "%s\n" "edit! -fifo ${fifo} *plug*
-                   set-option window filetype plug
+                   set-option buffer filetype plug
                    plug-show-help
-                   try %{
-                       remove-highlighter window/wrap
-                       remove-highlighter window/numbers
-                   }
                    hook -always -once buffer BufCloseFifo .* %{ nop %sh{ rm -rf ${tmp} } }
                    map buffer normal '<ret>' ':<space>plug-fifo-operate install-update<ret>'
                    map buffer normal 'H' ':<space>plug-show-help<ret>'
