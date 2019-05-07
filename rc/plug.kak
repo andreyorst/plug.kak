@@ -88,7 +88,7 @@ try %{
 
 hook -group plug-syntax global WinSetOption filetype=plug %{
     add-highlighter buffer/plug_buffer ref plug_buffer
-    hook -always -once buffer WinSetOption filetype=.* %{
+    hook -always -once window WinSetOption filetype=.* %{
         remove-highlighter buffer/plug_buffer
     }
 }
