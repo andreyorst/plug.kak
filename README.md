@@ -95,6 +95,7 @@ These are available keywords:
 - [do][12]
 - [theme][13]
 - [config][14]
+- [defer][21]
 - [depth-sort][19] and [no-depth-sort][19]
 - [domain][20]
 - [ensure][15]
@@ -239,12 +240,6 @@ For example:
 ```kak
 plug "andreyorst/fzf.kak" config %{
     map -docstring 'fzf mode' global normal '<c-p>' ': fzf-mode<ret>'
-    set-option global fzf_preview_width '65%'
-    evaluate-commands %sh{
-        if [ ! -z "$(command -v fd)" ]; then
-            echo "set-option global fzf_file_command 'fd . --no-ignore --type f --follow --hidden'"
-        fi
-    }
 }
 ```
 
@@ -252,13 +247,39 @@ In this example I'm setting a <kbd>Ctrl</kbd>+<kbd>p</kbd> mapping that is
 meaningful only if the plugin is installed. I've could configure it outside of
 `plug` command, but it will fail if I accidentally remove or disable the
 plugin. In case of configuring it with `plug` command, I don't need to keep
-track of other configuration pieces.
-
-After that I'm setting the `fzf_preview_width` option, and evaluating shell
-expansion as usual. Everything within the `config %{ }` block is ordinary kakscript.
+track of other configuration pieces. Everything within the `config %{ }` block
+is ordinary kakscript.
 
 The `config` keyword is optional, you can skip it if you want. Multiple `config`
 blocks are supported as well.
+
+### Deferring plugin configuration
+Sometimes it is unnecessary to configure plugin if it isn't loaded. Since
+Kakoune added support for module system with `provide-module` and
+`require-module` followed by `ModuleLoad` hook it is possible to defer
+configuration until certain module is loaded. For example, let's look on
+`fzf.kak` configuration deferred until `fzf` module is required:
+
+```kak
+plug "andreyorst/fzf.kak" config %{
+    map -docstring 'fzf mode' global normal '<c-p>' ': fzf-mode<ret>'
+} defer "fzf" %{
+    set-option global fzf_preview_width '65%'
+    set-option global fzf_project_use_tilda true
+    evaluate-commands %sh{
+        if [ -n "$(command -v fd)" ]; then
+            echo "set-option global fzf_file_command %{fd . --no-ignore --type f --follow --hidden --exclude .git --exclude .svn}"
+        else
+            echo "set-option global fzf_file_command %{find . \( -path '*/.svn*' -o -path '*/.git*' \) -prune -o -type f -follow -print}"
+        fi
+        [ -n "$(command -v bat)" ] && echo "set-option global fzf_highlight_cmd bat"
+        [ -n "${kak_opt_grepcmd}" ] && echo "set-option global fzf_sk_grep_command %{${kak_opt_grepcmd}}"
+    }
+}
+```
+
+The `defer "fzf" %{ ... }` block is a configuration block that will be evaluated
+only when `fzf` module is loaded.
 
 Since we've touched the configuration of **plug.kak** itself, let's discuss this
 topic.
@@ -372,3 +393,4 @@ And last but not least: `plug`. Load plugin from plugin installation directory b
 [18]: #Default-git-domain
 [19]: #Depth-sorting-sourced-files
 [20]: #Specifying-git-domain-on-per-plugin-basis
+[21]: #Deferring-plugin-configuration

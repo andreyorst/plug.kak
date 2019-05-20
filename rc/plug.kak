@@ -65,7 +65,7 @@ require-module kak
 
 # kakrc highlighters
 try %[
-    add-highlighter shared/kakrc/code/plug_keywords   regex (^|\h)\b(plug|do|config|load|domain)\b(\h+)?((?=")|(?=')|(?=%)|(?=\w)) 0:keyword
+    add-highlighter shared/kakrc/code/plug_keywords   regex (^|\h)\b(plug|do|config|load|domain|defer)\b(\h+)?((?=")|(?=')|(?=%)|(?=\w)) 0:keyword
     add-highlighter shared/kakrc/code/plug_attributes regex (^|\h)\b(noload|ensure|branch|tag|commit|theme|(no-)?depth-sort)\b 0:attribute
     add-highlighter shared/kakrc/plug_post_hooks      region -recurse '\{' '\bdo\h+%\{' '\}' ref sh
 ] catch %{
@@ -94,7 +94,13 @@ hook -group plug-syntax global WinSetOption filetype=plug %{
 }
 
 define-command -override -docstring \
-"plug <plugin> [<branch>|<tag>|<commit>] [<noload>|<load> <subset>] [[<config>] <configurations>]: load <plugin> from ""%opt{plug_install_dir}""" \
+"plug <plugin> [<switches>]: manage <plugin> from ""%opt{plug_install_dir}""
+Switches:
+    branch (tag, commit) <str>      checkout to <str> before loading plugin
+    noload                          do not source plugin files
+    load <subset>                   source only <subset> of plugin files
+    defer <module> <configurations> load plugin <configurations> only when <module> is loaded
+    config <configurations>         plugin <configurations>" \
 plug -params 1.. -shell-script-candidates %{ ls -1 ${kak_opt_plug_install_dir} } %{ try %{
     evaluate-commands %sh{
         plugin="${1%%.git}"
@@ -112,7 +118,7 @@ plug -params 1.. -shell-script-candidates %{ ls -1 ${kak_opt_plug_install_dir} }
             printf "%s\n" "set-option -add global plug_plugins %{${plugin} }"
         fi
 
-        [ "$kak_opt_plug_depth_sort" = "true" ] && depth_sort="true" || depth_sort="false"
+        [ "${kak_opt_plug_depth_sort}" = "true" ] && depth_sort="true" || depth_sort="false"
 
         while [ $# -gt 0 ]; do
             case $1 in
@@ -126,6 +132,14 @@ plug -params 1.. -shell-script-candidates %{ ls -1 ${kak_opt_plug_install_dir} }
                     shift
                     load=1
                     load_files="$1" ;;
+                defer)
+                    shift
+                    module="$1"
+                    shift
+                    deferred_conf=$(printf "%s\n" "$1" | sed "s/@/@@/g")
+                    deferred_conf=$(printf "%s\n%s\n" "hook global ModuleLoad ${module} %@ ${deferred_conf} @")
+                    configurations="${configurations}
+                    ${deferred_conf}" ;;
                 do)
                     shift
                     hooks="${hooks} %{${plugin_name}} %{$1}" ;;
@@ -156,7 +170,8 @@ plug -params 1.. -shell-script-candidates %{ ls -1 ${kak_opt_plug_install_dir} }
         # their configurations are known to `plug.kak', so it can load those after installation
         # automatically.
         if [ -n "${configurations}" ]; then
-            printf "%s\n" "declare-option -hidden str plug_${plugin_opt_name}_conf %{${configurations}}"
+            configurations=$(printf "%s\n" "${configurations}" | sed "s/&/&&/g")
+            printf "%s\n" "declare-option -hidden str plug_${plugin_opt_name}_conf %&${configurations}&"
         else
             printf "%s\n" "declare-option -hidden str plug_${plugin_opt_name}_conf"
         fi
@@ -194,7 +209,7 @@ plug -params 1.. -shell-script-candidates %{ ls -1 ${kak_opt_plug_install_dir} }
                     # trim leading and trailing whitespaces. Looks ugly, but faster than `sed'
                     file="${file#"${file%%[![:space:]]*}"}"
                     file="${file%"${file##*[![:space:]]}"}"
-                    if [ "$depth_sort" = "true" ]; then
+                    if [ "${depth_sort}" = "true" ]; then
                         # performance hungry place.
                         find -L ${kak_opt_plug_install_dir}/${plugin_name} -path '*/.git' -prune -o -type f -name "${file}" -print | perl -e '
                             print map  { $_->[0] }
