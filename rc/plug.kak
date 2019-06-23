@@ -148,7 +148,7 @@ plug -params 1.. -shell-script-candidates %{ ls -1 ${kak_opt_plug_install_dir} }
                 theme)
                     noload=1
                     theme_hooks="mkdir -p ${kak_config}/colors
-                           find -type f -name '*.kak' -exec cp {} ${kak_config}/colors/ \;"
+                           find . -type f -name '*.kak' -exec cp {} ${kak_config}/colors/ \;"
                     hooks="${hooks} %{${plugin_name}} %{${theme_hooks}}" ;;
                 depth-sort)
                     depth_sort="true" ;;
