@@ -54,11 +54,11 @@ str plug_loaded_plugins
 
 declare-option -hidden -docstring \
 "List of post update/install hooks to be executed" \
-str-list plug_post_hooks ''
+str-list plug_post_hooks
 
 declare-option -hidden -docstring \
 "List of post update/install hooks to be executed" \
-str-list plug_domains ''
+str-list plug_domains
 
 # since we want to add highlighters to kak filetype we need to require kak module
 require-module kak
@@ -287,7 +287,7 @@ plug-install -params ..1 %{ nop %sh{ (
         plugin_name="${plugin##*/}"
         git_domain=${kak_opt_plug_git_domain}
 
-        eval "set -- ${kak_opt_plug_domains}"
+        eval "set -- ${kak_quoted_opt_plug_domains}"
         while [ $# -ne 0 ]; do
             if [ "$1" = "${plugin_name}" ]; then
                 git_domain="https://$2"
@@ -432,7 +432,7 @@ define-command -override -hidden \
 plug-eval-hooks -params 1 %{ nop %sh{ (
     status=0
     plugin_name="$1"
-    eval "set -- ${kak_opt_plug_post_hooks}"
+    eval "set -- ${kak_quoted_opt_plug_post_hooks}"
     while [ $# -gt 0 ]; do
         if [ "$1" = "${plugin_name}" ]; then
             plugin_name="${1##*/}"
