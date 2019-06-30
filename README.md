@@ -256,7 +256,7 @@ blocks are supported as well.
 ### Deferring plugin configuration
 Sometimes it is unnecessary to configure plugin if it isn't loaded. Since
 Kakoune added support for module system with `provide-module` and
-`require-module` followed by `ModuleLoad` hook it is possible to defer
+`require-module` followed by `ModuleLoaded` hook it is possible to defer
 configuration until certain module is loaded. For example, let's look on
 `fzf.kak` configuration deferred until `fzf` module is required:
 
