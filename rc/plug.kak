@@ -12,19 +12,19 @@
 
 # Public options
 declare-option -docstring \
-"path where plugins should be installed.
+"Path where plugins should be installed.
 
     Default value: '%val{config}/plugins'" \
 str plug_install_dir "%val{config}/plugins"
 
 declare-option -docstring \
-"default domain to access git repositories. Can be changed to any preferred domain, like gitlab, bitbucket, gitea, etc.
+"Default domain to access git repositories. Can be changed to any preferred domain, like gitlab, bitbucket, gitea, etc.
 
     Default value: 'https://github.com'" \
 str plug_git_domain 'https://github.com'
 
 declare-option -docstring \
-"sort sourced files by depth" \
+"Sort sourced files by depth" \
 bool plug_depth_sort false
 
 declare-option -docstring \
@@ -34,7 +34,7 @@ declare-option -docstring \
 int plug_max_active_downloads 10
 
 declare-option -docstring \
-"always ensure that all plugins are installed. If this option specified, all uninstalled plugins are being installed when Kakoune starts." \
+"Always ensure that all plugins are installed. If this option specified, all uninstalled plugins are being installed when Kakoune starts." \
 bool plug_always_ensure false
 
 declare-option -docstring "name of the client in which utilities display information" \
@@ -67,10 +67,10 @@ require-module kak
 try %[
     add-highlighter shared/kakrc/code/plug_keywords   regex (^|\h)\b(plug|do|config|load|domain|defer)\b(\h+)?((?=")|(?=')|(?=%)|(?=\w)) 0:keyword
     add-highlighter shared/kakrc/code/plug_attributes regex (^|\h)\b(noload|ensure|branch|tag|commit|theme|(no-)?depth-sort)\b 0:attribute
-    add-highlighter shared/kakrc/plug_post_hooks      region -recurse '\{' '\bdo\h+%\{' '\}' ref sh
+    add-highlighter shared/kakrc/plug_post_hooks      region -recurse '\{' '\bdo\K\h+%\{' '\}' ref sh
 ] catch %{
-    echo -debug "plug.kak: Can't declare highlighters for kakrc."
-    try %{ echo -debug "          Detailed error: %val{error}" }
+    echo -debug "plug.kak: Can't declare highlighters for 'kak' filetype."
+    echo -debug "          Detailed error: %val{error}"
 }
 
 # *plug* highlighters
@@ -82,8 +82,8 @@ try %{
     add-highlighter shared/plug_buffer/updating      regex [^:]+:\h+(Installing|Updating|Local\h+changes)$              1:type
     add-highlighter shared/plug_buffer/working       regex [^:]+:\h+(Running\h+post-update\h+hooks|Waiting[^\n]+)$      1:attribute
 } catch %{
-    echo -debug "plug.kak: Can't declare highlighters for *plug*."
-    try %{ echo -debug "          Detailed error: %val{error}" }
+    echo -debug "plug.kak: Can't declare highlighters for *plug* buffer."
+    echo -debug "          Detailed error: %val{error}"
 }
 
 hook -group plug-syntax global WinSetOption filetype=plug %{
@@ -122,17 +122,17 @@ plug -params 1.. -shell-script-candidates %{ ls -1 ${kak_opt_plug_install_dir} }
 
         while [ $# -gt 0 ]; do
             case $1 in
-                branch|tag|commit)
+                (branch|tag|commit)
                     branch_type=$1
                     shift
                     checkout="$1" ;;
-                noload)
+                (noload)
                     noload=1 ;;
-                load)
+                (load)
                     shift
                     load=1
                     load_files="$1" ;;
-                defer)
+                (defer)
                     shift
                     module="$1"
                     shift
@@ -140,27 +140,27 @@ plug -params 1.. -shell-script-candidates %{ ls -1 ${kak_opt_plug_install_dir} }
                     deferred_conf=$(printf "%s\n%s\n" "hook global ModuleLoaded ${module} %@ ${deferred_conf} @")
                     configurations="${configurations}
                     ${deferred_conf}" ;;
-                do)
+                (do)
                     shift
                     hooks="${hooks} %{${plugin_name}} %{$1}" ;;
-                ensure)
+                (ensure)
                     ensure=1 ;;
-                theme)
+                (theme)
                     noload=1
                     theme_hooks="mkdir -p ${kak_config}/colors
                            find . -type f -name '*.kak' -exec cp {} ${kak_config}/colors/ \;"
                     hooks="${hooks} %{${plugin_name}} %{${theme_hooks}}" ;;
-                depth-sort)
+                (depth-sort)
                     depth_sort="true" ;;
-                no-depth-sort)
+                (no-depth-sort)
                     depth_sort="false" ;;
-                domain)
+                (domain)
                     shift
                     domains="${domains} %{${plugin_name}} %{$1}" ;;
-                config)
+                (config)
                     shift
                     configurations="${configurations} $1" ;;
-                *)
+                (*)
                     configurations="${configurations} $1" ;;
             esac
             shift
@@ -223,7 +223,7 @@ plug -params 1.. -shell-script-candidates %{ ls -1 ${kak_opt_plug_install_dir} }
                     fi
                 done
             } fi
-            printf "%s\n" "evaluate-commands \"%opt{plug_${plugin_opt_name}_conf}\""
+            printf "%s\n" "evaluate-commands %opt{plug_${plugin_opt_name}_conf}"
             printf "%s\n" "set-option -add global plug_loaded_plugins %{${plugin} }"
         else
             if [ -n "${ensure}" ] || [ "${kak_opt_plug_always_ensure}" = "true" ]; then
@@ -232,8 +232,8 @@ plug -params 1.. -shell-script-candidates %{ ls -1 ${kak_opt_plug_install_dir} }
         fi
     }
 } catch %{
-    echo -debug "plug.kak: Error occured while loading %arg{1} plugin:"
-    try %{ echo -debug "          %val{error}" }
+    echo -debug "plug.kak: Error occured while loading '%arg{1}' plugin:"
+    echo -debug "          %val{error}"
 }}
 
 define-command -override -docstring \
@@ -298,9 +298,9 @@ plug-install -params ..1 %{ nop %sh{ (
 
         if [ ! -d "${kak_opt_plug_install_dir}/${plugin_name}" ]; then
             case ${plugin} in
-                http*|git*)
+                (http*|git*)
                     git="git clone ${plugin}" ;;
-                *)
+                (*)
                     git="git clone ${git_domain}/${plugin}" ;;
             esac
 
@@ -550,29 +550,29 @@ plug-fifo-operate -params 1 %{ evaluate-commands -save-regs t %{
     evaluate-commands %sh{
         plugin="${kak_reg_t%:*}"
         case $1 in
-        install-update)
+        (install-update)
             if [ -d "${kak_opt_plug_install_dir}/${plugin##*/}" ]; then
                 printf "%s\n" "plug-update ${plugin}'"
             else
                 printf "%s\n" "plug-install ${plugin}'"
             fi ;;
-        update)
+        (update)
             if [ -d "${kak_opt_plug_install_dir}/${plugin##*/}" ]; then
                 printf "%s\n" "plug-update ${plugin}'"
             else
                 printf "%s\n" "echo -markup %{{Information}${plugin}' is not installed}"
             fi ;;
-        install)
+        (install)
             if [ ! -d "${kak_opt_plug_install_dir}/${plugin##*/}" ]; then
                 printf "%s\n" "plug-install ${plugin}'"
             else
                 printf "%s\n" "echo -markup %{{Information}${plugin}' already installed}"
             fi ;;
-        clean)
+        (clean)
                 printf "%s\n" "plug-clean ${plugin}'" ;;
-        log)
+        (log)
             printf "%s\n" "plug-display-log ${plugin}'" ;;
-        *)
+        (*)
             ;;
         esac
     }

@@ -7,7 +7,7 @@
 [vim-plug][5] and [use-package][6]. It helps installing and updating plugins,
 can run post-update actions, and isolates plugin configuration within itself.
 
-The release model of **plug.kak** supports two latest releases of Kakoune, and
+The release model of **plug.kak** supports one latest stable release of Kakoune, and
 the development version. Default branch is always in sync with latest stable
 release of Kakoune. If you're using Kakoune builds from GitHub repository,
 please switch to [dev][7] branch.
