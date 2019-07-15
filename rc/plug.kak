@@ -542,7 +542,7 @@ plug-list -params ..1 %{ evaluate-commands -try-client %opt{toolsclient} %sh{
 
 }}
 
-define-command -override \
+define-command -hidden -override \
 -docstring "operate on *plug* buffer contents based on current cursor position" \
 plug-fifo-operate -params 1 %{ evaluate-commands -save-regs t %{
     execute-keys -save-regs '' "<a-h><a-l>"
@@ -552,26 +552,26 @@ plug-fifo-operate -params 1 %{ evaluate-commands -save-regs t %{
         case $1 in
         (install-update)
             if [ -d "${kak_opt_plug_install_dir}/${plugin##*/}" ]; then
-                printf "%s\n" "plug-update ${plugin}'"
+                printf "%s\n" "plug-update ${plugin}"
             else
-                printf "%s\n" "plug-install ${plugin}'"
+                printf "%s\n" "plug-install ${plugin}"
             fi ;;
         (update)
             if [ -d "${kak_opt_plug_install_dir}/${plugin##*/}" ]; then
-                printf "%s\n" "plug-update ${plugin}'"
+                printf "%s\n" "plug-update ${plugin}"
             else
-                printf "%s\n" "echo -markup %{{Information}${plugin}' is not installed}"
+                printf "%s\n" "echo -markup %{{Information}'${plugin}' is not installed}"
             fi ;;
         (install)
             if [ ! -d "${kak_opt_plug_install_dir}/${plugin##*/}" ]; then
-                printf "%s\n" "plug-install ${plugin}'"
+                printf "%s\n" "plug-install ${plugin}"
             else
-                printf "%s\n" "echo -markup %{{Information}${plugin}' already installed}"
+                printf "%s\n" "echo -markup %{{Information}'${plugin}' already installed}"
             fi ;;
         (clean)
-                printf "%s\n" "plug-clean ${plugin}'" ;;
+                printf "%s\n" "plug-clean ${plugin}" ;;
         (log)
-            printf "%s\n" "plug-display-log ${plugin}'" ;;
+            printf "%s\n" "plug-display-log ${plugin}" ;;
         (*)
             ;;
         esac
