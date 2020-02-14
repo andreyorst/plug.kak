@@ -60,7 +60,7 @@ plug "author/repository"
 ```
 
 By default **plug.kak** will look for this plugin at GitHub.com, and download it
-for you.  If you want to install plugin from place other than GitHub, like
+for you.  If you want to install a plugin from place other than GitHub, like
 GitLab or Gitea, `plug` also accepts URL as first parameter.  So in most cases
 it is enough to add this into your `kakrc` to use a plugin:
 
@@ -146,7 +146,7 @@ plug "ul/kak-lsp" do %{
 }
 ```
 
-In this example **plug.kak** will run these `cargo` commands after `kak-lsp` was
+In this example **plug.kak** will run these `cargo` commands after `kak-lsp` is
 updated, keeping the compiled part in sync with the `kakscript` part shipped
 with the `kak-lsp` plugin.
 
@@ -211,7 +211,7 @@ plug "KJ_Duncan/kakoune-kotlin.kak" domain "bitbucket.org"
 
 #### Ensure that plugins are installed
 `plug` command can be explicitly told to install the plugin on loading with the
-`ensure` keyword. This is handy in case you don't isolated the configuration of
+`ensure` keyword. This is handy in case you don't isolate the configuration of
 the plugin, so you want this plugin to be installed and enabled in any
 situation.
 
@@ -222,17 +222,17 @@ want to install new plugins without calling the `plug-install` command.
 Now, let's discuss configuration of plugins with `plug` command.
 
 #### Handling user configurations
-Common problem with plugin configuration, and a configuration of external
+Common problem with plugin configuration, and configuration of external
 features in general, is that when this feature is not available, the
 configuration makes no sense at all.
 
 Previously I've mentioned that [`noload`][11] switch doesn't affect the
 configuration process of a plugin. That is, the configuration isn't loaded only
-when plugin is not installed. Which means that if you decide to install your
+when the plugin is not installed. Which means that if you decide to install your
 configuration to a new machine, Kakoune won't throw errors that something isn't
 available, for example some plugin options.
 
-There's second strict rule of `plug` command: every parameter that doesn't have
+There's a second strict rule of `plug` command: every parameter that doesn't have
 a keyword before it, is treated as plugin configuration.
 
 For example:
@@ -244,8 +244,8 @@ plug "andreyorst/fzf.kak" config %{
 ```
 
 In this example I'm setting a <kbd>Ctrl</kbd>+<kbd>p</kbd> mapping that is
-meaningful only if the plugin is installed. I've could configure it outside of
-`plug` command, but it will fail if I accidentally remove or disable the
+meaningful only if the plugin is installed. I could configure it outside of
+`plug` command, but it would fail if I accidentally remove or disable the
 plugin. In case of configuring it with `plug` command, I don't need to keep
 track of other configuration pieces. Everything within the `config %{ }` block
 is ordinary kakscript.
@@ -322,15 +322,15 @@ plug "andreyorst/plug.kak" noload config %{
 **plug.kak** will download plugins to that directory. Speaking of downloads.
 
 ### Maximum downloads
-**plug.kak** downloads plugins from the github.com asynchronously in the
-background. By default it allows only `10` simultaniously active downloads. To
+**plug.kak** downloads plugins from github.com asynchronously in the
+background. By default it allows only `10` simultaneously active downloads. To
 allow more, or less downloads at the same time you can change
 `plug_max_simultaneous_downloads` option.
 
 ### Default git domain
 Although you can use URLs inside `plugin` field, if you're using plugins from,
 say, Gitlab only, using URLs is tedious. You and set default git domain to
-`https://gitlab.com`, or to any other git domain, as long as it
+`https://gitlab.com`, or to any other git domain, as long as it is
 similar to github's in term of URL structure, and use `"author/repository"`
 instead of URL in `plug` command.
 
@@ -350,8 +350,8 @@ plugin will be enabled automatically, but you still need to add `plug` command
 to your configuration files in order to use that plugin after the restart.
 
 ### `plug-update`
-This commands updates all installed plugins. It accepts one optional argument,
-which is a plugin name, so it could be used to update single plugin. When called
+This command updates all installed plugins. It accepts one optional argument,
+which is a plugin name, so it could be used to update a single plugin. When called
 from prompt, it shows all installed plugins in the completion menu. This command
 is used by default with the <kbd>Enter</kbd> key on any plugin that is installed
 in the `*plug*` buffer.
@@ -386,7 +386,7 @@ And last but not least: `plug`. Load plugin from plugin installation directory b
 [12]: #Automatically-do-certain-tasks-on-install-or-update
 [13]: #Installing-color-schemes
 [14]: #Handling-user-configurations
-[15]: #Ensuring-that-plugin-is-installed
+[15]: #Ensure-that-plugins-are-installed
 
 [16]: #Plugin-installation-directory
 [17]: #Maximum-downloads
