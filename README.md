@@ -386,7 +386,7 @@ And last but not least: `plug`. Load plugin from plugin installation directory b
 [12]: #automatically-do-certain-tasks-on-install-or-update
 [13]: #installing-color-schemes
 [14]: #handling-user-configurations
-[15]: #ensuring-that-plugin-is-installed
+[15]: #ensure-that-plugins-are-installed
 
 [16]: #plugin-installation-directory
 [17]: #maximum-downloads
