@@ -60,9 +60,6 @@ declare-option -hidden -docstring \
 "List of post update/install hooks to be executed" \
 str-list plug_domains
 
-# since we want to add highlighters to kak filetype we need to require kak module
-require-module kak
-
 # kakrc highlighters
 try %[
     add-highlighter shared/kakrc/code/plug_keywords   regex (^|\h)\b(plug|do|config|load|domain|defer)\b(\h+)?((?=")|(?=')|(?=%)|(?=\w)) 0:keyword
