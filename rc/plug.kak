@@ -205,7 +205,7 @@ plug -params 1.. -shell-script-candidates %{ ls -1 ${kak_opt_plug_install_dir} }
                 IFS='
 '
                 set -f # set noglob
-                for file in "${load_files}"; do
+                for file in ${load_files}; do
                     # trim leading and trailing whitespaces. Looks ugly, but faster than `sed'
                     file="${file#"${file%%[![:space:]]*}"}"
                     file="${file%"${file##*[![:space:]]}"}"
