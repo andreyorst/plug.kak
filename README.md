@@ -33,13 +33,20 @@ command:
 git clone https://github.com/andreyorst/plug.kak.git ~/.config/kak/plugins/plug.kak
 ```
 
-Now, when **plug.kak** is installed, we need to tell Kakoune about it. You can
-either symlink `plug.kak` file to your `autoload` directory, or use Kakoune `source`
-command. I've added this `source` command to my `kakrc`:
+Now, when **plug.kak** is installed, we need to tell Kakoune about it. To do so
+use Kakoune's `source` command:
 
 ```kak
 source "%val{config}/plugins/plug.kak/rc/plug.kak"
 ```
+
+It's not recommended to use `autoload` directory with **plug.kak**, due to
+[loading order](https://github.com/mawww/kakoune/pull/3021) which can be
+different on different systems, depending on `find`. It is possible that
+**plug.kak** would be loaded before `kakrc.kak` and this will result in errors.
+Therefore using `source` from `kakrc` is more reliable approach. You don't need
+`autoload` if you're using **plug.kak** anyways, because it was created in order
+to avoid using `autoload`.
 
 As I've already mentioned **plug.kak** can work from any directory, but if you
 installed it to your plugin installation directory, **plug.kak** will be able to
@@ -90,12 +97,14 @@ how **plug.kak** works, or add additional steps for `plug` to perform for you.
 
 These are available keywords:
 - [branch, tag, commit][9]
-- [load][10]
+- [load-path][10]
+- [subset][22]
 - [noload][11]
 - [do][12]
 - [theme][13]
 - [config][14]
 - [defer][21]
+- [demand][23]
 - [depth-sort][19] and [no-depth-sort][19]
 - [domain][20]
 - [ensure][15]
@@ -112,13 +121,27 @@ uses it's default value, which is `*.kak`, and by specifying a value, you just
 override default one. Here's an example:
 
 ```kak
-plug "lenormf/kakoune-extra" load %{
+plug "lenormf/kakoune-extra" subset %{
     hatch_terminal.kak
     lineindent.kak
 }
 ```
 
 Filenames must be specified one per line.
+
+#### Loading plugin from different path
+When developing a plugin, it's nice to have ability to load development version
+from different place. with `path "path/to/plugin"` option you now able to load
+plugins from location that is different from the `plug_install_dir` path.
+
+``` kak
+plug "plugin_name" load-path "~/Development/plugin_dir"
+```
+
+This is also handy for loading plugins that you do not want to
+upload. Unfortunately all plug-related commands like `plug-update` or
+`plug-clean` will not work for plugins that aren't installed to
+`plug_install_dir`.
 
 #### Skipping loading of a plugin
 Sometimes plugin should be installed, but not loaded until certain event.  In
@@ -222,9 +245,9 @@ want to install new plugins without calling the `plug-install` command.
 Now, let's discuss configuration of plugins with `plug` command.
 
 #### Handling user configurations
-Common problem with plugin configuration, and configuration of external
-features in general, is that when this feature is not available, the
-configuration makes no sense at all.
+Common problem with plugin configuration, and configuration of external features
+in general, is that when this feature is not available, the configuration makes
+no sense at all.
 
 Previously I've mentioned that [`noload`][11] switch doesn't affect the
 configuration process of a plugin. That is, the configuration isn't loaded only
@@ -232,8 +255,8 @@ when the plugin is not installed. Which means that if you decide to install your
 configuration to a new machine, Kakoune won't throw errors that something isn't
 available, for example some plugin options.
 
-There's a second strict rule of `plug` command: every parameter that doesn't have
-a keyword before it, is treated as plugin configuration.
+There's a second strict rule of `plug` command: every parameter that doesn't
+have a keyword before it, is treated as plugin configuration.
 
 For example:
 
@@ -244,7 +267,7 @@ plug "andreyorst/fzf.kak" config %{
 ```
 
 In this example I'm setting a <kbd>Ctrl</kbd>+<kbd>p</kbd> mapping that is
-meaningful only if the plugin is installed. I could configure it outside of
+meaningful only if the plugin is installed. I've could configure it outside of
 `plug` command, but it would fail if I accidentally remove or disable the
 plugin. In case of configuring it with `plug` command, I don't need to keep
 track of other configuration pieces. Everything within the `config %{ }` block
@@ -284,6 +307,30 @@ only when `fzf` module is loaded.
 Since we've touched the configuration of **plug.kak** itself, let's discuss this
 topic.
 
+### Automatically require deferred module
+The `demand` keyword works only in pair with `defer` keyword. What it
+essentially does is calling `require-module module` at the end of `config` block
+(or if there's no `config` specified it will be the only configuration) with
+`module` specified by `defer` keyword. So this:
+
+```kak
+plug "andreyorst/fzf.kak" defer fzf %{
+    set-option global fzf_project_use_tilda true
+} demand
+```
+
+is a shorthand for this:
+
+``` kak
+plug "andreyorst/fzf.kak" defer fzf %{
+    set-option global fzf_project_use_tilda true
+} config %{
+    require-module fzf
+}
+```
+
+`demand` can be placed anywhere after plugin name.
+
 ## **plug.kak** Configuration
 You can change some bits of **plug.kak** behavior:
 - Change [plugin installation directory][16]
@@ -309,9 +356,11 @@ This means that **plug.kak** was installed in the plugin installation directory.
 
 ### Plugin installation directory
 
-You can specify where to install plugins, in case you don't like default
-`~/.config/kak/plugins/` path. You can do so by changing `plug_install_dir` option:
-(note: if you want to use environment variables in the path, consider using shell expansion like in this example)
+By default **plug.kak** will install plugins to the same directory where it was
+installed.  You can specify where to install plugins, in case you don't like
+default path. You can do so by changing `plug_install_dir` option: (note: if you
+want to use environment variables in the path, consider using shell expansion
+like in this example)
 
 ```kak
 plug "andreyorst/plug.kak" noload config %{
@@ -323,16 +372,16 @@ plug "andreyorst/plug.kak" noload config %{
 
 ### Maximum downloads
 **plug.kak** downloads plugins from github.com asynchronously in the
-background. By default it allows only `10` simultaneously active downloads. To
+background. By default it allows only `10` simultaniously active downloads. To
 allow more, or less downloads at the same time you can change
 `plug_max_simultaneous_downloads` option.
 
 ### Default git domain
 Although you can use URLs inside `plugin` field, if you're using plugins from,
 say, Gitlab only, using URLs is tedious. You and set default git domain to
-`https://gitlab.com`, or to any other git domain, as long as it is
-similar to github's in term of URL structure, and use `"author/repository"`
-instead of URL in `plug` command.
+`https://gitlab.com`, or to any other git domain, as long as it is similar to
+github's in term of URL structure, and use `"author/repository"` instead of URL
+in `plug` command.
 
 I've mentioned that `plug` is a command. Indeed you can call `plug` from the
 Kakoune command prompt, as long as other **plug.kak** commands.
@@ -351,7 +400,7 @@ to your configuration files in order to use that plugin after the restart.
 
 ### `plug-update`
 This command updates all installed plugins. It accepts one optional argument,
-which is a plugin name, so it could be used to update a single plugin. When called
+which is a plugin name, so it could be used to update single plugin. When called
 from prompt, it shows all installed plugins in the completion menu. This command
 is used by default with the <kbd>Enter</kbd> key on any plugin that is installed
 in the `*plug*` buffer.
@@ -394,3 +443,5 @@ And last but not least: `plug`. Load plugin from plugin installation directory b
 [19]: #depth-sorting-sourced-files
 [20]: #specifying-git-domain-on-per-plugin-basis
 [21]: #deferring-plugin-configuration
+[22]: #loading-plugin-from-different-path
+[23]: #automatically-require-deferred-module
