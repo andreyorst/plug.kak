@@ -480,7 +480,7 @@ plug-eval-hooks -params 1 %{ nop %sh{ (
 ) > /dev/null 2>&1 < /dev/null & }}
 
 define-command -override \
--docstring "plug-list [<noupdate>]: list all installed plugins in *plug* buffer. Chacks updates by default unless <noupdate> is specified." \
+-docstring "plug-list [<noupdate>]: list all installed plugins in *plug* buffer. Checks updates by default unless <noupdate> is specified." \
 plug-list -params ..1 %{ evaluate-commands -try-client %opt{toolsclient} %sh{
     noupdate=$1
     tmp=$(mktemp -d "${TMPDIR:-/tmp}/plug-kak.XXXXXXXX")
