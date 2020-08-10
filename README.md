@@ -1,5 +1,3 @@
-# THIS PLUGIN IS NOT ACTIVELY MAINTAINED. FOR MORE DETAILS PLEASE SEE [THIS DISCOURSE POST](https://discuss.kakoune.com/t/maintainance-warning-and-request)
-
 # plug.kak
 [![GitHub issues][1]][2] ![license][3]
 
