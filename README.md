@@ -1,3 +1,8 @@
+## New Official Home
+
+The amazing [Andrey Orst][24] has handed this off to me for the foreseesable
+future, I will do my best to keep plug,kak is healthy and working order. :) 
+
 # plug.kak
 [![GitHub issues][1]][2] ![license][3]
 
@@ -439,3 +444,4 @@ And last but not least: `plug`. Load plugin from plugin installation directory b
 [21]: #deferring-plugin-configuration
 [22]: #loading-plugin-from-different-path
 [23]: #automatically-require-deferred-module
+[24]: https://github.com/andreyorst/
