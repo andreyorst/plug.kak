@@ -210,7 +210,7 @@ plug -params 1.. -shell-script-candidates %{ ls -1 ${kak_opt_plug_install_dir} }
                         current_branch=$(git branch | awk '/^\*/ { print $2 }')
                         [ "${current_branch}" != "${checkout}" ] && git fetch >/dev/null 2>&1
                     fi
-                    git checkout ${checkout} >/dev/null 2>&1
+                    git checkout --recurse-submodules ${checkout} >/dev/null 2>&1
                 )
             fi
             if [ -z "${noload}" ]; then {
@@ -321,7 +321,7 @@ plug-install -params ..1 %{ nop %sh{ (
                 plugin_log="${TMPDIR:-/tmp}/${plugin_name}-log"
                 printf "%s\n" "hook global -always KakEnd .* %{ nop %sh{rm -rf ${plugin_log}}}
                                evaluate-commands -client ${kak_client:-client0} %{ plug-update-fifo %{${plugin_name}} %{Installing} }" | kak -p ${kak_session}
-                cd ${kak_opt_plug_install_dir} && git clone "$remote" >>${plugin_log} 2>&1
+                cd ${kak_opt_plug_install_dir} && git clone --recurse-submodules "$remote" >>${plugin_log} 2>&1
                 status=$?
                 if [ ${status} -ne 0 ]; then
                     printf "%s\n" "evaluate-commands -client ${kak_client:-client0} %{ plug-update-fifo %{${plugin_name}} %{Download Error (${status})} }" | kak -p ${kak_session}
@@ -372,7 +372,7 @@ plug-update -params ..1 -shell-script-candidates %{ printf "%s\n" ${kak_opt_plug
                     plugin_log="${TMPDIR:-/tmp}/${plugin_name}-log"
                     printf "%s\n" "hook global -always KakEnd .* %{ nop %sh{rm -rf ${plugin_log}}}
                                    evaluate-commands -client ${kak_client:-client0} %{ plug-update-fifo %{${plugin_name}} %{Updating} }" | kak -p ${kak_session}
-                    cd "${kak_opt_plug_install_dir}/${plugin_name}" && rev=$(git rev-parse HEAD) && git pull >> ${plugin_log} 2>&1
+                    cd "${kak_opt_plug_install_dir}/${plugin_name}" && rev=$(git rev-parse HEAD) && git pull --recurse-submodules >> ${plugin_log} 2>&1
                     status=$?
                     if [ ${status} -ne 0 ]; then
                         printf "%s\n" "evaluate-commands -client ${kak_client:-client0} %{ plug-update-fifo %{${plugin_name}} %{Update Error (${status})} }" | kak -p ${kak_session}
