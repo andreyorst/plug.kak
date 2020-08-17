@@ -312,16 +312,16 @@ plug-install -params ..1 %{ nop %sh{ (
         if [ ! -d "${kak_opt_plug_install_dir}/${plugin_name}" ]; then
             case ${plugin} in
                 (http*|git*)
-                    git="git clone ${plugin}" ;;
+                    remote=${plugin} ;;
                 (*)
-                    git="git clone ${git_domain}/${plugin}" ;;
+                    remote=${git_domain}/${plugin} ;;
             esac
 
             (
                 plugin_log="${TMPDIR:-/tmp}/${plugin_name}-log"
                 printf "%s\n" "hook global -always KakEnd .* %{ nop %sh{rm -rf ${plugin_log}}}
                                evaluate-commands -client ${kak_client:-client0} %{ plug-update-fifo %{${plugin_name}} %{Installing} }" | kak -p ${kak_session}
-                cd ${kak_opt_plug_install_dir} && ${git} >>${plugin_log} 2>&1
+                cd ${kak_opt_plug_install_dir} && git clone "$remote" >>${plugin_log} 2>&1
                 status=$?
                 if [ ${status} -ne 0 ]; then
                     printf "%s\n" "evaluate-commands -client ${kak_client:-client0} %{ plug-update-fifo %{${plugin_name}} %{Download Error (${status})} }" | kak -p ${kak_session}
