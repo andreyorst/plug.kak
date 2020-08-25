@@ -1,7 +1,7 @@
 ## New Official Home
 
 The amazing [Andrey Orst][24] has handed this off to me for the foreseesable
-future, I will do my best to keep plug.kak healthy and working order. :) 
+future, I will do my best to keep plug.kak healthy and in working order. :) 
 
 # plug.kak
 [![GitHub issues][1]][2] ![license][3]
