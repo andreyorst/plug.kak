@@ -30,7 +30,7 @@ After directory was created, we need to clone [plug.kak repository][8] there wit
 command:
 
 ```sh
-git clone https://github.com/andreyorst/plug.kak.git ~/.config/kak/plugins/plug.kak
+git clone https://github.com/robertmeta/plug.kak.git ~/.config/kak/plugins/plug.kak
 ```
 
 Now, when **plug.kak** is installed, we need to tell Kakoune about it. To do so
@@ -149,7 +149,7 @@ such case use `noload` attribute to skip loading of installed plugin. Useful
 with plug.kak itself, because it is already loaded by user configuration.
 
 ```kak
-plug "andreyorst/plug.kak" noload
+plug "robertmeta/plug.kak" noload
 ```
 
 However, not loading the plugin itself doesn't mean that `plug` command will
@@ -347,7 +347,7 @@ keyword like so:
 source "%val{config}/plugins/plug.kak/rc/plug.kak"
 
 # call plug.kak with `plug' command
-plug "andreyorst/plug.kak" noload config %{
+plug "robertmeta/plug.kak" noload config %{
     # configure plug.kak here
 }
 ```
@@ -363,7 +363,7 @@ want to use environment variables in the path, consider using shell expansion
 like in this example)
 
 ```kak
-plug "andreyorst/plug.kak" noload config %{
+plug "robertmeta/plug.kak" noload config %{
     set-option global plug_install_dir %sh{ echo $HOME/.cache/kakoune_plugins }
 }
 ```
@@ -420,13 +420,13 @@ plugin, depending on its state. This command accepts an optional argument
 ### `plug`
 And last but not least: `plug`. Load plugin from plugin installation directory by its name.
 
-[1]: https://img.shields.io/github/issues/andreyorst/plug.kak.svg
-[2]: https://github.com/andreyorst/plug.kak/issues
-[3]: https://img.shields.io/github/license/andreyorst/plug.kak.svg
+[1]: https://img.shields.io/github/issues/robertmeta/plug.kak.svg
+[2]: https://github.com/robertmeta/plug.kak/issues
+[3]: https://img.shields.io/github/license/robertmeta/plug.kak.svg
 [4]: https://user-images.githubusercontent.com/19470159/51197223-f2c26a80-1901-11e9-9494-b79ce823a364.png
 [5]: https://github.com/junegunn/vim-plug
 [6]: https://github.com/jwiegley/use-package
-[8]: https://github.com/andreyorst/plug.kak
+[8]: https://github.com/robertmeta/plug.kak
 
 [9]: #branch-tag-or-commit
 [10]: #loading-subset-of-files-from-plugin-repository
