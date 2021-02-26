@@ -29,9 +29,10 @@ To do so use Kakoune's `source` command:
 
 ```kak
 source "%val{config}/plugins/plug.kak/rc/plug.kak"
+plug "andreyorst/plug.kak" noload
 ```
 
-It's not recommended to use `autoload` directory with **plug.kak**, due to [loading order](https://github.com/mawww/kakoune/pull/3021) which can be different on different systems, depending on `find`.
+It's not recommended to use `autoload` directory with **plug.kak**, due to [loading order][25] which can be different on different systems, depending on `find`.
 It is possible that **plug.kak** would be loaded before `kakrc.kak` and this will result in errors.
 Therefore using `source` from `kakrc` is more reliable approach.
 You don't need `autoload` if you're using **plug.kak** anyways, because it was created in order to avoid using `autoload`.
@@ -48,9 +49,12 @@ evaluate-commands %sh{
         git clone -q https://github.com/andreyorst/plug.kak "$plugins/plug.kak"
     printf "%s\n" "source '$plugins/plug.kak/rc/plug.kak'"
 }
+plug "andreyorst/plug.kak" noload
 ```
 
-This will check if `plug.kak` is installed, and if not will automatically create all needed directories, and clone plug.kak repository.
+This will check if `plug.kak** is installed, and if not will automatically create all needed directories, and clone **plug.kak** repository.
+
+**Note**: `plug "andreyorst/plug.kak" noload` is needed to register **plug.kak** as manually loaded plugin, so `plug-clean` will not delete **plug.kak**.
 
 Now you can use **plug.kak**.
 
@@ -136,7 +140,7 @@ Unfortunately all plug-related commands like `plug-update` or `plug-clean` will 
 #### Skipping loading of a plugin
 Sometimes plugin should be installed, but not loaded until certain event.
 In such case use `noload` attribute to skip loading of installed plugin.
-Useful with plug.kak itself, because it is already loaded by user configuration.
+Useful with **plug.kak** itself, because it is already loaded by user configuration.
 
 ```kak
 plug "andreyorst/plug.kak" noload
@@ -398,7 +402,7 @@ Load plugin from plugin installation directory by its name.
 [22]: #loading-plugin-from-different-path
 [23]: #automatically-require-deferred-module
 [24]: https://github.com/andreyorst/
-
+[25]: https://github.com/mawww/kakoune/pull/3021
 <!--  LocalWords:  kak Kakoune Kakoune's GitLab Gitea noload config
       LocalWords:  kakscript kbd Ctrl github
  -->
