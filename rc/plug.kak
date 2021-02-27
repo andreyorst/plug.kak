@@ -153,7 +153,7 @@ plug -params 1.. -shell-script-candidates %{ ls -1 ${kak_opt_plug_install_dir} }
                     printf "%s\n" "echo -debug %{Error: plug.kak: '${plugin_name}': keyword '$1' is no longer supported. Use the module system instead}"
                     exit 1 ;;
                 (no-depth-sort)
-                    printf "%s\n" "echo -debug %{Warning: plug.kak: '${plugin_name}': use of deprecated `$1' keyword which has no effect}" ;;
+                    printf "%s\n" "echo -debug %{Warning: plug.kak: '${plugin_name}': use of deprecated '$1' keyword which has no effect}" ;;
                 (config)
                     shift
                     configurations="${configurations} $1" ;;
