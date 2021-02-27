@@ -65,12 +65,10 @@ try %@
         add-highlighter shared/kakrc/plug_post_hooks3     region -recurse '\(' '\bdo\K\h+%\(' '\)' ref sh
         add-highlighter shared/kakrc/plug_post_hooks4     region -recurse '<'  '\bdo\K\h+%<'  '>'  ref sh
     $ catch %$
-        echo -debug "plug.kak: Can't declare highlighters for 'kak' filetype."
-        echo -debug "          Detailed error: %val{error}"
+        echo -debug "Error: plug.kak: can't declare highlighters for 'kak' filetype: %val{error}"
     $
 @ catch %{
-    echo -debug "Can't require 'kak' module to declare highlighters for plug.kak."
-    echo -debug "Check if kakrc.kak is available in your autoload."
+    echo -debug "Error: plug.kak: can't require 'kak' module to declare highlighters for plug.kak. Check if kakrc.kak is available in your autoload."
 }
 
 # *plug* highlighters
@@ -82,8 +80,7 @@ try %{
     add-highlighter shared/plug_buffer/updating      regex [^:]+:\h+(Installing|Updating|Local\h+changes)$              1:type
     add-highlighter shared/plug_buffer/working       regex [^:]+:\h+(Running\h+post-update\h+hooks|Waiting[^\n]+)$      1:attribute
 } catch %{
-    echo -debug "plug.kak: Can't declare highlighters for *plug* buffer."
-    echo -debug "          Detailed error: %val{error}"
+    echo -debug "Error: plug.kak: Can't declare highlighters for *plug* buffer: %val{error}"
 }
 
 hook -group plug-syntax global WinSetOption filetype=plug %{
@@ -152,6 +149,11 @@ plug -params 1.. -shell-script-candidates %{ ls -1 ${kak_opt_plug_install_dir} }
                 (domain)
                     shift
                     domains="${domains} %{${plugin_name}} %{$1}" ;;
+                (dept-sort|subset)
+                    printf "%s\n" "echo -debug %{Error: plug.kak: '${plugin_name}': keyword '$1' is no longer supported. Use the module system instead}"
+                    exit 1 ;;
+                (no-depth-sort)
+                    printf "%s\n" "echo -debug %{Warning: plug.kak: '${plugin_name}': use of deprecated `$1' keyword which has no effect}" ;;
                 (config)
                     shift
                     configurations="${configurations} $1" ;;
@@ -162,7 +164,7 @@ plug -params 1.. -shell-script-candidates %{ ls -1 ${kak_opt_plug_install_dir} }
         done
 
         if [ -z "${module}" ] && [ -n "${demand}" ]; then
-            printf "%s\n" "echo -debug %{Warning: plug.kak: ${plugin_name} missing 'defer' keyword or 'defer' did not specify module name}"
+            printf "%s\n" "echo -debug %{Warning: plug.kak: '${plugin_name}': missing 'defer' keyword or 'defer' did not specify module name}"
         elif [ -n "${demand}" ] && [ -n "${module}" ]; then
             configurations="${configurations}
                             require-module ${module}"
@@ -201,8 +203,7 @@ plug -params 1.. -shell-script-candidates %{ ls -1 ${kak_opt_plug_install_dir} }
         fi
     }
 } catch %{
-    echo -debug "plug.kak: Error occured while loading '%arg{1}' plugin:"
-    echo -debug "          %val{error}"
+    echo -debug "Error: plug.kak: '%arg{1}': error occured while loading plugin: %val{error}"
 }}
 
 define-command -override -docstring \
@@ -217,7 +218,7 @@ plug-install -params ..1 %{ nop %sh{ (
 
     if [ ! -d ${kak_opt_plug_install_dir} ]; then
         if ! mkdir -p ${kak_opt_plug_install_dir} >/dev/null 2>&1; then
-            printf "%s\n" "evaluate-commands -client ${kak_client:-client0} echo -debug 'plug.kak: Error: unable to create directory for plugins'" | kak -p ${kak_session}
+            printf "%s\n" "evaluate-commands -client ${kak_client:-client0} echo -debug 'Error: plug.kak: unable to create directory for plugins'" | kak -p ${kak_session}
             exit
         fi
     fi
@@ -420,7 +421,7 @@ plug-eval-hooks -params 1 %{ nop %sh{ (
             done
 
             if [ ${status} -ne 0 ]; then
-                printf "%s\n" "evaluate-commands -client ${kak_client:-client0} %{ echo -debug %{plug.kak: error occured while evaluation of post-update hooks for ${plugin_name}. Aborting with error code ${status}} }" | kak -p ${kak_session}
+                printf "%s\n" "evaluate-commands -client ${kak_client:-client0} %{ echo -debug %{Error: plug.kak: '${plugin_name}': error occured while evaluation of post-update hooks - aborting with error code ${status}} }" | kak -p ${kak_session}
             fi
             break
         fi
