@@ -1,14 +1,6 @@
-# ╭─────────────╥────────────────────╮
-# │ Author:     ║ File:              │
-# │ Andrey Orst ║ plug.kak           │
-# ╞═════════════╩════════════════════╡
-# │ plug.kak is a plugin manager for │
-# │ Kakoune. It can install plugins  │
-# │ keep them updated and uninstall  │
-# ╞══════════════════════════════════╡
-# │ GitHub repo:                     │
-# │ GitHub.com/andreyorst/plug.kak   │
-# ╰──────────────────────────────────╯
+# Author: Andrey Listopadov
+# plug.kak is a plugin manager for Kakoune. It can install plugins, keep them updated, configure and build dependencies
+# https://github.com/andreyorst/plug.kak
 
 # Public options
 declare-option -docstring \
@@ -24,11 +16,7 @@ declare-option -docstring \
 str plug_git_domain 'https://github.com'
 
 declare-option -docstring \
-"Sort sourced files by depth" \
-bool plug_depth_sort false
-
-declare-option -docstring \
-"Sort sourced files by depth" \
+"Profile plugin loading." \
 bool plug_profile false
 
 declare-option -docstring \
@@ -70,8 +58,8 @@ try %@
     require-module kak
 
     try %$
-        add-highlighter shared/kakrc/code/plug_keywords   regex \b(plug|do|config|subset|domain|defer|demand|load-path|branch|tag|commit)\b 0:keyword
-        add-highlighter shared/kakrc/code/plug_attributes regex \b(noload|ensure|theme|(no-)?depth-sort)\b 0:attribute
+        add-highlighter shared/kakrc/code/plug_keywords   regex \b(plug|do|config|domain|defer|demand|load-path|branch|tag|commit)\b 0:keyword
+        add-highlighter shared/kakrc/code/plug_attributes regex \b(noload|ensure|theme)\b 0:attribute
         add-highlighter shared/kakrc/plug_post_hooks1     region -recurse '\{' '\bdo\K\h+%\{' '\}' ref sh
         add-highlighter shared/kakrc/plug_post_hooks2     region -recurse '\[' '\bdo\K\h+%\[' '\]' ref sh
         add-highlighter shared/kakrc/plug_post_hooks3     region -recurse '\(' '\bdo\K\h+%\(' '\)' ref sh
@@ -116,12 +104,11 @@ Switches:
     config <configurations>         plugin <configurations>" \
 plug -params 1.. -shell-script-candidates %{ ls -1 ${kak_opt_plug_install_dir} } %{ try %{
     evaluate-commands %sh{
-        [ "${kak_opt_plug_profile}" = "true" ] && start=$(date +%s%N)
+        [ "${kak_opt_plug_profile}" = "true" ] && profile_start=$(date +%s%N)
         plugin="${1%%.git}"
         shift
         plugin_name="${plugin##*/}"
         plugin_opt_name=$(printf "%s\n" "${plugin_name}" | sed 's/[^a-zA-Z0-9_]/_/g')
-        load_files='*.kak'
         path_to_plugin="${kak_opt_plug_install_dir}/${plugin_name}"
 
         if [ $(expr "${kak_opt_plug_loaded_plugins}" : ".*${plugin}.*") -ne 0 ]; then
@@ -130,7 +117,6 @@ plug -params 1.. -shell-script-candidates %{ ls -1 ${kak_opt_plug_install_dir} }
         fi
 
         [ $(expr "${kak_opt_plug_plugins}" : ".*${plugin}.*") -eq 0 ] && printf "%s\n" "set-option -add global plug_plugins %{${plugin} }"
-        [ "${kak_opt_plug_depth_sort}" = "true" ] && depth_sort="true" || depth_sort="false"
 
         while [ $# -gt 0 ]; do
             case $1 in
@@ -140,10 +126,6 @@ plug -params 1.. -shell-script-candidates %{ ls -1 ${kak_opt_plug_install_dir} }
                     checkout="$1" ;;
                 (noload)
                     noload=1 ;;
-                (subset)
-                    shift
-                    subset=1
-                    load_files="$1" ;;
                 (load-path)
                     shift
                     path_to_plugin=$(printf "%s\n" "$1" | sed "s:^\s*~/:${HOME}/:") ;;
@@ -151,10 +133,10 @@ plug -params 1.. -shell-script-candidates %{ ls -1 ${kak_opt_plug_install_dir} }
                     shift
                     module="$1"
                     shift
-                    [ -z "${1##*@*}" ] && deferred_conf=$(printf "%s\n" "$1" | sed "s/@/@@/g") || deferred_conf="$1"
+                    deferred_conf=$(printf "%s\n" "$1" | sed "s/@/@@/g")
                     deferred_conf=$(printf "%s\n" "hook global ModuleLoaded ${module} %@ ${deferred_conf} @")
                     configurations="${configurations}
-                    ${deferred_conf}" ;;
+                                    ${deferred_conf}" ;;
                 (demand)
                     demand=1 ;;
                 (do)
@@ -165,12 +147,8 @@ plug -params 1.. -shell-script-candidates %{ ls -1 ${kak_opt_plug_install_dir} }
                 (theme)
                     noload=1
                     theme_hooks="mkdir -p ${kak_config}/colors
-                           find . -type f -name '*.kak' -exec cp {} ${kak_config}/colors/ \;"
+                                 find . -type f -name '*.kak' -exec cp {} ${kak_config}/colors/ \;"
                     hooks="${hooks} %{${plugin_name}} %{${theme_hooks}}" ;;
-                (depth-sort)
-                    depth_sort="true" ;;
-                (no-depth-sort)
-                    depth_sort="false" ;;
                 (domain)
                     shift
                     domains="${domains} %{${plugin_name}} %{$1}" ;;
@@ -183,7 +161,9 @@ plug -params 1.. -shell-script-candidates %{ ls -1 ${kak_opt_plug_install_dir} }
             shift
         done
 
-        if [ -n "${demand}" ] && [ -n "${module}" ]; then
+        if [ -z "${module}" ] && [ -n "${demand}" ]; then
+            printf "%s\n" "echo -debug %{Warning: plug.kak: ${plugin_name} missing 'defer' keyword or 'defer' did not specify module name}"
+        elif [ -n "${demand}" ] && [ -n "${module}" ]; then
             configurations="${configurations}
                             require-module ${module}"
         fi
@@ -196,45 +176,18 @@ plug -params 1.. -shell-script-candidates %{ ls -1 ${kak_opt_plug_install_dir} }
         [ -n "${hooks}" ] &&   printf "%s\n" "set-option -add global plug_post_hooks ${hooks}"
         [ -n "${domains}" ] && printf "%s\n" "set-option -add global plug_domains ${domains}"
 
-        if [ -n "${noload}" ] && [ -n "${subset}" ]; then
-            printf "%s\n" "echo -debug %{Warning: plug.kak: ${plugin_name}: 'load' has higer priority than 'noload'}"
-            noload=
-        fi
-
         if [ -d "${path_to_plugin}" ]; then
-            if [ -n "${checkout}" ]; then
-                (
+            if [ -n "${checkout}" ]; then (
                     cd "${path_to_plugin}"
                     [ -z "${GIT_TERMINAL_PROMPT}" ] && export GIT_TERMINAL_PROMPT=0
                     if [ "${checkout_type}" = "branch" ]; then
-                        current_branch=$(git branch | awk '/^\*/ { print $2 }')
-                        [ "${current_branch}" != "${checkout}" ] && git fetch >/dev/null 2>&1
+                        [ "$(git branch --show-current)" != "${checkout}" ] && git fetch >/dev/null 2>&1
                     fi
                     git checkout ${checkout} >/dev/null 2>&1
-                )
+            ) fi
+            if [ -z "${noload}" ]; then
+                find -L "${path_to_plugin}" -path '*/.git' -prune -o -type f -name '*.kak' -exec printf 'source "%s"\n' {} \;
             fi
-            if [ -z "${noload}" ]; then {
-                IFS='
-'
-                set -f # set noglob
-                for file in ${load_files}; do
-                    # trim leading and trailing whitespaces. Looks ugly, but faster than `sed'
-                    file="${file#"${file%%[![:space:]]*}"}"
-                    file="${file%"${file##*[![:space:]]}"}"
-                    if [ "${depth_sort}" = "true" ]; then
-                        # performance hungry place.
-                        find -L "${path_to_plugin}" -path '*/.git' -prune -o -type f -name "${file}" -print | perl -e '
-                            print map  { $_->[0] }
-                                  sort { $a->[1] <=> $b->[1] }
-                                  map  { [$_, ($_ =~ s/^/source "/ && $_ =~ s/$/"/ && $_ =~ s/\//\//g)] }
-                                           <>;'
-                    else
-                        # source files in order that `find' is returning
-                        # may break some plugins
-                        find -L "${path_to_plugin}" -path '*/.git' -prune -o -type f -name "${file}" -exec printf 'source "%s"\n' {} \;
-                    fi
-                done
-            } fi
             printf "%s\n" "evaluate-commands %opt{plug_${plugin_opt_name}_conf}"
             printf "%s\n" "set-option -add global plug_loaded_plugins %{${plugin} }"
         else
@@ -242,7 +195,10 @@ plug -params 1.. -shell-script-candidates %{ ls -1 ${kak_opt_plug_install_dir} }
                 printf "%s\n" "evaluate-commands plug-install ${plugin}"
             fi
         fi
-        [ "${kak_opt_plug_profile}" = "true" ] && printf "%s\n" "echo -debug %{'$plugin' loaded in $(echo "($(date +%s%N)-${start})/1000000" | bc) ms}"
+        if  [ "${kak_opt_plug_profile}" = "true" ]; then
+            profile_end=$(date +%s%N)
+            printf "%s\n" "echo -debug %{'$plugin_name' loaded in $(((${profile_end}-${profile_start})/1000000)) ms}"
+        fi
     }
 } catch %{
     echo -debug "plug.kak: Error occured while loading '%arg{1}' plugin:"
@@ -253,7 +209,7 @@ define-command -override -docstring \
 "plug-install [<plugin>]: install <plugin>.
 If <plugin> omitted installs all plugins mentioned in configuration files" \
 plug-install -params ..1 %{ nop %sh{ (
-    plugin=$1
+    plugin="${1%%.git}"
     plugin_name="${plugin##*/}"
     jobs=$(mktemp ${TMPDIR:-/tmp}/plug.kak.jobs.XXXXXX)
 
