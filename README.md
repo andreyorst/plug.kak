@@ -87,7 +87,7 @@ These keywords are supported:
 - [theme](#installing-color-schemes)
 - [config](#handling-user-configurations)
 - [defer](#deferring-plugin-configuration)
-- [demand](#automatically-require-deferred-module)
+- [demand](#demanding-plugin-module-configuration)
 - [ensure](#ensuring-that-plugins-are-installed)
 
 
@@ -193,15 +193,19 @@ plug "andreyorst/fzf.kak" config %{
 }
 ```
 
+**Note**: the `ModuleLoaded` hook is defined as early as possible - before sourcing any of plugin files.
 
-### Automatically require deferred module
+### Demanding plugin module configuration
 
-To force the module loading defined with the `defer` keyword, the `demand` keyword can be used.
-This keyword only works in pair with the `defer` keyword.
+Works the same as `defer` except requires the module immediately:
 
 ```kak
-plug "andreyorst/fzf.kak" demand defer fzf %{
+plug "andreyorst/fzf.kak" config {
+    # evaluated before demanding the module
+} demand fzf %{
     set-option global fzf_project_use_tilda true
+} config %{
+    # evaluated after demanding the module
 }
 ```
 
@@ -211,11 +215,14 @@ The above snippet is a shorthand for this code:
 plug "andreyorst/fzf.kak" defer fzf %{
     set-option global fzf_project_use_tilda true
 } config %{
+    # evaluated before demanding the module
     require-module fzf
+    # evaluated after demanding the module
 }
 ```
 
-Note that `demand` can be placed anywhere after plugin name.
+**Note**: the `ModuleLoaded` hook is defined as early as possible - before sourcing any of plugin files.
+The place where `require-module` call will be placed depends on the order of config blocks in the `plug` command.
 
 
 ## **plug.kak** Configuration

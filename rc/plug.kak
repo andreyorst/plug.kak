@@ -128,14 +128,20 @@ plug -params 1.. -shell-script-candidates %{ ls -1 ${kak_opt_plug_install_dir} }
                     path_to_plugin=$(printf "%s\n" "$1" | sed "s:^\s*~/:${HOME}/:") ;;
                 (defer)
                     shift
-                    module="$1"
+                    defer=1
+                    defer_module="$1"
                     shift
                     deferred_conf=$(printf "%s\n" "$1" | sed "s/@/@@/g")
-                    deferred_conf=$(printf "%s\n" "hook global ModuleLoaded ${module} %@ ${deferred_conf} @")
-                    configurations="${configurations}
-                                    ${deferred_conf}" ;;
+                    printf "%s\n" "hook global ModuleLoaded '${defer_module}' %@ ${deferred_conf} @" ;;
                 (demand)
-                    demand=1 ;;
+                    demand=1
+                    shift
+                    demand_module="$1"
+                    shift
+                    demand_conf=$(printf "%s\n" "$1" | sed "s/@/@@/g")
+                    printf "%s\n" "hook global ModuleLoaded '${demand_module}' %@ ${demand_conf} @"
+                    configurations="${configurations}
+                                    require-module ${demand_module}" ;;
                 (do)
                     shift
                     hooks="${hooks} %{${plugin_name}} %{$1}" ;;
@@ -162,13 +168,6 @@ plug -params 1.. -shell-script-candidates %{ ls -1 ${kak_opt_plug_install_dir} }
             esac
             shift
         done
-
-        if [ -z "${module}" ] && [ -n "${demand}" ]; then
-            printf "%s\n" "echo -debug %{Warning: plug.kak: '${plugin_name}': missing 'defer' keyword or 'defer' did not specify module name}"
-        elif [ -n "${demand}" ] && [ -n "${module}" ]; then
-            configurations="${configurations}
-                            require-module ${module}"
-        fi
 
         # bake configuration options. We need this in case plugins are not installed, but
         # their configurations are known to `plug.kak', so it can load those after installation
