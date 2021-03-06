@@ -10,19 +10,23 @@
 # expansions.
 
 plug () {
-    [ "${kak_opt_plug_profile:?}" = "true" ] && profile_start=$(date +%s%N)
+    [ "${kak_opt_plug_profile:-}" = "true" ] && profile_start=$(date +%s%N)
     plugin="${1%%.git}"
     shift
     plugin_name="${plugin##*/}"
-    plugin_opt_name=$(printf "%s\n" "${plugin_name}" | sed 's/[^a-zA-Z0-9_]/_/g')
-    path_to_plugin="${kak_opt_plug_install_dir:?}/${plugin_name}"
+    path_to_plugin="${kak_opt_plug_install_dir:?}/$plugin_name"
+    build_dir="${kak_opt_plug_install_dir:?}/.build/$plugin_name"
+    conf_file="$build_dir/config"
+    hook_file="$build_dir/hooks"
 
     if [ "$(expr "${kak_opt_plug_loaded_plugins:-}" : ".*${plugin}.*")" -ne 0 ]; then
         printf "%s\n" "echo -markup %{{Information}${plugin_name} already loaded}"
         exit
     fi
 
-    [ "$(expr "${kak_opt_plug_plugins:-}" : ".*${plugin}.*")" -eq 0 ] && printf "%s\n" "set-option -add global plug_plugins %{${plugin} }"
+    if [ "$(expr "${kak_opt_plug_plugins:-}" : ".*${plugin}.*")" -eq 0 ]; then
+        printf "%s\n" "set-option -add global plug_plugins %{${plugin} }"
+    fi
 
     while [ $# -gt 0 ]; do
         case $1 in
@@ -39,13 +43,15 @@ plug () {
                 printf "%s\n" "hook global ModuleLoaded '${demand_module}' %@ ${demand_conf} @"
                 configurations="${configurations}
                                 require-module ${demand_module}" ;;
-            ("do") shift; hooks="${hooks} %{${plugin_name}} %{$1}" ;;
+            ("do") shift; hooks="$hooks
+                                 $1" ;;
             (ensure) ensure=1 ;;
             (theme)
                 noload=1
                 theme_hooks="mkdir -p ${kak_config:?}/colors
-                                 find . -type f -name '*.kak' -exec ln -sf \"\${PWD}/{}\" ${kak_config}/colors/ \;"
-                hooks="${hooks} %{${plugin_name}} %{${theme_hooks}}" ;;
+                             find . -type f -name '*.kak' -exec ln -sf \"\${PWD}/{}\" ${kak_config}/colors/ \;"
+                hooks="$hooks
+                       $theme_hooks" ;;
             (domain) shift; domains="${domains} %{${plugin_name}} %{$1}" ;;
             (dept-sort|subset)
                 printf "%s\n" "echo -debug %{Error: plug.kak: '${plugin_name}': keyword '$1' is no longer supported. Use the module system instead}"
@@ -57,12 +63,10 @@ plug () {
         shift
     done
 
-    # bake configuration options. We need this in case plugins are not installed, but
-    # their configurations are known to `plug.kak', so it can load those after installation
-    # automatically.
-    [ -z "${configurations##*&*}" ] && configurations=$(printf "%s\n" "${configurations}" | sed "s/&/&&/g")
-    printf "%s\n" "declare-option -hidden str plug_${plugin_opt_name}_conf %&${configurations}&"
-    [ -n "${hooks}" ] &&   printf "%s\n" "set-option -add global plug_post_hooks ${hooks}"
+    mkdir -p "$build_dir"
+    printf "%s\n" "$configurations" > "$conf_file"
+    printf "%s\n" "$hooks" > "$hook_file"
+
     [ -n "${domains}" ] && printf "%s\n" "set-option -add global plug_domains ${domains}"
 
     if [ -d "${path_to_plugin}" ]; then
@@ -76,14 +80,10 @@ plug () {
                 git checkout "${checkout}" >/dev/null 2>&1
             )
         fi
-        if [ -z "${noload}" ]; then
-            find -L "${path_to_plugin}" -path '*/.git' -prune -o -type f -name '*.kak' -exec printf 'source "%s"\n' {} \;
-        fi
-        printf "%s\n" "evaluate-commands %opt{plug_${plugin_opt_name}_conf}"
-        printf "%s\n" "set-option -add global plug_loaded_plugins %{${plugin} }"
+        plug_load "$plugin" "$noload"
     else
-        if [ -n "${ensure}" ] || [ "${kak_opt_plug_always_ensure:?}" = "true" ]; then
-            plug_install "${plugin}"
+        if [ -n "${ensure}" ] || [ "${kak_opt_plug_always_ensure:-}" = "true" ]; then
+            plug_install "$plugin" "$noload"
         fi
     fi
     if  [ "${kak_opt_plug_profile}" = "true" ]; then
@@ -95,6 +95,7 @@ plug () {
 plug_install () {
     (
         plugin="${1%%.git}"
+        noload=$2
         plugin_name="${plugin##*/}"
         jobs=$(mktemp "${TMPDIR:-/tmp}"/plug.kak.jobs.XXXXXX)
 
@@ -112,7 +113,7 @@ plug_install () {
 
         lockfile="${kak_opt_plug_install_dir}/.${plugin_name:-global}.plug.kak.lock"
         if [ -d "${lockfile}" ]; then
-            printf "%s\n" "evaluate-commands -client ${kak_client:-client0} %{ plug-update-fifo %{${plugin_name}} %{Waiting for .plug.kak.lock} }" | kak -p "${kak_session}"
+            plug_fifo_update "${plugin_name}" "Waiting for .plug.kak.lock"
         fi
 
         # this creates the lockfile for a plugin, if specified to prevent several processes of installation
@@ -125,13 +126,12 @@ plug_install () {
         # otherwise update all plugins
         if [ -n "${plugin}" ]; then
             plugin_list=${plugin}
-            printf "%s\n" "evaluate-commands -buffer *plug* %{
-            try %{
-                execute-keys /${plugin}<ret>
-            } catch %{
-                execute-keys gjO${plugin}:<space>Not<space>installed<esc>
-            }
-        }" | kak -p "${kak_session}"
+            printf "%s\n" "
+                evaluate-commands -buffer *plug* %{ try %{
+                    execute-keys /${plugin}<ret>
+                } catch %{
+                    execute-keys gjO${plugin}:<space>Not<space>installed<esc>
+                }}" | kak -p "${kak_session}"
             sleep 0.2
         else
             plugin_list=${kak_opt_plug_plugins}
@@ -141,7 +141,7 @@ plug_install () {
             plugin_name="${plugin##*/}"
             git_domain=${kak_opt_plug_git_domain:?}
 
-            eval "set -- ${kak_quoted_opt_plug_domains:?}"
+            eval "set -- ${kak_quoted_opt_plug_domains:-}"
             while [ $# -ne 0 ]; do
                 if [ "$1" = "${plugin_name}" ]; then
                     git_domain="https://$2"
@@ -151,24 +151,24 @@ plug_install () {
             done
 
             if [ ! -d "${kak_opt_plug_install_dir}/${plugin_name}" ]; then
-                case ${plugin} in
-                    (http*|git*)
-                        git="git clone ${plugin}" ;;
-                    (*)
-                        git="git clone ${git_domain}/${plugin}" ;;
-                esac
-
                 (
                     plugin_log="${TMPDIR:-/tmp}/${plugin_name}-log"
-                    printf "%s\n" "hook global -always KakEnd .* %{ nop %sh{rm -rf \"${plugin_log}\"}}
-                               evaluate-commands -client ${kak_client:-client0} %{ plug-update-fifo %{${plugin_name}} %{Installing} }" | kak -p "${kak_session}"
-                    cd "${kak_opt_plug_install_dir}" && ${git} >>"${plugin_log}" 2>&1
+                    printf "%s\n" "hook global -always KakEnd .* %{ nop %sh{rm -rf \"${plugin_log}\"}} " | kak -p "${kak_session}"
+                    plug_fifo_update "${plugin_name}" "Installing"
+                    cd "${kak_opt_plug_install_dir}" || exit
+                    case ${plugin} in
+                        (http*|git*)
+                            git clone "${plugin}" "${plugin_name}" >> "${plugin_log}" 2>&1 ;;
+                        (*)
+                            git clone "${git_domain}/${plugin}" "${plugin_name}" >> "${plugin_log}" 2>&1 ;;
+                    esac
                     status=$?
                     if [ ${status} -ne 0 ]; then
-                        printf "%s\n" "evaluate-commands -client ${kak_client:-client0} %{ plug-update-fifo %{${plugin_name}} %{Download Error (${status})} }" | kak -p "${kak_session}"
+                        plug_fifo_update "${plugin_name}" "Download Error (${status})"
                     else
-                        printf "%s\n" "evaluate-commands -client ${kak_client:-client0} plug-eval-hooks ${plugin_name}
-                                   evaluate-commands -client ${kak_client:-client0} plug ${plugin}" | kak -p "${kak_session}"
+                        plug_eval_hooks "$plugin_name"
+                        wait
+                        plug_load "$plugin" "$noload" | kak -p "${kak_session:?}"
                     fi
                 ) > /dev/null 2>&1 < /dev/null &
             fi
@@ -185,6 +185,21 @@ plug_install () {
     ) > /dev/null 2>&1 < /dev/null &
 }
 
+plug_load() {
+    plugin="${1%%.git}"
+    noload=$2
+    plugin_name="${plugin##*/}"
+    path_to_plugin="${kak_opt_plug_install_dir:?}/$plugin_name"
+    build_dir="${kak_opt_plug_install_dir:?}/.build/$plugin_name"
+    conf_file="$build_dir/config"
+
+    if [ -z "${noload}" ]; then
+        find -L "${path_to_plugin}" -path '*/.git' -prune -o -type f -name '*.kak' -exec printf 'source "%s"\n' {} \;
+    fi
+    printf "%s\n" "source $conf_file"
+    printf "%s\n" "set-option -add global plug_loaded_plugins %{${plugin} }"
+}
+
 plug_update () {
     (
         plugin=$1
@@ -197,7 +212,7 @@ plug_update () {
 
         lockfile="${kak_opt_plug_install_dir}/.${plugin_name:-global}.plug.kak.lock"
         if [ -d "${lockfile}" ]; then
-            printf "%s\n" "evaluate-commands -client ${kak_client:-client0} %{ plug-update-fifo %{${plugin##*/}} %{Waiting for .plug.kak.lock} }" | kak -p "${kak_session}"
+            plug_fifo_update "${plugin##*/}" "Waiting for .plug.kak.lock"
         fi
 
         while ! mkdir "${lockfile}" 2>/dev/null; do sleep 1; done
@@ -209,17 +224,17 @@ plug_update () {
             if [ -d "${kak_opt_plug_install_dir}/${plugin_name}" ]; then
                 (
                     plugin_log="${TMPDIR:-/tmp}/${plugin_name}-log"
-                    printf "%s\n" "hook global -always KakEnd .* %{ nop %sh{rm -rf ${plugin_log}}}
-                                   evaluate-commands -client ${kak_client:-client0} %{ plug-update-fifo %{${plugin_name}} %{Updating} }" | kak -p "${kak_session}"
+                    printf "%s\n" "hook global -always KakEnd .* %{ nop %sh{rm -rf ${plugin_log}}} " | kak -p "${kak_session}"
+                    plug_fifo_update "${plugin_name}" "Updating"
                     cd "${kak_opt_plug_install_dir}/${plugin_name}" && rev=$(git rev-parse HEAD) && git pull >> "${plugin_log}" 2>&1
                     status=$?
                     if [ ${status} -ne 0 ]; then
-                        printf "%s\n" "evaluate-commands -client ${kak_client:-client0} %{ plug-update-fifo %{${plugin_name}} %{Update Error (${status})} }" | kak -p "${kak_session}"
+                        plug_fifo_update "${plugin_name}" "Update Error (${status})"
                     else
                         if [ "${rev}" != "$(git rev-parse HEAD)" ]; then
                             printf "%s\n" "evaluate-commands -client ${kak_client:-client0} plug-eval-hooks ${plugin_name}" | kak -p "${kak_session}"
                         else
-                            printf "%s\n" "evaluate-commands -client ${kak_client:-client0} %{ plug-update-fifo %{${plugin_name}} %{Done} }" | kak -p "${kak_session}"
+                            plug_fifo_update "${plugin_name}" "Done"
                         fi
                     fi
                 ) > /dev/null 2>&1 < /dev/null &
@@ -240,14 +255,14 @@ plug_update () {
 
 plug_clean () {
     (
-        plugin=$1
+        plugin="${1%%.git}"
         plugin_name="${plugin##*/}"
 
         printf "%s\n" "evaluate-commands -client ${kak_client:-client0} %{ try %{ buffer *plug* } catch %{ plug-list noupdate } }" | kak -p "${kak_session}"
 
         lockfile="${kak_opt_plug_install_dir}/.${plugin_name:-global}.plug.kak.lock"
         if [ -d "${lockfile}" ]; then
-            printf "%s\n" "evaluate-commands -client ${kak_client:-client0} %{ plug-update-fifo %{${plugin_name}} %{Waiting for .plug.kak.lock} }" | kak -p "${kak_session}"
+            plug_fifo_update "${plugin_name}" "Waiting for .plug.kak.lock"
         fi
 
         while ! mkdir "${lockfile}" 2>/dev/null; do sleep 1; done
@@ -257,7 +272,7 @@ plug_clean () {
             if [ -d "${kak_opt_plug_install_dir}/${plugin_name}" ]; then
                 (
                     cd "${kak_opt_plug_install_dir}" && rm -rf "${plugin_name}"
-                    printf "%s\n" "evaluate-commands -client ${kak_client:-client0} %{ plug-update-fifo %{${plugin_name}} %{Deleted} }" | kak -p "${kak_session}"
+                    plug_fifo_update "${plugin_name}" "Deleted"
                 )
             else
                 printf "%s\n" "evaluate-commands -client ${kak_client:-client0} echo -markup %{{Error}No such plugin '${plugin}'}" | kak -p "${kak_session}"
@@ -272,7 +287,7 @@ plug_clean () {
                 [ "${skip}" = "1" ] || plugins_to_remove=${plugins_to_remove}" ${installed_plugin}"
             done
             for plugin in ${plugins_to_remove}; do
-                printf "%s\n" "evaluate-commands -client ${kak_client:-client0} %{ plug-update-fifo %{${plugin##*/}} %{Deleted} }" | kak -p "${kak_session}"
+                plug_fifo_update "${plugin##*/}" "Deleted"
                 rm -rf "${plugin}"
             done
         fi
@@ -281,43 +296,23 @@ plug_clean () {
 
 plug_eval_hooks () {
     (
-        status=0
-        plugin_name="$1"
-        eval "set -- ${kak_quoted_opt_plug_post_hooks:?}"
-        while [ $# -gt 0 ]; do
-            if [ "$1" = "${plugin_name}" ]; then
-                plugin_name="${1##*/}"
-                plugin_log="${TMPDIR:-/tmp}/${plugin_name}-log"
-                if ! cd "${kak_opt_plug_install_dir}/${plugin_name}"; then
-                    shift
-                    continue
-                fi
-                printf "%s\n" "hook global -always KakEnd .* %{ nop %sh{rm -rf ${plugin_log}}}
-                           evaluate-commands -client ${kak_client:-client0} %{ plug-update-fifo %{${plugin_name}} %{Running post-update hooks} }" | kak -p "${kak_session}"
-                IFS='
-'
-                for cmd in $2; do
-                    eval "${cmd}" >> "${plugin_log}" 2>&1
-                    status=$?
-                    if [ ! ${status} -eq 0 ]; then
-                        break
-                    fi
-                done
+        plugin="${1%%.git}"
+        plugin_name="${plugin##*/}"
+        path_to_plugin="${kak_opt_plug_install_dir:?}/$plugin_name"
+        build_dir="${kak_opt_plug_install_dir:?}/.build/$plugin_name"
+        hook_file="$build_dir/hooks"
 
-                if [ ${status} -ne 0 ]; then
-                    printf "%s\n" "evaluate-commands -client ${kak_client:-client0} %{ echo -debug %{Error: plug.kak: '${plugin_name}': error occured while evaluation of post-update hooks - aborting with error code ${status}} }" | kak -p "${kak_session}"
-                fi
-                break
-            fi
-            shift
-        done
+        plugin_log="${TMPDIR:-/tmp}/${plugin_name}-log"
+        cd "$path_to_plugin" || exit
 
-        if [ ${status} -ne 0 ]; then
-            message="Error (${status})"
-        else
-            message="Done"
-        fi
-        printf "%s\n" "evaluate-commands -client ${kak_client:-client0} %{ plug-update-fifo %{${plugin_name}} %{${message}} }" | kak -p "${kak_session}"
+        printf "%s\n" "hook global -always KakEnd .* %{ nop %sh{rm -rf ${plugin_log}}}" | kak -p "${kak_session}"
+        plug_fifo_update "${plugin_name}" "Running post-update hooks"
+
+        [ -e "$hook_file" ] && (. "$hook_file" > "$plugin_log" 2>&1)
+        status=$?
+        [ ${status} -ne 0 ] && message="Error (${status})" || message="Done"
+
+        plug_fifo_update "${plugin_name}" "${message}"
     ) > /dev/null 2>&1 < /dev/null &
 }
 
@@ -387,7 +382,7 @@ plug_list () {
                     else
                         message="Fetch Error (${status})"
                     fi
-                    printf "%s\n" "evaluate-commands -client ${kak_client:-client0} %{ plug-update-fifo %{$1} %{${message}} }" | kak -p "${kak_session}"
+                    plug_fifo_update "$1" "${message}"
                 ) > /dev/null 2>&1 < /dev/null & fi
                 shift
             done
@@ -421,4 +416,21 @@ plug_fifo_operate() {
         (hooks) plug_eval_hooks "${plugin##*/}" ;;
         (*) ;;
     esac
+}
+
+plug_fifo_update() {
+    printf "%s\n" "
+        evaluate-commands -draft -buffer *plug* -save-regs \"/\"\"\" %{ try %{
+            set-register / \"$1: \"
+            set-register dquote %{$2}
+            execute-keys -draft /<ret>lGlR
+        }}" | kak -p "$kak_session"
+}
+
+plug_display_log() {
+    plugin="${1%%.git}"
+    plugin_name="${plugin##*/}"
+    plugin_log="${TMPDIR:-/tmp}/${plugin-name}-log"
+    [ -s "${plugin_log}" ] && printf "%s\n" "edit! -existing -debug -readonly -scroll %{${plugin_log}}" | kak -p "$kak_session"
+
 }

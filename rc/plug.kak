@@ -49,10 +49,6 @@ str plug_loaded_plugins ""
 
 declare-option -hidden -docstring \
 "List of post update/install hooks to be executed" \
-str-list plug_post_hooks
-
-declare-option -hidden -docstring \
-"List of post update/install hooks to be executed" \
 str-list plug_domains
 
 # since we want to add highlighters to kak filetype we need to require kak module
@@ -255,14 +251,6 @@ plug-fifo-operate -params 1 %{ evaluate-commands -save-regs t %{
 
     . "${kak_opt_plug_sh_source}"
     plug_fifo_operate "$@"
-}}}
-
-define-command -hidden -override \
--docstring "plug-update-fifo <plugin> <message>" \
-plug-update-fifo -params 2 %{ evaluate-commands -buffer *plug* -save-regs "/""" %{ try %{
-    set-register / "%arg{1}: "
-    set-register dquote %arg{2}
-    execute-keys /<ret>lGlR
 }}}
 
 define-command -hidden -override \
