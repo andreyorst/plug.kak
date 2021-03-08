@@ -2,9 +2,6 @@
 # plug.kak is a plugin manager for Kakoune. It can install plugins, keep them updated, configure and build dependencies
 # https://github.com/andreyorst/plug.kak
 
-# Internal options
-declare-option -hidden str plug_sh_source %sh{ echo "${kak_source%%.kak}.sh" }
-
 # Public options
 declare-option -docstring \
 "Path where plugins should be installed.
@@ -37,19 +34,19 @@ str toolsclient
 
 # Private options
 declare-option -hidden -docstring \
+"Path to plug.sh script." \
+str plug_sh_source %sh{ echo "${kak_source%%.kak}.sh" }
+
+declare-option -hidden -docstring \
 "Array of all plugins, mentioned in any configuration file.
 Empty by default, and erased on reload of main Kakoune configuration, to track if some plugins were disabled
 Should not be modified by user." \
-str plug_plugins ''
+str plug_plugins ""
 
 declare-option -hidden -docstring \
 "List of loaded plugins. Has no default value.
 Should not be cleared during update of configuration files. Should not be modified by user." \
 str plug_loaded_plugins ""
-
-declare-option -hidden -docstring \
-"List of post update/install hooks to be executed" \
-str-list plug_domains
 
 # since we want to add highlighters to kak filetype we need to require kak module
 # using `try' here since kakrc module may not be available in rare cases
@@ -110,8 +107,6 @@ plug -params 1.. -shell-script-candidates %{ ls -1 ${kak_opt_plug_install_dir} }
         # $kak_opt_plug_plugin
         # $kak_opt_plug_plugins
         # $kak_opt_plug_profile
-        # $kak_quoted_opt_plug_domains
-        # $kak_quoted_opt_plug_post_hooks
         # $kak_session
 
         . "${kak_opt_plug_sh_source}"
@@ -133,8 +128,6 @@ plug-install -params ..1 %{ nop %sh{
     # $kak_opt_plug_plugin
     # $kak_opt_plug_plugins
     # $kak_opt_plug_profile
-    # $kak_quoted_opt_plug_domains
-    # $kak_quoted_opt_plug_post_hooks
     # $kak_session
 
     . "${kak_opt_plug_sh_source}"
@@ -156,8 +149,6 @@ plug-update -params ..1 -shell-script-candidates %{ printf "%s\n" ${kak_opt_plug
         # $kak_opt_plug_plugin
         # $kak_opt_plug_plugins
         # $kak_opt_plug_profile
-        # $kak_quoted_opt_plug_domains
-        # $kak_quoted_opt_plug_post_hooks
         # $kak_session
 
         . "${kak_opt_plug_sh_source}"
@@ -178,8 +169,6 @@ plug-clean -params ..1 -shell-script-candidates %{ ls -1 ${kak_opt_plug_install_
     # $kak_opt_plug_plugin
     # $kak_opt_plug_plugins
     # $kak_opt_plug_profile
-    # $kak_quoted_opt_plug_domains
-    # $kak_quoted_opt_plug_post_hooks
     # $kak_session
 
     . "${kak_opt_plug_sh_source}"
@@ -199,8 +188,6 @@ plug-eval-hooks -params 1 %{ nop %sh{
     # $kak_opt_plug_plugin
     # $kak_opt_plug_plugins
     # $kak_opt_plug_profile
-    # $kak_quoted_opt_plug_domains
-    # $kak_quoted_opt_plug_post_hooks
     # $kak_session
 
     . "${kak_opt_plug_sh_source}"
@@ -220,8 +207,6 @@ plug-list -params ..1 %{ evaluate-commands -try-client %opt{toolsclient} %sh{
     # $kak_opt_plug_plugin
     # $kak_opt_plug_plugins
     # $kak_opt_plug_profile
-    # $kak_quoted_opt_plug_domains
-    # $kak_quoted_opt_plug_post_hooks
     # $kak_session
 
     . "${kak_opt_plug_sh_source}"
@@ -245,8 +230,6 @@ plug-fifo-operate -params 1 %{ evaluate-commands -save-regs t %{
     # $kak_opt_plug_plugin
     # $kak_opt_plug_plugins
     # $kak_opt_plug_profile
-    # $kak_quoted_opt_plug_domains
-    # $kak_quoted_opt_plug_post_hooks
     # $kak_session
 
     . "${kak_opt_plug_sh_source}"

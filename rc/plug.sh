@@ -128,15 +128,18 @@ plug_install () {
             plug_fifo_update "${plugin_name}" "Waiting for .plug.kak.lock"
         fi
 
-        # this creates the lockfile for a plugin, if specified to prevent several processes of installation
-        # of the same plugin, but will allow install different plugins without waiting for eachother.
-        # Should be fine, since different plugins doesn't interfere with eachother.
+        # this creates the lock file for a plugin, if specified to
+        # prevent several processes of installation of the same
+        # plugin, but will allow install different plugins without
+        # waiting for each other.  Should be fine, since different
+        # plugins doesn't interfere with each other.
         while ! mkdir "${lockfile}" 2>/dev/null; do sleep 1; done
         # shellcheck disable=SC2064
         trap "rmdir '${lockfile}'" EXIT
 
-        # if plugin specified as an argument add it to the *plug* buffer, if it isn't there already
-        # otherwise update all plugins
+        # if plugin specified as an argument add it to the *plug*
+        # buffer, if it isn't there already otherwise update all
+        # plugins
         if [ -n "${plugin}" ]; then
             plugin_list=${plugin}
             printf "%s\n" "
@@ -161,9 +164,9 @@ plug_install () {
                     cd "${kak_opt_plug_install_dir}" || exit
                     case ${plugin} in
                         (http*|git*)
-                            git clone "${plugin}" "$plugin_name" >> "$plugin_log" 2>&1 ;;
+                            git clone --recurse-submodules "${plugin}" "$plugin_name" >> "$plugin_log" 2>&1 ;;
                         (*)
-                            git clone "$git_domain/$plugin" "$plugin_name" >> "$plugin_log" 2>&1 ;;
+                            git clone --recurse-submodules "$git_domain/$plugin" "$plugin_name" >> "$plugin_log" 2>&1 ;;
                     esac
                     status=$?
                     if [ ${status} -ne 0 ]; then
@@ -175,8 +178,10 @@ plug_install () {
                     fi
                 ) > /dev/null 2>&1 < /dev/null &
             fi
-            # this is a hacky way to measure amount of active processes. We need this
-            # because dash shell has this long term bug: https://bugs.debian.org/cgi-bin/bugreport.cgi?bug=482999
+            # this is a hacky way to measure amount of active
+            # processes. We need this because dash shell has this long
+            # term bug:
+            # https://bugs.debian.org/cgi-bin/bugreport.cgi?bug=482999
             jobs > "${jobs}"; active=$(wc -l < "${jobs}")
             while [ "${active}" -ge "${kak_opt_plug_max_active_downloads:?}" ]; do
                 sleep 1
@@ -231,7 +236,7 @@ plug_update () {
                     plugin_log="${TMPDIR:-/tmp}/${plugin_name}-log"
                     printf "%s\n" "hook global -always KakEnd .* %{ nop %sh{rm -rf ${plugin_log}}} " | kak -p "${kak_session}"
                     plug_fifo_update "${plugin_name}" "Updating"
-                    cd "${kak_opt_plug_install_dir}/${plugin_name}" && rev=$(git rev-parse HEAD) && git pull >> "${plugin_log}" 2>&1
+                    cd "${kak_opt_plug_install_dir}/${plugin_name}" && rev=$(git rev-parse HEAD) && git pull --recurse-submodules >> "${plugin_log}" 2>&1
                     status=$?
                     if [ ${status} -ne 0 ]; then
                         plug_fifo_update "${plugin_name}" "Update Error (${status})"
@@ -246,7 +251,7 @@ plug_update () {
             fi
             jobs > "${jobs}"; active=$(wc -l < "${jobs}")
             # TODO: re-check this
-            # for some reason I need to multiply the amount of jobs by five here.
+            # For some reason I need to multiply the amount of jobs by five here.
             while [ "${active}" -ge $((kak_opt_plug_max_active_downloads * 5)) ]; do
                 sleep 1
                 jobs > "${jobs}"; active=$(wc -l < "${jobs}")
@@ -356,8 +361,9 @@ plug_list () {
         shift
     done
 
-    # get those plugins which have a directory at installation path, but wasn't mentioned in any config file
-    for exitsting_plugin in $(printf "%s\n" "${kak_opt_plug_install_dir}"/*); do
+    # get those plugins which have a directory at installation path,
+    # but wasn't mentioned in any config file
+    for exitsting_plugin in "${kak_opt_plug_install_dir}"/*; do
         if [ "$(expr "${kak_opt_plug_plugins}" : ".*${exitsting_plugin##*/}.*")" -eq 0 ]; then
             printf "%s: Not loaded\n" "${exitsting_plugin##*/}" >> "${plug_buffer}"
         fi
@@ -423,7 +429,7 @@ plug_fifo_operate() {
                 printf "%s\n" "echo -markup %{{Information}'${plugin}' already installed}"
             fi ;;
         (clean) plug_clean "${plugin}" ;;
-        (log) plug_display_log "${plugin}" ;;
+        (log) printf "%s\n" "plug-display-log $plugin" ;;
         (hooks) plug_eval_hooks "${plugin##*/}" ;;
         (*) ;;
     esac
@@ -436,11 +442,4 @@ plug_fifo_update() {
             set-register dquote %{$2}
             execute-keys -draft /<ret>lGlR
         }}" | kak -p "$kak_session"
-}
-
-plug_display_log() {
-    plugin="${1%%.git}"
-    plugin_name="${plugin##*/}"
-    plugin_log="${TMPDIR:-/tmp}/${plugin_name}-log"
-    [ -s "$plugin_log" ] && printf "%s\n" "edit! -existing -debug -readonly -scroll %{$plugin_log}" | kak -p "${kak_session:?}"
 }
