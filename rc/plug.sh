@@ -363,9 +363,9 @@ plug_list () {
 
     # get those plugins which have a directory at installation path,
     # but wasn't mentioned in any config file
-    for exitsting_plugin in "${kak_opt_plug_install_dir}"/*; do
-        if [ "$(expr "${kak_opt_plug_plugins}" : ".*${exitsting_plugin##*/}.*")" -eq 0 ]; then
-            printf "%s: Not loaded\n" "${exitsting_plugin##*/}" >> "${plug_buffer}"
+    for existing_plugin in "${kak_opt_plug_install_dir}"/*; do
+        if [ "$(expr "${kak_opt_plug_plugins}" : ".*${existing_plugin##*/}.*")" -eq 0 ]; then
+            printf "%s: Not loaded\n" "${existing_plugin##*/}" >> "${plug_buffer}"
         fi
     done
 
@@ -443,3 +443,10 @@ plug_fifo_update() {
             execute-keys -draft /<ret>lGlR
         }}" | kak -p "$kak_session"
 }
+
+#  Spell-checker local dictionary
+#  LocalWords:  Andrey Listopadov github kak usr config dir Kakoune
+#  LocalWords:  expr ModuleLoaded mkdir ln PWD conf shellcheck noload
+#  LocalWords:  TMPDIR tmp noupdate lockfile rmdir ret gjO esc KakEnd
+#  LocalWords:  nop rf hacky eval fifo filetype BufCloseFifo regs
+#  LocalWords:  dquote lGlR
