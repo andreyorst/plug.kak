@@ -63,6 +63,7 @@ $1" ;;
         shift
     done
 
+    rm -rf "$build_dir"
     mkdir -p "$build_dir"
     [ -n "$configurations" ] && printf "%s" "$configurations" > "$conf_file"
     [ -n "$hooks" ] && printf "%s" "$hooks" > "$hook_file"
