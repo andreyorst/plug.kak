@@ -261,6 +261,10 @@ plug_update () {
         rm -rf "${jobs}"
         wait
     ) > /dev/null 2>&1 < /dev/null &
+
+    if [ "$kak_opt_plug_block_ui" = "true" ]; then
+        wait
+    fi
 }
 
 
@@ -304,6 +308,10 @@ plug_clean () {
             done
         fi
     ) > /dev/null 2>&1 < /dev/null &
+
+    if [ "$kak_opt_plug_block_ui" = "true" ]; then
+        wait
+    fi
 }
 
 plug_eval_hooks () {
@@ -330,6 +338,10 @@ plug_eval_hooks () {
 
         plug_fifo_update "${plugin_name}" "${message}"
     ) > /dev/null 2>&1 < /dev/null &
+
+    if [ "$kak_opt_plug_block_ui" = "true" ]; then
+        wait
+    fi
 }
 
 plug_list () {

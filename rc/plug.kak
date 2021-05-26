@@ -32,6 +32,10 @@ bool plug_always_ensure false
 declare-option -docstring "name of the client in which utilities display information" \
 str toolsclient
 
+declare-option -docstring \
+"Block UI until operation completes." \
+bool plug_block_ui false
+
 # Private options
 declare-option -hidden -docstring \
 "Path to plug.sh script." \
@@ -107,6 +111,7 @@ plug -params 1.. -shell-script-candidates %{ ls -1 ${kak_opt_plug_install_dir} }
         # $kak_opt_plug_plugin
         # $kak_opt_plug_plugins
         # $kak_opt_plug_profile
+        # $kak_opt_plug_block_ui
         # $kak_session
 
         . "${kak_opt_plug_sh_source}"
@@ -128,6 +133,7 @@ plug-install -params ..1 %{ nop %sh{
     # $kak_opt_plug_plugin
     # $kak_opt_plug_plugins
     # $kak_opt_plug_profile
+    # $kak_opt_plug_block_ui
     # $kak_session
 
     . "${kak_opt_plug_sh_source}"
@@ -149,6 +155,7 @@ plug-update -params ..1 -shell-script-candidates %{ printf "%s\n" ${kak_opt_plug
         # $kak_opt_plug_plugin
         # $kak_opt_plug_plugins
         # $kak_opt_plug_profile
+        # $kak_opt_plug_block_ui
         # $kak_session
 
         . "${kak_opt_plug_sh_source}"
@@ -169,6 +176,7 @@ plug-clean -params ..1 -shell-script-candidates %{ ls -1 ${kak_opt_plug_install_
     # $kak_opt_plug_plugin
     # $kak_opt_plug_plugins
     # $kak_opt_plug_profile
+    # $kak_opt_plug_block_ui
     # $kak_session
 
     . "${kak_opt_plug_sh_source}"
@@ -188,6 +196,7 @@ plug-eval-hooks -params 1 %{ nop %sh{
     # $kak_opt_plug_plugin
     # $kak_opt_plug_plugins
     # $kak_opt_plug_profile
+    # $kak_opt_plug_block_ui
     # $kak_session
 
     . "${kak_opt_plug_sh_source}"
@@ -207,6 +216,7 @@ plug-list -params ..1 %{ evaluate-commands -try-client %opt{toolsclient} %sh{
     # $kak_opt_plug_plugin
     # $kak_opt_plug_plugins
     # $kak_opt_plug_profile
+    # $kak_opt_plug_block_ui
     # $kak_session
 
     . "${kak_opt_plug_sh_source}"
@@ -230,6 +240,7 @@ plug-fifo-operate -params 1 %{ evaluate-commands -save-regs t %{
     # $kak_opt_plug_plugin
     # $kak_opt_plug_plugins
     # $kak_opt_plug_profile
+    # $kak_opt_plug_block_ui
     # $kak_session
 
     . "${kak_opt_plug_sh_source}"
