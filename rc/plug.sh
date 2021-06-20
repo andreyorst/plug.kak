@@ -81,7 +81,7 @@ $1" ;;
                 git checkout "$checkout" >/dev/null 2>&1
             )
         fi
-        plug_load "$plugin" "$noload"
+        plug_load "$plugin" "$path_to_plugin" "$noload"
         if  [ "$kak_opt_plug_profile" = "true" ]; then
             profile_end=$(date +%s%3N)
             profile_time=$(echo "scale=3; x=($profile_end-$profile_start)/1000; if(x<1) print 0; x" | bc -l)
@@ -175,7 +175,7 @@ plug_install () {
                     else
                         plug_eval_hooks "$plugin_name"
                         wait
-                        plug_load "$plugin" "$noload" | kak -p "${kak_session:?}"
+                        plug_load "$plugin" "${kak_opt_plug_install_dir:?}/$plugin_name" "$noload" | kak -p "${kak_session:?}"
                     fi
                 ) > /dev/null 2>&1 < /dev/null &
             fi
@@ -196,9 +196,9 @@ plug_install () {
 
 plug_load() {
     plugin="${1%%.git}"
-    noload=$2
+    path_to_plugin=$2
+    noload=$3
     plugin_name="${plugin##*/}"
-    path_to_plugin="${kak_opt_plug_install_dir:?}/$plugin_name"
     build_dir="${kak_opt_plug_install_dir:?}/.build/$plugin_name"
     conf_file="$build_dir/config"
 
@@ -262,7 +262,7 @@ plug_update () {
         wait
     ) > /dev/null 2>&1 < /dev/null &
 
-    if [ "$kak_opt_plug_block_ui" = "true" ]; then
+    if [ "${kak_opt_plug_block_ui:-}" = "true" ]; then
         wait
     fi
 }
