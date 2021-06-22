@@ -396,9 +396,9 @@ plug_list () {
                     git fetch > /dev/null 2>&1
                     status=$?
                     if [ ${status} -eq 0 ]; then
-                        LOCAL=$(git rev-parse "@{0}")
+                        LOCAL=$(git rev-parse "@")
                         REMOTE=$(git rev-parse "@{u}")
-                        BASE=$(git merge-base "@{0}" "@{u}")
+                        BASE=$(git merge-base "@" "@{u}")
 
                         if [ "${LOCAL}" = "${REMOTE}" ]; then
                             message="Up to date"
