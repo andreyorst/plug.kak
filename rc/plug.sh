@@ -60,7 +60,7 @@ find . -type f -name '*.kak' -exec ln -sf \"\$PWD/{}\" $kak_config/colors/ \;"
                 hooks="$hooks
 $theme_hooks" ;;
             (domain) shift; domain="$1" ;;
-            (dept-sort|subset)
+            (depth-sort|subset)
                 printf "%s\n" "echo -debug %{Error: plug.kak: '$plugin_name': keyword '$1' is no longer supported. Use the module system instead}"
                 exit 1 ;;
             (no-depth-sort) printf "%s\n" "echo -debug %{Warning: plug.kak: '$plugin_name': use of deprecated '$1' keyword which has no effect}" ;;
