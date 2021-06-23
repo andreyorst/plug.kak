@@ -36,11 +36,17 @@ plug () {
             (load-path) shift; path_to_plugin=$(eval echo "$1") ;;
             (defer|demand)
                 demand=$1
-                shift; module="$1"; shift;
-                deferred=$(printf "%s\n" "$1" | sed "s/@/@@/g")
-                printf "%s\n" "hook global ModuleLoaded '$module' %@ $deferred @"
-                [ "$demand" = "demand" ] && configurations="$configurations
+                shift; module="$1"
+                case $2 in
+                    (branch|tag|commit|noload|load-path|ensure|theme|domain|depth-sort|subset|no-depth-sort|config|defer|demand|"")
+                    ;;
+                    (*)
+                        shift; deferred=$(printf "%s\n" "$1" | sed "s/@/@@/g")
+                        printf "%s\n" "hook global ModuleLoaded '$module' %@ $deferred @"
+                        [ "$demand" = "demand" ] && configurations="$configurations
 require-module $module" ;;
+                esac
+                ;;
             ("do") shift; hooks="$hooks
 $1" ;;
             (ensure) ensure=1 ;;
