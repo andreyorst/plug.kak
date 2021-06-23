@@ -38,8 +38,11 @@ plug () {
                 demand=$1
                 shift; module="$1"
                 case $2 in
-                    (branch|tag|commit|noload|load-path|ensure|theme|domain|depth-sort|subset|no-depth-sort|config|defer|demand|"")
+                    (branch|tag|commit|noload|load-path|ensure|theme|domain|depth-sort|subset|no-depth-sort|config|defer|demand)
                     ;;
+                    ("")
+                        [ "$demand" = "demand" ] && configurations="$configurations
+require-module $module" ;;
                     (*)
                         shift; deferred=$(printf "%s\n" "$1" | sed "s/@/@@/g")
                         printf "%s\n" "hook global ModuleLoaded '$module' %@ $deferred @"
