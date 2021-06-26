@@ -36,11 +36,20 @@ plug () {
             (load-path) shift; path_to_plugin=$(eval echo "$1") ;;
             (defer|demand)
                 demand=$1
-                shift; module="$1"; shift;
-                deferred=$(printf "%s\n" "$1" | sed "s/@/@@/g")
-                printf "%s\n" "hook global ModuleLoaded '$module' %@ $deferred @"
-                [ "$demand" = "demand" ] && configurations="$configurations
+                shift; module="$1"
+                case $2 in
+                    (branch|tag|commit|noload|load-path|ensure|theme|domain|depth-sort|subset|no-depth-sort|config|defer|demand)
+                    ;;
+                    ("")
+                        [ "$demand" = "demand" ] && configurations="$configurations
 require-module $module" ;;
+                    (*)
+                        shift; deferred=$(printf "%s\n" "$1" | sed "s/@/@@/g")
+                        printf "%s\n" "hook global ModuleLoaded '$module' %@ $deferred @"
+                        [ "$demand" = "demand" ] && configurations="$configurations
+require-module $module" ;;
+                esac
+                ;;
             ("do") shift; hooks="$hooks
 $1" ;;
             (ensure) ensure=1 ;;
@@ -51,7 +60,7 @@ find . -type f -name '*.kak' -exec ln -sf \"\$PWD/{}\" $kak_config/colors/ \;"
                 hooks="$hooks
 $theme_hooks" ;;
             (domain) shift; domain="$1" ;;
-            (dept-sort|subset)
+            (depth-sort|subset)
                 printf "%s\n" "echo -debug %{Error: plug.kak: '$plugin_name': keyword '$1' is no longer supported. Use the module system instead}"
                 exit 1 ;;
             (no-depth-sort) printf "%s\n" "echo -debug %{Warning: plug.kak: '$plugin_name': use of deprecated '$1' keyword which has no effect}" ;;
