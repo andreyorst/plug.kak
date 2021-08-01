@@ -20,20 +20,21 @@ plug () {
     hook_file="$build_dir/hooks"
     domain_file="$build_dir/domain"
 
-    if [ "$(expr "${kak_opt_plug_loaded_plugins:-}" : ".*${plugin}.*")" -ne 0 ]; then
+    case "${kak_opt_plug_loaded_plugins:-}" in
+      (*"$plugin"*)
         printf "%s\n" "echo -markup %{{Information}$plugin_name already loaded}"
         exit
-    fi
-
-    if [ "$(expr "${kak_opt_plug_plugins:-}" : ".*${plugin}.*")" -eq 0 ]; then
+        ;;
+      (*)
         printf "%s\n" "set-option -add global plug_plugins %{$plugin }"
-    fi
+        ;;
+    esac
 
     while [ $# -gt 0 ]; do
         case $1 in
             (branch|tag|commit) checkout_type=$1; shift; checkout="$1" ;;
             (noload) noload=1 ;;
-            (load-path) shift; path_to_plugin=$(eval echo "$1") ;;
+            (load-path) shift; eval "path_to_plugin=$1" ;;
             (defer|demand)
                 demand=$1
                 shift; module="$1"
@@ -386,9 +387,12 @@ plug_list () {
     # get those plugins which have a directory at installation path,
     # but wasn't mentioned in any config file
     for existing_plugin in "${kak_opt_plug_install_dir}"/*; do
-        if [ "$(expr "${kak_opt_plug_plugins}" : ".*${existing_plugin##*/}.*")" -eq 0 ]; then
+        case "${kak_opt_plug_plugins}" in
+          (*"${existing_plugin##*/}"*) ;;
+          (*)
             printf "%s: Not loaded\n" "${existing_plugin##*/}" >> "${plug_buffer}"
-        fi
+            ;;
+        esac
     done
 
     ( sort "${plug_buffer}" > "${fifo}" )  > /dev/null 2>&1 < /dev/null &
@@ -405,9 +409,12 @@ plug_list () {
                     git fetch > /dev/null 2>&1
                     status=$?
                     if [ ${status} -eq 0 ]; then
-                        LOCAL=$(git rev-parse "@")
-                        REMOTE=$(git rev-parse "@{u}")
-                        BASE=$(git merge-base "@" "@{u}")
+                        { IFS= read -r LOCAL; IFS= read -r REMOTE; IFS= read -r BASE; } <<EOF
+$(
+                        git rev-parse  @ '@{u}'  # prints 2 lines
+                        git merge-base @ '@{u}'
+)
+EOF
 
                         if [ "${LOCAL}" = "${REMOTE}" ]; then
                             message="Up to date"
