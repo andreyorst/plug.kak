@@ -180,7 +180,7 @@ Multiple `config` blocks are also supported.
 ### Deferring plugin configuration
 
 With the introduction of the module system, some configurations have to be preformed after loading the module.
-The `defer` keyword is a shorthand to register a `ModuleLoaded` hook for given `module`.
+The `defer` keyword is a shorthand to register a `ModuleLoaded` hook for given `module`. You need to **`require` the module explicitly** elsewhere.
 
 Below is the configuration of [fzf.kak](https://github.com/andreyorst/fzf.kak) plugin, which provides the `fzf` module:
 
@@ -200,12 +200,12 @@ plug "andreyorst/fzf.kak" config %{
 Works the same as `defer` except requires the module immediately:
 
 ```kak
-plug "andreyorst/fzf.kak" config {
-    # evaluated before demanding the module
+plug "andreyorst/fzf.kak" config %{
+    # config1 evaluated before demanding the module
 } demand fzf %{
-    set-option global fzf_project_use_tilda true
+    set-option global fzf_project_use_tilda true # demand block
 } config %{
-    # evaluated after demanding the module
+    # config2 evaluated after demanding the module
 }
 ```
 
@@ -213,16 +213,16 @@ The above snippet is a shorthand for this code:
 
 ``` kak
 plug "andreyorst/fzf.kak" defer fzf %{
-    set-option global fzf_project_use_tilda true
+    set-option global fzf_project_use_tilda true # demand block
 } config %{
-    # evaluated before demanding the module
+    # config1 evaluated before demanding the module
     require-module fzf
-    # evaluated after demanding the module
+    # config2 evaluated after demanding the module
 }
 ```
 
 **Note**: the `ModuleLoaded` hook is defined as early as possible - before sourcing any of plugin files.
-The place where `require-module` call will be placed depends on the order of config blocks in the `plug` command.
+The place where `require-module` call will be placed depends on the order of config blocks in the `plug` command. As soon as the module is required, the `ModuleLoaded` hook will execute.
 
 
 ## **plug.kak** Configuration
