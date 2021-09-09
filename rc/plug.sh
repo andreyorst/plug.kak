@@ -131,7 +131,7 @@ plug_install () {
         fi
 
         printf "%s\n" "evaluate-commands -client ${kak_client:-client0} %{ try %{ buffer *plug* } catch %{ plug-list noupdate } }" | kak -p "${kak_session}"
-        sleep 0.3
+        sleep 0.3 || sleep 1
 
         lockfile="${kak_opt_plug_install_dir}/.${plugin_name:-global}.plug.kak.lock"
         if [ -d "${lockfile}" ]; then
@@ -158,7 +158,7 @@ plug_install () {
                 } catch %{
                     execute-keys gjO${plugin}:<space>Not<space>installed<esc>
                 }}" | kak -p "${kak_session}"
-            sleep 0.2
+            sleep 0.2 || sleep 1
         else
             plugin_list=${kak_opt_plug_plugins}
         fi
