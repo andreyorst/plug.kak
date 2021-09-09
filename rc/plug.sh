@@ -116,7 +116,6 @@ plug_install () {
         plugin="${1%%.git}"
         noload=$2
         plugin_name="${plugin##*/}"
-        jobs=$(mktemp "${TMPDIR:-/tmp}"/plug.kak.jobs.XXXXXX)
         build_dir="${kak_opt_plug_install_dir:?}/.build/$plugin_name"
         domain_file="$build_dir/domain"
 
@@ -192,14 +191,15 @@ plug_install () {
             # processes. We need this because dash shell has this long
             # term bug:
             # https://bugs.debian.org/cgi-bin/bugreport.cgi?bug=482999
+            jobs=$(mktemp "${TMPDIR:-/tmp}"/plug.kak.jobs.XXXXXX)
             jobs > "${jobs}"; active=$(wc -l < "${jobs}")
             while [ "${active}" -ge "${kak_opt_plug_max_active_downloads:?}" ]; do
                 sleep 1
                 jobs > "${jobs}"; active=$(wc -l < "${jobs}")
             done
+            rm -rf "${jobs}"
         done
         wait
-        rm -rf "${jobs}"
     ) > /dev/null 2>&1 < /dev/null &
 }
 
@@ -222,7 +222,6 @@ plug_update () {
     (
         plugin="${1%%.git}"
         plugin_name="${plugin##*/}"
-        jobs=$(mktemp "${TMPDIR:-/tmp}"/jobs.XXXXXX)
 
         # shellcheck disable=SC2030,SC2031
         [ -z "${GIT_TERMINAL_PROMPT}" ] && export GIT_TERMINAL_PROMPT=0
@@ -259,6 +258,7 @@ plug_update () {
                     fi
                 ) > /dev/null 2>&1 < /dev/null &
             fi
+            jobs=$(mktemp "${TMPDIR:-/tmp}"/jobs.XXXXXX)
             jobs > "${jobs}"; active=$(wc -l < "${jobs}")
             # TODO: re-check this
             # For some reason I need to multiply the amount of jobs by five here.
@@ -266,8 +266,8 @@ plug_update () {
                 sleep 1
                 jobs > "${jobs}"; active=$(wc -l < "${jobs}")
             done
+            rm -rf "${jobs}"
         done
-        rm -rf "${jobs}"
         wait
     ) > /dev/null 2>&1 < /dev/null &
 
