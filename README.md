@@ -180,7 +180,8 @@ Multiple `config` blocks are also supported.
 ### Deferring plugin configuration
 
 With the introduction of the module system, some configurations have to be preformed after loading the module.
-The `defer` keyword is a shorthand to register a `ModuleLoaded` hook for given `module`. You need to **`require` the module explicitly** elsewhere.
+The `defer` keyword is a shorthand to register a `ModuleLoaded` hook for given `module`.
+You need to **`require` the module explicitly** elsewhere.
 
 Below is the configuration of [fzf.kak](https://github.com/andreyorst/fzf.kak) plugin, which provides the `fzf` module:
 
@@ -201,11 +202,12 @@ Works the same as `defer` except requires the module immediately:
 
 ```kak
 plug "andreyorst/fzf.kak" config %{
-    # config1 evaluated before demanding the module
+    # config1 (evaluated before demanding the module)
 } demand fzf %{
-    set-option global fzf_project_use_tilda true # demand block
+    # demand block (will generate `require-modlue fzf` call, and a respective hook)
+    set-option global fzf_project_use_tilda true 
 } config %{
-    # config2 evaluated after demanding the module
+    # config2 (evaluated after demanding the module)
 }
 ```
 
@@ -213,16 +215,18 @@ The above snippet is a shorthand for this code:
 
 ``` kak
 plug "andreyorst/fzf.kak" defer fzf %{
+    # the body of demand block
     set-option global fzf_project_use_tilda true # demand block
 } config %{
-    # config1 evaluated before demanding the module
-    require-module fzf
-    # config2 evaluated after demanding the module
+    # config1 (evaluated before demanding the module)
+    require-module fzf # the demand hook
+    # config2 (evaluated after demanding the module)
 }
 ```
 
 **Note**: the `ModuleLoaded` hook is defined as early as possible - before sourcing any of plugin files.
-The place where `require-module` call will be placed depends on the order of config blocks in the `plug` command. As soon as the module is required, the `ModuleLoaded` hook will execute.
+The place where `require-module` call will be placed depends on the order of config blocks in the `plug` command.
+As soon as the module is required, the `ModuleLoaded` hook will execute.
 
 
 ## **plug.kak** Configuration
@@ -304,13 +308,20 @@ This command also accepts optional argument, which is a plugin name, and can be 
 
 Load plugin from plugin installation directory by its name.
 
+
+### Alternative plugin managers
+
+Here are some other plugin managers to consider as alternatives to plug.kak:
+
+- [kak-bundle][7]
+
 [1]: https://img.shields.io/github/issues/andreyorst/plug.kak.svg
 [2]: https://github.com/andreyorst/plug.kak/issues
 [3]: https://img.shields.io/github/license/andreyorst/plug.kak.svg
 [4]: https://user-images.githubusercontent.com/19470159/51197223-f2c26a80-1901-11e9-9494-b79ce823a364.png
 [5]: https://github.com/junegunn/vim-plug
 [6]: https://github.com/jwiegley/use-package
-[8]: https://github.com/andreyorst/plug.kak
+[7]: https://github.com/jdugan6240/kak-bundle
 
 <!--  LocalWords:  kak Kakoune Kakoune's GitLab Gitea noload config
       LocalWords:  kakscript kbd Ctrl github fzf
