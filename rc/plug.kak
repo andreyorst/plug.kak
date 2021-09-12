@@ -141,11 +141,11 @@ define-command -override plug-many -params 1.. %{ try %{
             [ "$_plug_processed_args" != 0 ] || set --
             _plug_processed_args=$((_plug_processed_args + 1))
             if [ plug = "$_plug_param" ]; then
-              plug "$@"; return
+              break
             fi
             set -- "$@" "$_plug_param"
           done
-          plug "$@"  # final plug command
+          (plug "$@")  # final plug command
         }
         while [ "$#" != 0 ]; do
           _plug_processed_args=0
