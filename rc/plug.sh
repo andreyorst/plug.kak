@@ -10,7 +10,7 @@
 # expansions.
 
 plug () {
-    [ "${kak_opt_plug_profile:-}" = "true" ] && profile_start=$(date +%s%3N)
+    [ "${kak_opt_plug_profile:-}" = "true" ] && plug_save_timestamp profile_start
     plugin="${1%%.git}"
     shift
     plugin_name="${plugin##*/}"
@@ -95,7 +95,7 @@ $1" ;;
         fi
         plug_load "$plugin" "$path_to_plugin" "$noload"
         if  [ "$kak_opt_plug_profile" = "true" ]; then
-            profile_end=$(date +%s%3N)
+            plug_save_timestamp profile_end
             profile_time=$(echo "scale=3; x=($profile_end-$profile_start)/1000; if(x<1) print 0; x" | bc -l)
             printf "%s\n" "echo -debug %{'$plugin_name' loaded in $profile_time sec}"
         fi
@@ -105,7 +105,7 @@ $1" ;;
                 plug_install "$plugin" "$noload"
                 wait
                 if  [ "$kak_opt_plug_profile" = "true" ]; then
-                    profile_end=$(date +%s%3N)
+                    plug_save_timestamp profile_end
                     profile_time=$(echo "scale=3; x=($profile_end-$profile_start)/1000; if(x<1) print 0; x" | bc -l)
                     printf "%s\n" "echo -debug %{'$plugin_name' loaded in $profile_time sec}" | kak -p "${kak_session:?}"
                 fi
@@ -473,6 +473,23 @@ plug_fifo_update() {
             set-register dquote %{$2}
             execute-keys -draft /<ret>lGlR
         }}" | kak -p "$kak_session"
+}
+
+plug_save_timestamp() {
+  plug_tstamp=${EPOCHREALTIME:-}
+  if [ -n "$plug_tstamp" ]; then
+    plug_tstamp_ms=${plug_tstamp#*.}
+    case "$plug_tstamp_ms" in
+      (????*) plug_tstamp_ms=${plug_tstamp_ms%"${plug_tstamp_ms#???}"} ;;
+      (???)   ;;
+      (*)     plug_tstamp= ;;  # redo with date
+    esac
+    if [ -n "$plug_tstamp" ]; then
+      plug_tstamp=${plug_tstamp%.*}${plug_tstamp_ms}
+    fi
+  fi
+  : "${plug_tstamp:=$(date +%s%3N)}"
+  if [ -n "$1" ]; then eval "$1=\$plug_tstamp"; fi
 }
 
 #  Spell-checker local dictionary
