@@ -47,7 +47,10 @@ plug () {
                         [ "$demand" = "demand" ] && configurations="$configurations
 require-module $module" ;;
                     (*)
-                        shift; deferred=$(printf "%s\n" "$1" | sed "s/@/@@/g")
+                        shift
+                        case "$1" in (*'@'*)
+                            deferred=$(printf "%s\n" "$1" | sed "s/@/@@/g") ;;
+                        esac
                         printf "%s\n" "hook global ModuleLoaded '$module' %@ $deferred @"
                         [ "$demand" = "demand" ] && configurations="$configurations
 require-module $module" ;;
