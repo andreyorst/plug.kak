@@ -20,6 +20,8 @@ plug () {
     hook_file="$build_dir/hooks"
     domain_file="$build_dir/domain"
 
+    configurations= hooks= domain= checkout= noload=
+
     case "${kak_opt_plug_loaded_plugins:-}" in
       (*"$plugin"*)
         printf "%s\n" "echo -markup %{{Information}$plugin_name already loaded}"
