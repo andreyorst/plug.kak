@@ -34,13 +34,13 @@ plug () {
 
     while [ $# -gt 0 ]; do
         case $1 in
-            (branch|tag|commit) checkout_type=$1; shift; checkout="$1" ;;
+            (branch|tag|commit) checkout_type=$1; shift; checkout=${1?} ;;
             (noload) noload=1 ;;
-            (load-path) shift; eval "path_to_plugin=$1" ;;
+            (load-path) shift; eval "path_to_plugin=${1?}" ;;
             (defer|demand)
                 demand=$1
-                shift; module="$1"
-                case $2 in
+                shift; module=${1?}
+                case "${2:-}" in
                     (branch|tag|commit|noload|load-path|ensure|theme|domain|depth-sort|subset|no-depth-sort|config|defer|demand)
                     ;;
                     ("")
@@ -54,7 +54,7 @@ require-module $module" ;;
                 esac
                 ;;
             ("do") shift; hooks="$hooks
-$1" ;;
+${1?}" ;;
             (ensure) ensure=1 ;;
             (theme)
                 noload=1
@@ -62,13 +62,13 @@ $1" ;;
 find . -type f -name '*.kak' -exec ln -sf \"\$PWD/{}\" $kak_config/colors/ \;"
                 hooks="$hooks
 $theme_hooks" ;;
-            (domain) shift; domain="$1" ;;
+            (domain) shift; domain=${1?} ;;
             (depth-sort|subset)
                 printf "%s\n" "echo -debug %{Error: plug.kak: '$plugin_name': keyword '$1' is no longer supported. Use the module system instead}"
                 exit 1 ;;
             (no-depth-sort) printf "%s\n" "echo -debug %{Warning: plug.kak: '$plugin_name': use of deprecated '$1' keyword which has no effect}" ;;
             (config) shift; configurations="$configurations
-$1" ;;
+${1?}" ;;
             (*) configurations="$configurations
 $1" ;;
         esac
