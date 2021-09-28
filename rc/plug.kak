@@ -119,7 +119,7 @@ plug -params 1.. -shell-script-candidates %{ ls -1 ${kak_opt_plug_install_dir} }
     }
 }}
 
-define-command -override plug-many -params 1.. %{ try %{
+define-command -override plug-chain -params 0.. %{ try %{
     evaluate-commands %sh{
         # $kak_client
         # $kak_config
@@ -145,7 +145,7 @@ define-command -override plug-many -params 1.. %{ try %{
             fi
             set -- "$@" "$_plug_param"
           done
-          (plug "$@")  # final plug command
+          (plug "$@")  # EFFICIENCY NOTE: final plug call; still subshell, relies on undef vars, needs work on `set -u`
         }
         while [ "$#" != 0 ]; do
           _plug_processed_args=0
