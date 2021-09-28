@@ -119,7 +119,9 @@ plug -params 1.. -shell-script-candidates %{ ls -1 ${kak_opt_plug_install_dir} }
     }
 }}
 
-define-command -override plug-chain -params 0.. %{ try %{
+define-command -override plug-chain -params 0.. -docstring %{
+  Chain plug commands (see docs, saves startup time by reducing sh calls)
+} %{ try %{
     evaluate-commands %sh{
         # $kak_client
         # $kak_config
