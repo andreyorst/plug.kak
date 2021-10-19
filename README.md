@@ -205,7 +205,7 @@ plug "andreyorst/fzf.kak" config %{
     # config1 (evaluated before demanding the module)
 } demand fzf %{
     # demand block (will generate `require-modlue fzf` call, and a respective hook)
-    set-option global fzf_project_use_tilda true 
+    set-option global fzf_project_use_tilda true
 } config %{
     # config2 (evaluated after demanding the module)
 }
@@ -325,6 +325,9 @@ Backslashes can also be used to separate individual `plug` "clauses" (which avoi
 Either way, `plug-chain` simply figures out the parameters intended for each individual `plug` clause (using "`plug`" as a delimiter), and executes all implied `plug`s in a single shell call.
 All regular `plug` features are supported.
 Mix and match `plug` / `plug-chain` invocations in any order, any number of times.
+
+Note, that if plug.kak own variables are altered in the `plug-chain` body, the chained `plug` commands won't get updated values.
+This happens because Kakoune reads its variables only once per shell invocation, and calling `set-option` won't update the value of a variable for current shell.
 
 
 ### Alternative plugin managers
