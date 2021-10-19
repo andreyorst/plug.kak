@@ -309,6 +309,24 @@ This command also accepts optional argument, which is a plugin name, and can be 
 Load plugin from plugin installation directory by its name.
 
 
+### `plug-chain`
+
+This command can collapse separate `plug` invocations and thus saves startup time by reducing multiple shell calls; it may come in handy if you're invoking `kak` frequently (e.g. as the `$EDITOR`). Replace the first `plug` command in your `kakrc` with `plug-chain`, then append subsequent `plug` calls and their parameters, as in the following:
+```
+plug-chain https://github.com/Delapouite/kakoune-select-view config %{
+  map global view s '<esc>: select-view<ret>' -docstring 'select view'
+} plug https://github.com/occivink/kakoune-vertical-selection %{
+} plug https://github.com/jbomanson/search-doc.kak demand search-doc %{
+  alias global doc-search search-doc
+}
+```
+
+Backslashes can also be used to separate individual `plug` "clauses" (which avoids the "visual hack" of empty config blocks, as above, serving as newlines).
+Either way, `plug-chain` simply figures out the parameters intended for each individual `plug` clause (using "`plug`" as a delimiter), and executes all implied `plug`s in a single shell call.
+All regular `plug` features are supported.
+Mix and match `plug` / `plug-chain` invocations in any order, any number of times.
+
+
 ### Alternative plugin managers
 
 Here are some other plugin managers to consider as alternatives to plug.kak:

@@ -119,6 +119,44 @@ plug -params 1.. -shell-script-candidates %{ ls -1 ${kak_opt_plug_install_dir} }
     }
 }}
 
+define-command -override plug-chain -params 0.. -docstring %{
+  Chain plug commands (see docs, saves startup time by reducing sh calls)
+} %{ try %{
+    evaluate-commands %sh{
+        # $kak_client
+        # $kak_config
+        # $kak_opt_plug_always_ensure
+        # $kak_opt_plug_git_domain
+        # $kak_opt_plug_install_dir
+        # $kak_opt_plug_loaded_plugins
+        # $kak_opt_plug_max_active_downloads
+        # $kak_opt_plug_plugin
+        # $kak_opt_plug_plugins
+        # $kak_opt_plug_profile
+        # $kak_opt_plug_block_ui
+        # $kak_session
+
+        . "${kak_opt_plug_sh_source}"
+        plug1() {
+          for _plug_param; do
+            # reset "$@" on 1st iteration; args still in 'for'
+            [ "$_plug_processed_args" != 0 ] || set --
+            _plug_processed_args=$((_plug_processed_args + 1))
+            if [ plug = "$_plug_param" ]; then
+              break
+            fi
+            set -- "$@" "$_plug_param"
+          done
+          (plug "$@")  # EFFICIENCY NOTE: final plug call; still subshell, relies on undef vars, needs work on `set -u`
+        }
+        while [ "$#" != 0 ]; do
+          _plug_processed_args=0
+          plug1 "$@"
+          shift "$_plug_processed_args"
+        done
+    }
+}}
+
 define-command -override -docstring \
 "plug-install [<plugin>]: install <plugin>.
 If <plugin> omitted installs all plugins mentioned in configuration files" \
