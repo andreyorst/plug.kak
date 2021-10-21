@@ -157,6 +157,10 @@ plug "andreyorst/base16-gruvbox.kak" theme config %{
 `plug` command can be explicitly told to install the plugin automatically with the `ensure` keyword.
 The `plug_always_ensure` option can be set to `true` to perform this for each and every plugin specified in the `kakrc`.
 
+Note that `ensure` plugins are installed (if missing) in a background job; they are then only loaded when the install finishes.
+Thus, subsequent `kakrc` commands should not depend on functionality provided by such plugins.
+Only use `ensure` with non-essential plugins, which are not required for `kakrc` to complete loading.
+
 
 #### Handling user configurations
 
