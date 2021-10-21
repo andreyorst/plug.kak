@@ -40,11 +40,11 @@ plug () {
             (defer|demand)
                 demand=$1
                 shift; module=${1?}
-                case "${2:-}" in
-                    (branch|tag|commit|noload|load-path|ensure|theme|domain|depth-sort|subset|no-depth-sort|config|defer|demand)
-                    ;;
-                    (*)
-                        if [ $# -ge 2 ]; then
+                if [ $# -ge 2 ]; then
+                    case "$2" in
+                        (branch|tag|commit|noload|load-path|ensure|theme|domain|depth-sort|subset|no-depth-sort|config|defer|demand)
+                        ;;
+                        (*)
                             shift
                             deferred=$1
                             case "$deferred" in (*[![:space:]]*)
@@ -53,10 +53,10 @@ plug () {
                                 esac
                                 printf "%s\n" "hook global ModuleLoaded '$module' %@ $deferred @"
                             esac
-                        fi
-                        [ "$demand" = "demand" ] && configurations="$configurations
+                            [ "$demand" = "demand" ] && configurations="$configurations
 require-module $module" ;;
-                esac
+                    esac
+                fi
                 ;;
             ("do") shift; hooks="$hooks
 ${1?}" ;;
