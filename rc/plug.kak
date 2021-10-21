@@ -136,6 +136,7 @@ define-command -override plug-chain -params 0.. -docstring %{
         # $kak_opt_plug_block_ui
         # $kak_session
 
+        set -u
         . "${kak_opt_plug_sh_source}"
         plug1() {
           for _plug_param; do
@@ -147,7 +148,7 @@ define-command -override plug-chain -params 0.. -docstring %{
             fi
             set -- "$@" "$_plug_param"
           done
-          (plug "$@")  # EFFICIENCY NOTE: final plug call; still subshell, relies on undef vars, needs work on `set -u`
+          plug "$@"  # subshell would be safer, but slower
         }
         while [ "$#" != 0 ]; do
           _plug_processed_args=0
