@@ -220,7 +220,7 @@ plug_load() {
     conf_file="$build_dir/config"
 
     if [ -z "${noload}" ]; then
-        find -L "${path_to_plugin}" -path '*/.git' -prune -o -type f -name '*.kak' -exec printf 'source "%s"\n' {} \;
+        find -L "${path_to_plugin}" -path '*/.git' -prune -o -type f -name '*.kak' -exec printf 'source "%s"\n' {} +
     fi
     [ -e "$conf_file" ] && printf "%s\n" "source $conf_file"
     printf "%s\n" "set-option -add global plug_loaded_plugins %{${plugin} }"
