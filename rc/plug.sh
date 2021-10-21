@@ -47,10 +47,12 @@ plug () {
                         if [ $# -ge 2 ]; then
                             shift
                             deferred=$1
-                            case "$deferred" in (*'@'*)
-                                deferred=$(printf "%s\n" "$deferred" | sed "s/@/@@/g") ;;
+                            case "$deferred" in (*[![:space:]]*)
+                                case "$deferred" in (*'@'*)
+                                    deferred=$(printf "%s\n" "$deferred" | sed "s/@/@@/g") ;;
+                                esac
+                                printf "%s\n" "hook global ModuleLoaded '$module' %@ $deferred @"
                             esac
-                            printf "%s\n" "hook global ModuleLoaded '$module' %@ $deferred @"
                         fi
                         [ "$demand" = "demand" ] && configurations="$configurations
 require-module $module" ;;
