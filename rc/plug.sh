@@ -20,7 +20,7 @@ plug () {
     hook_file="$build_dir/hooks"
     domain_file="$build_dir/domain"
 
-    configurations= hooks= domain= checkout= noload=
+    configurations= hooks= domain= checkout= checkout_type= noload= ensure=
 
     case "${kak_opt_plug_loaded_plugins:-}" in
       (*"$plugin"*)
