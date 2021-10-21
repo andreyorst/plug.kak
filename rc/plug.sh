@@ -43,16 +43,15 @@ plug () {
                 case "${2:-}" in
                     (branch|tag|commit|noload|load-path|ensure|theme|domain|depth-sort|subset|no-depth-sort|config|defer|demand)
                     ;;
-                    ("")
-                        [ "$demand" = "demand" ] && configurations="$configurations
-require-module $module" ;;
                     (*)
-                        shift
-                        deferred=$1
-                        case "$deferred" in (*'@'*)
-                            deferred=$(printf "%s\n" "$deferred" | sed "s/@/@@/g") ;;
-                        esac
-                        printf "%s\n" "hook global ModuleLoaded '$module' %@ $deferred @"
+                        if [ $# -ge 2 ]; then
+                            shift
+                            deferred=$1
+                            case "$deferred" in (*'@'*)
+                                deferred=$(printf "%s\n" "$deferred" | sed "s/@/@@/g") ;;
+                            esac
+                            printf "%s\n" "hook global ModuleLoaded '$module' %@ $deferred @"
+                        fi
                         [ "$demand" = "demand" ] && configurations="$configurations
 require-module $module" ;;
                 esac
