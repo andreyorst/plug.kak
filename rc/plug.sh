@@ -9,6 +9,11 @@
 # plug.sh contains a set of functions plug.kak calls via shell
 # expansions.
 
+plug_code_append () {
+    eval "$1=\"\$$1
+\$2\""
+}
+
 plug () {
     [ "${kak_opt_plug_profile:-}" = "true" ] && plug_save_timestamp profile_start
     plugin="${1%%.git}"
@@ -53,29 +58,24 @@ plug () {
                                 esac
                                 printf "%s\n" "hook global ModuleLoaded '$module' %@ $deferred @"
                             esac
-                            [ "$demand" = "demand" ] && configurations="$configurations
-require-module $module" ;;
+                            [ "$demand" = demand ] && plug_code_append configurations "require-module $module" ;;
                     esac
                 fi
                 ;;
-            ("do") shift; hooks="$hooks
-${1?}" ;;
+            ('do') shift; plug_code_append hooks "${1?}" ;;
             (ensure) ensure=1 ;;
             (theme)
                 noload=1
-                theme_hooks="mkdir -p ${kak_config:?}/colors
+                plug_code_append hooks "mkdir -p ${kak_config:?}/colors
 find . -type f -name '*.kak' -exec ln -sf \"\$PWD/{}\" $kak_config/colors/ \;"
-                hooks="$hooks
-$theme_hooks" ;;
+            ;;
             (domain) shift; domain=${1?} ;;
             (depth-sort|subset)
                 printf "%s\n" "echo -debug %{Error: plug.kak: '$plugin_name': keyword '$1' is no longer supported. Use the module system instead}"
                 exit 1 ;;
             (no-depth-sort) printf "%s\n" "echo -debug %{Warning: plug.kak: '$plugin_name': use of deprecated '$1' keyword which has no effect}" ;;
-            (config) shift; configurations="$configurations
-${1?}" ;;
-            (*) configurations="$configurations
-$1" ;;
+            (config) shift; plug_code_append configurations "${1?}" ;;
+            (*) plug_code_append configurations "$1" ;;
         esac
         shift
     done
