@@ -16,7 +16,7 @@ plug_code_append () {
 
 plug () {
     [ "${kak_opt_plug_profile:-}" = "true" ] && plug_save_timestamp profile_start
-    plugin="${1%%.git}"
+    plugin="${1%%.git}"; plugin=${1%%/}
     shift
     plugin_name="${plugin##*/}"
     path_to_plugin="${kak_opt_plug_install_dir:?}/$plugin_name"
