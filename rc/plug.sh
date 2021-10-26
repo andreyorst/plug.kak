@@ -91,7 +91,7 @@ find . -type f -name '*.kak' -exec ln -sf \"\$PWD/{}\" $kak_config/colors/ \;"
             (
                 cd "$path_to_plugin" || exit
                 # shellcheck disable=SC2030,SC2031
-                [ -z "$GIT_TERMINAL_PROMPT" ] && export GIT_TERMINAL_PROMPT=0
+                [ -z "${GIT_TERMINAL_PROMPT:-}" ] && export GIT_TERMINAL_PROMPT=0
                 if [ "$checkout_type" = "branch" ]; then
                     [ "$(git branch --show-current)" != "$checkout" ] && git fetch >/dev/null 2>&1
                 fi
@@ -128,7 +128,7 @@ plug_install () {
         domain_file="$build_dir/domain"
 
         # shellcheck disable=SC2030,SC2031
-        [ -z "${GIT_TERMINAL_PROMPT}" ] && export GIT_TERMINAL_PROMPT=0
+        [ -z "${GIT_TERMINAL_PROMPT:-}" ] && export GIT_TERMINAL_PROMPT=0
 
         if [ ! -d "${kak_opt_plug_install_dir}" ]; then
             if ! mkdir -p "${kak_opt_plug_install_dir}" >/dev/null 2>&1; then
@@ -232,7 +232,7 @@ plug_update () {
         plugin_name="${plugin##*/}"
 
         # shellcheck disable=SC2030,SC2031
-        [ -z "${GIT_TERMINAL_PROMPT}" ] && export GIT_TERMINAL_PROMPT=0
+        [ -z "${GIT_TERMINAL_PROMPT:-}" ] && export GIT_TERMINAL_PROMPT=0
 
         printf "%s\n" "evaluate-commands -client ${kak_client:-client0} %{ try %{ buffer *plug* } catch %{ plug-list noupdate } }" | kak -p "${kak_session}"
 
@@ -407,7 +407,7 @@ plug_list () {
     if [ -z "${noupdate}" ]; then
         (
             # shellcheck disable=SC2030,SC2031
-            [ -z "${GIT_TERMINAL_PROMPT}" ] && export GIT_TERMINAL_PROMPT=0
+            [ -z "${GIT_TERMINAL_PROMPT:-}" ] && export GIT_TERMINAL_PROMPT=0
             eval "set -- ${kak_opt_plug_plugins}"
             while [ $# -gt 0 ]; do
                 plugin_dir="${1##*/}"
