@@ -80,8 +80,8 @@ find . -type f -name '*.kak' -exec ln -sf \"\$PWD/{}\" $kak_config/colors/ \;"
         shift
     done
 
-    rm -rf "$build_dir"
-    mkdir -p "$build_dir"
+    [ -d "$build_dir" ] || mkdir -p "$build_dir"
+    rm -rf "$build_dir"/* "$build_dir"/.[!.]* "$build_dir"/..?*
     [ -n "$configurations" ] && printf "%s" "$configurations" > "$conf_file"
     [ -n "$hooks" ] && printf "%s" "$hooks" > "$hook_file"
     [ -n "$domain" ] && printf "%s" "$domain" > "$domain_file"
