@@ -16,6 +16,7 @@ plug_code_append () {
 
 plug () {
     [ "${kak_opt_plug_profile:-}" = "true" ] && plug_save_timestamp profile_start
+    plugin_arg=$1
     plugin="${1%%.git}"; plugin=${plugin%%/}
     shift
     plugin_name="${plugin##*/}"
@@ -107,7 +108,7 @@ find . -type f -name '*.kak' -exec ln -sf \"\$PWD/{}\" $kak_config/colors/ \;"
     else
         if [ -n "$ensure" ] || [ "${kak_opt_plug_always_ensure:-}" = "true" ]; then
             (
-                plug_install "$plugin" "$noload"
+                plug_install "$plugin_arg" "$noload"
                 wait
                 if  [ "$kak_opt_plug_profile" = "true" ]; then
                     plug_save_timestamp profile_end
@@ -121,7 +122,7 @@ find . -type f -name '*.kak' -exec ln -sf \"\$PWD/{}\" $kak_config/colors/ \;"
 
 plug_install () {
     (
-        plugin="${1%%.git}"
+        plugin="${1%%.git}"; plugin=${plugin%%/}
         noload=$2
         plugin_name="${plugin##*/}"
         build_dir="${kak_opt_plug_install_dir:?}/.build/$plugin_name"
