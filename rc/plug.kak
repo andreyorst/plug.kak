@@ -159,9 +159,10 @@ define-command -override plug-chain -params 0.. -docstring %{
 }}
 
 define-command -override -docstring \
-"plug-install [<plugin>]: install <plugin>.
-If <plugin> omitted installs all plugins mentioned in configuration files" \
-plug-install -params ..1 %{ nop %sh{
+"plug-install [<plugin>] [<noload>]: install <plugin>.
+If <plugin> omitted installs all plugins mentioned in configuration
+files.  If <noload> is supplied skip loading the plugin." \
+plug-install -params ..2 %{ nop %sh{
     # $kak_client
     # $kak_config
     # $kak_opt_plug_always_ensure

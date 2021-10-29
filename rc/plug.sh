@@ -450,7 +450,7 @@ plug_fifo_operate() {
             if [ -d "${kak_opt_plug_install_dir}/${plugin##*/}" ]; then
                 plug_update "${plugin}"
             else
-                plug_install "${plugin}"
+                plug_install "${plugin}" true
             fi ;;
         (update)
             if [ -d "${kak_opt_plug_install_dir}/${plugin##*/}" ]; then
