@@ -67,8 +67,7 @@ plug () {
             (ensure) ensure=1 ;;
             (theme)
                 noload=1
-                plug_code_append hooks "mkdir -p ${kak_config:?}/colors
-find . -type f -name '*.kak' -exec ln -sf \"\$PWD/{}\" $kak_config/colors/ \;"
+                plug_code_append hooks "[ -d \"${kak_config:?}/colors\" ] || mkdir -p \"${kak_config}/colors\"; ln -sf \"\$PWD\" \"$kak_config/colors\""
             ;;
             (domain) shift; domain=${1?} ;;
             (depth-sort|subset)
