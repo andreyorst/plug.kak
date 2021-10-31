@@ -58,7 +58,7 @@ try %@
     require-module kak
 
     try %$
-        add-highlighter shared/kakrc/code/plug_keywords   regex '\b(plug|plug-chain|do|config|domain|defer|demand|load-path|branch|tag|commit)(?=[ \t])' 0:keyword
+        add-highlighter shared/kakrc/code/plug_keywords   regex '\b(plug|plug-chain|do|config|domain|defer|demand|load-path|branch|tag|commit|comment)(?=[ \t])' 0:keyword
         add-highlighter shared/kakrc/code/plug_attributes regex '(?<=[ \t])(noload|ensure|theme)\b' 0:attribute
         add-highlighter shared/kakrc/plug_post_hooks1     region -recurse '\{' '\bdo\K\h+%\{' '\}' ref sh
         add-highlighter shared/kakrc/plug_post_hooks2     region -recurse '\[' '\bdo\K\h+%\[' '\]' ref sh
