@@ -143,12 +143,10 @@ define-command -override plug-chain -params 0.. -docstring %{
             # reset "$@" on 1st iteration; args still in 'for'
             [ "$_plug_processed_args" != 0 ] || set --
             _plug_processed_args=$((_plug_processed_args + 1))
-            if [ plug = "$_plug_param" ]; then
-              break
-            fi
+            [ plug != "$_plug_param" ] || break
             set -- "$@" "$_plug_param"
           done
-          plug "$@"  # subshell would be safer, but slower
+          [ $# = 0 ] || plug "$@"  # subshell would be safer, but slower
         }
         while [ "$#" != 0 ]; do
           _plug_processed_args=0
