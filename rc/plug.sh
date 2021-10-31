@@ -43,12 +43,13 @@ plug () {
             (branch|tag|commit) checkout_type=$1; shift; checkout=${1?} ;;
             (noload) noload=1 ;;
             (load-path) shift; eval "path_to_plugin=${1?}" ;;
+            (comment) shift ;;
             (defer|demand)
                 demand=$1
                 shift; module=${1?}
                 if [ $# -ge 2 ]; then
                     case "$2" in
-                        (branch|tag|commit|noload|load-path|ensure|theme|domain|depth-sort|subset|no-depth-sort|config|defer|demand)
+                        (branch|tag|commit|noload|load-path|ensure|theme|domain|depth-sort|subset|no-depth-sort|config|defer|demand|comment)
                         ;;
                         (*)
                             shift
