@@ -17,7 +17,11 @@ plug_code_append () {
 plug () {
     [ "${kak_opt_plug_profile:-}" = "true" ] && plug_save_timestamp profile_start
     plugin_arg=$1
-    plugin="${1%%.git}"; plugin=${plugin%%/}
+    case "$plugin_arg" in (sh:*)
+        plugin_arg=${plugin_arg#sh:}
+        plugin_arg=sh://$(printf "${plugin_arg}" | sed -e 's/%/%25/g; s/ /%20/g')
+    esac
+    plugin="${plugin_arg%%.git}"; plugin=${plugin%%/}
     shift
     plugin_name="${plugin##*/}"
     path_to_plugin="${kak_opt_plug_install_dir:?}/$plugin_name"
@@ -183,6 +187,10 @@ plug_install () {
                     case ${plugin} in
                         (https://*|http://*|git@*|file://*|ext::*)
                             git clone --recurse-submodules "${plugin}" "$plugin_name" >> "$plugin_log" 2>&1 ;;
+                        (*) (sh://)
+                            installer=$(printf %s "${plugin#sh://}" | sed -e 's/%20/ /g; s/%25/%/g')
+                            (cd "$kak_opt_plug_install_dir"; eval "$installer")
+                            ;;
                         (*)
                             git clone --recurse-submodules "$git_domain/$plugin" "$plugin_name" >> "$plugin_log" 2>&1 ;;
                     esac
