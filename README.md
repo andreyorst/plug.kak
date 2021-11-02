@@ -339,6 +339,7 @@ This happens because Kakoune reads its variables only once per shell invocation,
 Here are some other plugin managers to consider as alternatives to plug.kak:
 
 - [kak-bundle][7]
+- [cork.kak][8]
 
 [1]: https://img.shields.io/github/issues/andreyorst/plug.kak.svg
 [2]: https://github.com/andreyorst/plug.kak/issues
@@ -347,6 +348,7 @@ Here are some other plugin managers to consider as alternatives to plug.kak:
 [5]: https://github.com/junegunn/vim-plug
 [6]: https://github.com/jwiegley/use-package
 [7]: https://github.com/jdugan6240/kak-bundle
+[8]: https://github.com/topisani/cork.kak
 
 <!--  LocalWords:  kak Kakoune Kakoune's GitLab Gitea noload config
       LocalWords:  kakscript kbd Ctrl github fzf
