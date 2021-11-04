@@ -14,6 +14,23 @@ plug_code_append () {
 \$2\""
 }
 
+# https://github.com/vaiv/daun.git -> com/github/vaiv/daun
+# vaiv/daun.git -> vaiv/daun
+plug_reverse_domain_path () {
+    schema="${1%://*}"
+    if [ -n "$schema" ] && [ "$schema" != "$1" ]; then
+        url="${1#*://}"; url="${url%%.git}"
+        domain="${url%%/*}"
+        domain_name="${domain%%.*}"
+        zone="${domain##*.}"
+        path="${url#*/}"
+        echo "$zone/$domain_name/$path"
+    else
+        # not an url
+        echo "${1%%.git}"
+    fi
+}
+
 plug () {
     [ "${kak_opt_plug_profile:-}" = "true" ] && plug_save_timestamp profile_start
     plugin_arg=$1
