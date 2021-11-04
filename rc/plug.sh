@@ -47,11 +47,10 @@ plug_reverse_domain_path () {
 plug () {
     [ "${kak_opt_plug_profile:-}" = "true" ] && plug_save_timestamp profile_start
     plugin_arg=$1
-    plugin="${1%%.git}"; plugin=${plugin%%/}
     shift
-    plugin_name="${plugin##*/}"
-    path_to_plugin="${kak_opt_plug_install_dir:?}/$plugin_name"
-    build_dir="${kak_opt_plug_install_dir:?}/.build/$plugin_name"
+    plugin_path=$(plug_reverse_domain_path "$plugin_arg")
+    path_to_plugin="${kak_opt_plug_install_dir:?}/$plugin_path"
+    build_dir="${kak_opt_plug_install_dir:?}/.build/$plugin_path"
     conf_file="$build_dir/config"
     hook_file="$build_dir/hooks"
     domain_file="$build_dir/domain"
@@ -59,13 +58,11 @@ plug () {
     configurations= hooks= domain= checkout= checkout_type= noload= ensure=
 
     case "${kak_opt_plug_loaded_plugins:-}" in
-      (*"$plugin"*)
-        printf "%s\n" "echo -markup %{{Information}$plugin_name already loaded}"
-        exit
-        ;;
+      (*"$plugin_path"*)
+          printf "%s\n" "echo -markup %{{Information}$plugin_path already loaded}"
+          exit ;;
       (*)
-        printf "%s\n" "set-option -add global plug_plugins %{$plugin }"
-        ;;
+          printf "%s\n" "set-option -add global plug_plugins %{$plugin_path }" ;;
     esac
 
     while [ $# -gt 0 ]; do
@@ -83,11 +80,13 @@ plug () {
                         (*)
                             shift
                             deferred=$1
-                            case "$deferred" in (*[![:space:]]*)
-                                case "$deferred" in (*'@'*)
-                                    deferred=$(printf "%s\n" "$deferred" | sed "s/@/@@/g") ;;
-                                esac
-                                printf "%s\n" "hook global ModuleLoaded '$module' %@ $deferred @"
+                            case "$deferred" in
+                                (*[![:space:]]*)
+                                    case "$deferred" in
+                                        (*'@'*)
+                                            deferred=$(printf "%s\n" "$deferred" | sed "s/@/@@/g") ;;
+                                    esac
+                                    printf "%s\n" "hook global ModuleLoaded '$module' %@ $deferred @"
                             esac
                             [ "$demand" = demand ] && plug_code_append configurations "require-module $module" ;;
                     esac
@@ -101,9 +100,9 @@ plug () {
             ;;
             (domain) shift; domain=${1?} ;;
             (depth-sort|subset)
-                printf "%s\n" "echo -debug %{Error: plug.kak: '$plugin_name': keyword '$1' is no longer supported. Use the module system instead}"
+                printf "%s\n" "echo -debug %{Error: plug.kak: '$plugin_path': keyword '$1' is no longer supported. Use the module system instead}"
                 exit 1 ;;
-            (no-depth-sort) printf "%s\n" "echo -debug %{Warning: plug.kak: '$plugin_name': use of deprecated '$1' keyword which has no effect}" ;;
+            (no-depth-sort) printf "%s\n" "echo -debug %{Warning: plug.kak: '$plugin_path': use of deprecated '$1' keyword which has no effect}" ;;
             (config) shift; plug_code_append configurations "${1?}" ;;
             (*) plug_code_append configurations "$1" ;;
         esac
@@ -132,7 +131,7 @@ plug () {
         if  [ "$kak_opt_plug_profile" = "true" ]; then
             plug_save_timestamp profile_end
             profile_time=$(echo "scale=3; x=($profile_end-$profile_start)/1000; if(x<1) print 0; x" | bc -l)
-            printf "%s\n" "echo -debug %{'$plugin_name' loaded in $profile_time sec}"
+            printf "%s\n" "echo -debug %{'$plugin_path' loaded in $profile_time sec}"
         fi
     else
         if [ -n "$ensure" ] || [ "${kak_opt_plug_always_ensure:-}" = "true" ]; then
@@ -142,7 +141,7 @@ plug () {
                 if  [ "$kak_opt_plug_profile" = "true" ]; then
                     plug_save_timestamp profile_end
                     profile_time=$(echo "scale=3; x=($profile_end-$profile_start)/1000; if(x<1) print 0; x" | bc -l)
-                    printf "%s\n" "echo -debug %{'$plugin_name' loaded in $profile_time sec}" | kak -p "${kak_session:?}"
+                    printf "%s\n" "echo -debug %{'$plugin_path' loaded in $profile_time sec}" | kak -p "${kak_session:?}"
                 fi
             ) > /dev/null 2>&1 < /dev/null &
         fi
@@ -151,10 +150,9 @@ plug () {
 
 plug_install () {
     (
-        plugin="${1%%.git}"; plugin=${plugin%%/}
+        plugin_path=$(plug_reverse_domain_path "$1")
         noload=$2
-        plugin_name="${plugin##*/}"
-        build_dir="${kak_opt_plug_install_dir:?}/.build/$plugin_name"
+        build_dir="${kak_opt_plug_install_dir:?}/.build/$plugin_path"
         domain_file="$build_dir/domain"
 
         # shellcheck disable=SC2030,SC2031
@@ -170,9 +168,10 @@ plug_install () {
         printf "%s\n" "evaluate-commands -client ${kak_client:-client0} %{ try %{ buffer *plug* } catch %{ plug-list noupdate } }" | kak -p "${kak_session}"
         sleep 0.3
 
-        lockfile="${kak_opt_plug_install_dir}/.${plugin_name:-global}.plug.kak.lock"
+        lockname=$(printf "%s\n" "${plugin_path:-global}.plug.kak.lock" | sed "s:/:.:g")
+        lockfile="${kak_opt_plug_install_dir}/.$lockname"
         if [ -d "${lockfile}" ]; then
-            plug_fifo_update "${plugin_name}" "Waiting for .plug.kak.lock"
+            plug_fifo_update "${plugin_path}" "Waiting for .plug.kak.lock"
         fi
 
         # this creates the lock file for a plugin, if specified to
