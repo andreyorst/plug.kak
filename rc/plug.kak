@@ -11,6 +11,7 @@ str plug_install_dir %sh{ echo "${kak_source%%/rc*}/../" }
 
 declare-option -docstring \
 "Default domain to access git repositories. Can be changed to any preferred domain, like gitlab, bitbucket, gitea, etc.
+Must include url schema, such as 'https://' or 'git@'.
 
     Default value: 'https://github.com'" \
 str plug_git_domain 'https://github.com'

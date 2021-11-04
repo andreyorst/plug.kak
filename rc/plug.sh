@@ -15,19 +15,32 @@ plug_code_append () {
 }
 
 # https://github.com/vaiv/daun.git -> com/github/vaiv/daun
-# vaiv/daun.git -> vaiv/daun
+# git@github.com:vaiv/daun.git -> com/github/vaiv/daun
+# vaiv/daun -> zone/default/vaiv/daun (taken from plug_git_domain)
 plug_reverse_domain_path () {
-    schema="${1%://*}"
-    if [ -n "$schema" ] && [ "$schema" != "$1" ]; then
-        url="${1#*://}"; url="${url%%.git}"
-        domain="${url%%/*}"
-        domain_name="${domain%%.*}"
-        zone="${domain##*.}"
-        path="${url#*/}"
-        echo "$zone/$domain_name/$path"
-    else
-        # not an url
-        echo "${1%%.git}"
+    if [ -n "$1" ]; then
+        schema="${1%://*}"
+        git_schema="${1%git@*}"
+        if [ -z "$git_schema" ]; then
+            # git@ style url
+            url="${1#git@}"; url="${url%%.git}"
+            domain="${url%%:*}"
+            domain_name="${domain%%.*}"
+            zone="${domain##*.}"
+            path="${url#*:}"
+            echo "$zone/$domain_name/$path"
+        elif [ -n "$schema" ] && [ "$schema" = "$1" ]; then
+            # not an url, append default schema
+            plug_reverse_domain_path "${kak_opt_plug_git_domain:?}/${1}"
+        else
+            # probably an ordinary url
+            url="${1#*://}"; url="${url%%.git}"
+            domain="${url%%/*}"
+            domain_name="${domain%%.*}"
+            zone="${domain##*.}"
+            path="${url#*/}"
+            echo "$zone/$domain_name/$path"
+        fi
     fi
 }
 
