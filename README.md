@@ -181,6 +181,18 @@ The `config` keyword is optional, and can be skipped.
 Multiple `config` blocks are also supported.
 
 
+#### Commenting out `plug` options
+
+It may be tricky to "toggle" `plug` options, for debugging or testing purposes, because it is impossible to continue a command past a `#...` comment (also, `config` blocks usually span multiple lines).
+To solve this, `plug` supports a `comment` keyword that ignores its next argument.
+For example, to toggle a `load-path` option, wrap it in `comment %{}`; then remove the "wrapper" to turn it back on (without having to re-type the full path):
+```kak
+plug "andreyorst/fzf.kak" comment %{load-path /usr/local/src/fzf} config %{
+    # ...
+}
+```
+
+
 ### Deferring plugin configuration
 
 With the introduction of the module system, some configurations have to be preformed after loading the module.
@@ -326,6 +338,7 @@ plug-chain https://github.com/Delapouite/kakoune-select-view config %{
 ```
 
 Backslashes can also be used to separate individual `plug` "clauses" (which avoids the "visual hack" of empty config blocks, as above, serving as newlines).
+An initial `plug` redundant argument is also supported for symmetry.
 Either way, `plug-chain` simply figures out the parameters intended for each individual `plug` clause (using "`plug`" as a delimiter), and executes all implied `plug`s in a single shell call.
 All regular `plug` features are supported.
 Mix and match `plug` / `plug-chain` invocations in any order, any number of times.
