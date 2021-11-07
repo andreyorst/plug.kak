@@ -288,6 +288,16 @@ To change this, use the `plug_max_simultaneous_downloads` option.
 If majority of plugins is installed from the service other than GitHub, default git domain can be changed to avoid specifying the `domain` keyword for each plugin, or using URLs.
 
 
+### Notify on configuration error
+
+By default, **plug.kak** will display an `info` box when any plugin's `config` block has errors while being evaluated.
+To change this, use the `plug_report_conf_errors` option:
+
+```kak
+set-option global plug_report_conf_errors false
+```
+
+
 ## Commands
 
 **plug.kak** adds five new commands to Kakoune.

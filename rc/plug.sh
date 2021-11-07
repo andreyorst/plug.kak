@@ -83,9 +83,33 @@ plug () {
 
     [ -d "$build_dir" ] || mkdir -p "$build_dir"
     rm -rf "$build_dir"/* "$build_dir"/.[!.]* "$build_dir"/..?*
-    [ -n "$configurations" ] && printf "%s" "$configurations" > "$conf_file"
     [ -n "$hooks" ] && printf "%s" "$hooks" > "$hook_file"
     [ -n "$domain" ] && printf "%s" "$domain" > "$domain_file"
+
+    if [ -n "$configurations" ]; then
+        if [ "${kak_opt_plug_report_conf_errors:-}" = "true" ]; then
+            cat > "$conf_file" <<ERRHANDLE
+try %{ $configurations } catch %{
+    echo -debug "Error while evaluating '$plugin_name' configuration: %val{error}"
+
+    set-option -add current plug_conf_errors "Error while evaluating '$plugin_name' configuration:"
+    set-option -add current plug_conf_errors %sh{ printf "\n    " }
+    set-option -add current plug_conf_errors %val{error}
+    set-option -add current plug_conf_errors %sh{ printf "\n\n" }
+
+    hook -once -group plug-conf-err global WinDisplay .* %{
+        info -style modal -title "plug.kak error" "%opt{plug_conf_errors}"
+        on-key %{
+            info -style modal
+            execute-keys -with-maps -with-hooks %val{key}
+        }
+    }
+}
+ERRHANDLE
+        else
+          printf "%s" "$configurations" > "$conf_file"
+        fi
+    fi
 
     if [ -d "$path_to_plugin" ]; then
         if [ -n "$checkout" ]; then
