@@ -52,6 +52,15 @@ declare-option -hidden -docstring \
 Should not be cleared during update of configuration files. Should not be modified by user." \
 str plug_loaded_plugins ""
 
+declare-option -docstring \
+"Whether or not to report errors in config blocks. Defaults to true." \
+bool plug_report_conf_errors true
+
+declare-option -hidden -docstring \
+"This will be set if there are any errors with a plugin's config block. Has no default value.
+Should not be cleared during update of configuration files. Should not be modified by user." \
+str plug_conf_errors ""
+
 # since we want to add highlighters to kak filetype we need to require kak module
 # using `try' here since kakrc module may not be available in rare cases
 try %@
@@ -112,6 +121,8 @@ plug -params 1.. -shell-script-candidates %{ ls -1 ${kak_opt_plug_install_dir} }
         # $kak_opt_plug_plugins
         # $kak_opt_plug_profile
         # $kak_opt_plug_block_ui
+        # $kak_opt_plug_report_conf_errors
+        # $kak_opt_plug_conf_errors
         # $kak_session
 
         . "${kak_opt_plug_sh_source}"
@@ -134,6 +145,8 @@ define-command -override plug-chain -params 0.. -docstring %{
         # $kak_opt_plug_plugins
         # $kak_opt_plug_profile
         # $kak_opt_plug_block_ui
+        # $kak_opt_plug_report_conf_errors
+        # $kak_opt_plug_conf_errors
         # $kak_session
 
         set -u
@@ -172,6 +185,8 @@ plug-install -params ..2 %{ nop %sh{
     # $kak_opt_plug_plugins
     # $kak_opt_plug_profile
     # $kak_opt_plug_block_ui
+    # $kak_opt_plug_report_conf_errors
+    # $kak_opt_plug_conf_errors
     # $kak_session
 
     . "${kak_opt_plug_sh_source}"
@@ -194,6 +209,8 @@ plug-update -params ..1 -shell-script-candidates %{ printf "%s\n" ${kak_opt_plug
         # $kak_opt_plug_plugins
         # $kak_opt_plug_profile
         # $kak_opt_plug_block_ui
+        # $kak_opt_plug_report_conf_errors
+        # $kak_opt_plug_conf_errors
         # $kak_session
 
         . "${kak_opt_plug_sh_source}"
@@ -215,6 +232,8 @@ plug-clean -params ..1 -shell-script-candidates %{ ls -1 ${kak_opt_plug_install_
     # $kak_opt_plug_plugins
     # $kak_opt_plug_profile
     # $kak_opt_plug_block_ui
+    # $kak_opt_plug_report_conf_errors
+    # $kak_opt_plug_conf_errors
     # $kak_session
 
     . "${kak_opt_plug_sh_source}"
@@ -235,6 +254,8 @@ plug-eval-hooks -params 1 %{ nop %sh{
     # $kak_opt_plug_plugins
     # $kak_opt_plug_profile
     # $kak_opt_plug_block_ui
+    # $kak_opt_plug_report_conf_errors
+    # $kak_opt_plug_conf_errors
     # $kak_session
 
     . "${kak_opt_plug_sh_source}"
@@ -255,6 +276,8 @@ plug-list -params ..1 %{ evaluate-commands -try-client %opt{toolsclient} %sh{
     # $kak_opt_plug_plugins
     # $kak_opt_plug_profile
     # $kak_opt_plug_block_ui
+    # $kak_opt_plug_report_conf_errors
+    # $kak_opt_plug_conf_errors
     # $kak_session
 
     . "${kak_opt_plug_sh_source}"
@@ -279,6 +302,8 @@ plug-fifo-operate -params 1 %{ evaluate-commands -save-regs t %{
     # $kak_opt_plug_plugins
     # $kak_opt_plug_profile
     # $kak_opt_plug_block_ui
+    # $kak_opt_plug_report_conf_errors
+    # $kak_opt_plug_conf_errors
     # $kak_session
 
     . "${kak_opt_plug_sh_source}"
