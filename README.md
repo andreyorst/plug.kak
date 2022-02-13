@@ -164,7 +164,7 @@ Only use `ensure` with non-essential plugins, which are not required for `kakrc`
 
 #### Handling user configurations
 
-The configuration of the plugin is preformed only when the plugin is installed.
+The configuration of the plugin is performed only when the plugin is installed.
 There's a second strict rule of `plug` command: every parameter that doesn't have a keyword before it, is treated as plugin configuration.
 For example:
 
