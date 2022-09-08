@@ -64,7 +64,8 @@ plug () {
                     esac
                 fi
                 ;;
-            ('do') shift; plug_code_append hooks "${1?}" ;;
+            ('do') shift; plug_code_append hooks "set -e
+${1?}" ;;
             (ensure) ensure=1 ;;
             (theme)
                 noload=1
