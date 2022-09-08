@@ -205,7 +205,7 @@ plug_install () {
                     plug_fifo_update "${plugin_name}" "Installing"
                     cd "${kak_opt_plug_install_dir}" || exit
                     case ${plugin} in
-                        (https://*|http://*|git@*|file://*|ext::*)
+                        (https://*|http://*|*@*|file://*|ext::*)
                             git clone --recurse-submodules "${plugin}" "$plugin_name" >> "$plugin_log" 2>&1 ;;
                         (*)
                             git clone --recurse-submodules "$git_domain/$plugin" "$plugin_name" >> "$plugin_log" 2>&1 ;;
