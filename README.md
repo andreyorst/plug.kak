@@ -1,15 +1,19 @@
+# Project status
+
+Because I have stopped using Kakoune, this project will not receive active maintenance. The issues section has been closed, as I do not plan to address any issues myself. However, I welcome pull requests from anyone who encounters problems with this plugin and knows how to resolve them.
+
 # plug.kak
 [![GitHub issues][1]][2] ![license][3]
 
 ![plug.kak][4]
 
-**plug.kak** is a plugin manager for Kakoune, that was inspired by [vim-plug][5] and [use-package][6].
-It can install and update plugins, run post-update actions, and helps to encapsulate the configuration within itself.
+**plug.kak** is a plugin manager for Kakoune, which was inspired by [vim-plug][5] and [use-package][6].
+It can install and update plugins, run post-update actions, and help to encapsulate the configuration within itself.
 
 
 ## Installation
 
-**plug.kak** can be installed anywhere in your system, but in order to update itself, it is required to install **plug.kak** in the plugin installation directory.
+**plug.kak** can be installed anywhere in your system, but to update itself, it is required to install **plug.kak** in the plugin installation directory.
 By default, **plug.kak** installs plugins to the `%val{config}/plugins`, which is usually at `$HOME/.config/kak/plugins`:
 
 ``` sh
@@ -25,7 +29,7 @@ source "%val{config}/plugins/plug.kak/rc/plug.kak"
 plug "andreyorst/plug.kak" noload
 ```
 
-Alternatively, this process can be automated, by adding the following snippet to the `kakrc`:
+Alternatively, this process can be automated by adding the following snippet to the `kakrc`:
 
 ``` sh
 evaluate-commands %sh{
@@ -40,13 +44,13 @@ plug "andreyorst/plug.kak" noload
 
 This will create all needed directories on Kakoune launch, and download **plug.kak** if it is not installed already.
 
-**Note**: `plug "andreyorst/plug.kak" noload` is needed to register **plug.kak** as manually loaded plugin, so `plug-clean` will not delete **plug.kak**.
+**Note**: `plug "andreyorst/plug.kak" noload` is needed to register **plug.kak** as a manually loaded plugin, so `plug-clean` will not delete **plug.kak**.
 
 
 ## Usage
 
 All plugins are installed and loaded with the `plug` command.
-This command accepts one-or-more arguments, which are keywords and attributes, that change how **plug.kak** behaves.
+This command accepts one or more arguments, which are keywords and attributes, that change how **plug.kak** behaves.
 
 The first strict rule of the `plug` command is that the first argument is always the plugin name formatted as in GitHub URL: `"author/repository"`.
 
@@ -54,9 +58,9 @@ The first strict rule of the `plug` command is that the first argument is always
 plug "author/repository"
 ```
 
-By default **plug.kak** will look for the plugin at GitHub.com, and download it.
+By default **plug.kak** will look for the plugin at GitHub.com and download it.
 When the plugin is hosted on a different service, a URL can be used as the first argument.
-So in most cases it is enough to add this to the `kakrc` to use a plugin:
+So, in most cases, it is enough to add this to the `kakrc` to use a plugin:
 
 ```kak
 plug "delapouite/kakoune-text-objects"
@@ -68,20 +72,20 @@ Or with URL:
 plug "https://gitlab.com/Screwtapello/kakoune-inc-dec"
 ```
 
-After adding this, `kakrc` needs to be re-sourced to let **plug.kak** know that configuration was changed.
+After adding this, `kakrc` needs to be re-sourced to let **plug.kak** know that the configuration was changed.
 Alternatively, Kakoune can be restarted.
-After that newly added plugins can be installed with the `plug-install` command.
-More information about other commands available in [Commands](#Commands) section.
+After that, newly added plugins can be installed with the `plug-install` command.
+More information about other commands available in the [Commands](#Commands) section.
 
 
 ### Keywords and attributes
 
-The `plug` command accepts optional attributes, that change how **plug.kak** works, or add additional steps for `plug` to perform.
+The `plug` command accepts optional attributes that change how **plug.kak** works, or add additional steps for `plug` to perform.
 
 These keywords are supported:
 
 - [branch, tag, commit](#branch-tag-or-commit)
-- [load-path](#loading-plugin-from-different-path)
+- [load-path](#loading-plugin-from-a-different-path)
 - [noload](#skipping-loading-of-a-plugin)
 - [do](#automatically-do-certain-tasks-on-install-or-update)
 - [theme](#installing-color-schemes)
@@ -91,41 +95,42 @@ These keywords are supported:
 - [ensure](#ensuring-that-plugins-are-installed)
 
 
-#### Branch, Tag or Commit
+#### Branch, Tag, or Commit
 
-`plug` can checkout a plugin to desired branch, commit or tag before loading it.
+`plug` can checkout a plugin to the desired branch, commit, or tag before loading it.
 It can be done by adding the following keywords with parameters: `branch "branch_name"`, `tag "tag_name"` or `commit "commit_hash"`.
 
 
-#### Loading plugin from different path
+#### Loading plugin from a different path
 
-Plugins can be loaded from arbitrary path by specifying the `load-path` keyword and providing the path as an argument:
+Plugins can be loaded from an arbitrary path by specifying the `load-path` keyword and providing the path as an argument:
 
 ``` kak
 plug "plugin_name" load-path "~/Development/plugin_dir"
 ```
 
-However all `plug` related commands, like `plug-update` or `plug-clean` will not work for plugins that aren't installed to `plug_install_dir`.
+However, all `plug` related commands, like `plug-update` or `plug-clean`, will not work for plugins that aren't installed to `plug_install_dir`.
 
 
 #### Skipping loading of a plugin
 
-If plugin needs to be loaded manually, the `noload` keyword can be used.
-This can also be used to avoid loading the plugin second time, like in the example with **plug.kak** from the [installation](#installation) section:
+If a plugin needs to be loaded manually, the `noload` keyword can be used.
+This can also be used to avoid loading the plugin a second time, like in the example with **plug.kak** from the [installation](#installation) section:
 
 ```kak
 source "%val{config}/plugins/plug.kak/rc/plug.kak"
 plug "andreyorst/plug.kak" noload
 ```
 
-Note, that plugins with the `noload` keyword are still configured and managed.
+Note that plugins with the `noload` keyword are still configured and managed.
 See [handling-user-configuration](#handling-user-configurations) for more details.
 
 
 #### Automatically do certain tasks on install or update
 
-When the plugin requires some additional steps to preform after installation or update, the `do` keyword can be used.
-This keyword expects the body which will be executed in the shell, thus it can only contain shell commands, not Kakoune commands.
+When the plugin requires some additional steps to perform after installation or update, the `do` keyword can be used.
+This keyword expects the body, which will be executed in the shell. 
+Thus, it can only contain shell commands, not Kakoune commands.
 
 ```kak
 plug "ul/kak-lsp" do %{
@@ -136,7 +141,7 @@ plug "ul/kak-lsp" do %{
 
 In the example above **plug.kak** will run these `cargo` commands after `kak-lsp` was installed or updated.
 
-**Note** that even though this is technically a shell expansion, the `%sh{}` expansion can't be used with `do`, as it will be evaluated immediately each time `kakrc` loaded.
+**Note** that even though this is technically a shell expansion, the `%sh{}` expansion can't be used with `do`, as it will be evaluated immediately each time `kakrc` is loaded.
 Use `%{}` instead.
 
 
